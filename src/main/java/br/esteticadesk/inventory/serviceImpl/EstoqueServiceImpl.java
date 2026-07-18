@@ -5,11 +5,15 @@ import br.esteticadesk.company.service.AssinaturaService;
 import br.esteticadesk.enums.*;
 import br.esteticadesk.exception.EstoqueInsuficienteException;
 import br.esteticadesk.exception.RecursoNaoEncontradoException;
+import br.esteticadesk.finance.entity.Despesa;
+import br.esteticadesk.finance.service.FinanceiroService;
 import br.esteticadesk.inventory.dto.ProdutoEstoqueDTO;
 import br.esteticadesk.inventory.entity.*;
 import br.esteticadesk.inventory.repository.*;
 import br.esteticadesk.inventory.service.EstoqueService;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,16 +27,18 @@ public class EstoqueServiceImpl implements EstoqueService {
     private final CategoriaProdutoRepository categorias;
     private final SessaoUsuario sessao;
     private final AssinaturaService assinaturas;
+    private final FinanceiroService financeiro;
 
     public EstoqueServiceImpl(EstoqueRepository estoques, MovimentacaoEstoqueRepository movimentacoes,
             ProdutoRepository produtos, CategoriaProdutoRepository categorias, SessaoUsuario sessao,
-            AssinaturaService assinaturas) {
+            AssinaturaService assinaturas, FinanceiroService financeiro) {
         this.estoques = estoques;
         this.movimentacoes = movimentacoes;
         this.produtos = produtos;
         this.categorias = categorias;
         this.sessao = sessao;
         this.assinaturas = assinaturas;
+        this.financeiro = financeiro;
     }
 
     @Transactional(readOnly = true)
@@ -85,8 +91,10 @@ public class EstoqueServiceImpl implements EstoqueService {
             estoque.setQuantidadeAtual(dados.quantidadeInicial());
             estoque.setQuantidadeMinima(dados.quantidadeMinima());
             estoques.save(estoque);
-            if (dados.quantidadeInicial().signum() > 0)
+            if (dados.quantidadeInicial().signum() > 0) {
                 registrarMovimentacao(empresaId, produto, TipoMovimentacao.ENTRADA, dados.quantidadeInicial());
+                registrarDespesaDeEntrada(produto, dados.quantidadeInicial());
+            }
             return;
         }
 
@@ -109,6 +117,7 @@ public class EstoqueServiceImpl implements EstoqueService {
         var estoque = buscarEstoqueParaAtualizacao(empresaId, produtoId);
         estoque.setQuantidadeAtual(estoque.getQuantidadeAtual().add(quantidade));
         registrarMovimentacao(empresaId, estoque.getProduto(), TipoMovimentacao.ENTRADA, quantidade);
+        registrarDespesaDeEntrada(estoque.getProduto(), quantidade);
     }
 
     public void registrarSaida(Long produtoId, BigDecimal quantidade) {
@@ -149,6 +158,24 @@ public class EstoqueServiceImpl implements EstoqueService {
         mov.setOrigem(OrigemMovimentacao.MANUAL);
         mov.setQuantidade(quantidade);
         movimentacoes.save(mov);
+    }
+
+    private void registrarDespesaDeEntrada(Produto produto, BigDecimal quantidade) {
+        var valor = produto.getPrecoCusto().multiply(quantidade).setScale(2, RoundingMode.HALF_UP);
+        if (valor.signum() == 0) {
+            return;
+        }
+        if (valor.compareTo(new BigDecimal("99999999.99")) > 0) {
+            throw new IllegalArgumentException("O custo total da entrada excede o limite permitido.");
+        }
+        var despesa = new Despesa();
+        despesa.setDescricao("Reposição de estoque: " + produto.getNome()
+                + " (" + quantidade.stripTrailingZeros().toPlainString() + " "
+                + produto.getUnidadeMedida() + ")");
+        despesa.setCategoria(CategoriaDespesa.FORNECEDOR);
+        despesa.setValor(valor);
+        despesa.setDataPagamento(LocalDate.now());
+        financeiro.registrarDespesa(despesa);
     }
 
     private void preencherProduto(Produto produto, ProdutoEstoqueDTO dados, CategoriaProduto categoria) {

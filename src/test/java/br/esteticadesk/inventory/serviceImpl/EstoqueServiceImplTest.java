@@ -12,6 +12,8 @@ import br.esteticadesk.enums.OrigemMovimentacao;
 import br.esteticadesk.enums.TipoMovimentacao;
 import br.esteticadesk.enums.UnidadeMedida;
 import br.esteticadesk.exception.EstoqueInsuficienteException;
+import br.esteticadesk.finance.entity.Despesa;
+import br.esteticadesk.finance.service.FinanceiroService;
 import br.esteticadesk.inventory.dto.ProdutoEstoqueDTO;
 import br.esteticadesk.inventory.entity.CategoriaProduto;
 import br.esteticadesk.inventory.entity.Estoque;
@@ -44,12 +46,15 @@ class EstoqueServiceImplTest {
     private SessaoUsuario sessao;
     @Mock
     private AssinaturaService assinaturas;
+    @Mock
+    private FinanceiroService financeiro;
 
     private EstoqueServiceImpl service;
 
     @BeforeEach
     void configurar() {
-        service = new EstoqueServiceImpl(estoques, movimentacoes, produtos, categorias, sessao, assinaturas);
+        service = new EstoqueServiceImpl(estoques, movimentacoes, produtos, categorias, sessao, assinaturas,
+                financeiro);
     }
 
     @Test
@@ -67,6 +72,10 @@ class EstoqueServiceImplTest {
         assertEquals(TipoMovimentacao.ENTRADA, captor.getValue().getTipo());
         assertEquals(OrigemMovimentacao.MANUAL, captor.getValue().getOrigem());
         assertEquals(new BigDecimal("2.500"), captor.getValue().getQuantidade());
+        var despesaCaptor = ArgumentCaptor.forClass(Despesa.class);
+        verify(financeiro).registrarDespesa(despesaCaptor.capture());
+        assertEquals(new BigDecimal("75.00"), despesaCaptor.getValue().getValor());
+        assertEquals("Reposição de estoque: Produto (2.5 L)", despesaCaptor.getValue().getDescricao());
     }
 
     @Test
@@ -90,6 +99,9 @@ class EstoqueServiceImplTest {
         verify(movimentacoes).save(movimentacaoCaptor.capture());
         assertEquals(TipoMovimentacao.ENTRADA, movimentacaoCaptor.getValue().getTipo());
         assertEquals(new BigDecimal("5.000"), movimentacaoCaptor.getValue().getQuantidade());
+        var despesaCaptor = ArgumentCaptor.forClass(Despesa.class);
+        verify(financeiro).registrarDespesa(despesaCaptor.capture());
+        assertEquals(new BigDecimal("150.00"), despesaCaptor.getValue().getValor());
     }
 
     @Test
@@ -118,6 +130,8 @@ class EstoqueServiceImplTest {
     private Estoque estoque(String nomeProduto, String quantidade) {
         var produto = new Produto();
         produto.setNome(nomeProduto);
+        produto.setPrecoCusto(new BigDecimal("30.00"));
+        produto.setUnidadeMedida(UnidadeMedida.L);
         var estoque = new Estoque();
         estoque.setProduto(produto);
         estoque.setQuantidadeAtual(new BigDecimal(quantidade));

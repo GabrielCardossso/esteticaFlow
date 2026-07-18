@@ -296,13 +296,13 @@ a {
 }
 
 .table {
-    width: 100%;
+    width: max-content;
     border-collapse: collapse;
     background: var(--bg-elevated);
     border-radius: 8px;
     overflow: hidden;
     border: 1px solid var(--border);
-    min-width: 560px;
+    min-width: 100%;
 }
 
 .table th,
@@ -310,6 +310,8 @@ a {
     padding: 12px;
     text-align: left;
     border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    vertical-align: middle;
 }
 
 .table th {
@@ -507,6 +509,163 @@ textarea {
     margin: 0;
 }
 
+.table .actions,
+.table .appointment-actions {
+    flex-wrap: nowrap;
+    min-width: max-content;
+}
+
+.category-manager {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, auto);
+    gap: 20px;
+    align-items: end;
+    margin-bottom: 20px;
+}
+
+.category-manager h3 {
+    margin: 0 0 10px;
+}
+
+.category-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.category-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: var(--info-bg);
+    color: var(--info-text);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.inline-form {
+    display: flex;
+    gap: 8px;
+    align-items: stretch;
+}
+
+.stock-dialog {
+    width: min(920px, calc(100vw - 32px));
+    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
+    padding: 0;
+    border: none;
+    border-radius: 14px;
+    background: transparent;
+    color: var(--text);
+    overflow: auto;
+}
+
+.stock-dialog::backdrop {
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(2px);
+}
+
+.stock-dialog-card {
+    padding: 24px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.22);
+}
+
+.stock-dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.stock-dialog-header h2 {
+    margin: 3px 0 0;
+}
+
+.dialog-close {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    border: none;
+    border-radius: 50%;
+    background: var(--border);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 1.75rem;
+    line-height: 1;
+}
+
+.stock-summary {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.stock-summary > div {
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+}
+
+.stock-summary span,
+.stock-summary strong {
+    display: block;
+}
+
+.stock-summary span {
+    margin-bottom: 4px;
+    color: var(--text-muted);
+    font-size: 0.82rem;
+}
+
+.stock-summary strong {
+    font-size: 1.25rem;
+}
+
+.stock-operation-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.stock-operation-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg);
+}
+
+.stock-operation-card h3,
+.stock-operation-card p {
+    margin: 0;
+}
+
+.stock-operation-card p {
+    min-height: 42px;
+    font-size: 0.85rem;
+}
+
+.stock-operation-card label {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.stock-operation-card .btn {
+    width: 100%;
+    margin-top: auto;
+}
+
 .service-picker {
     display: grid;
     gap: 8px;
@@ -696,6 +855,7 @@ textarea {
     .content {
         padding: 16px;
         padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+        overflow-x: auto;
     }
 
     .page-header {
@@ -769,6 +929,21 @@ textarea {
     .actions form,
     .appointment-actions form {
         width: 100%;
+    }
+
+    .table .actions,
+    .table .appointment-actions {
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: nowrap;
+    }
+
+    .table .actions .btn,
+    .table .appointment-actions .btn,
+    .table .actions form,
+    .table .appointment-actions form {
+        width: auto;
+        flex-shrink: 0;
     }
 
     .payment-form {
@@ -846,6 +1021,36 @@ textarea {
         width: 44px;
         height: 44px;
     }
+
+    .category-manager {
+        grid-template-columns: 1fr;
+        align-items: stretch;
+    }
+
+    .inline-form {
+        flex-direction: column;
+    }
+
+    .inline-form .btn {
+        width: 100%;
+    }
+
+    .stock-dialog {
+        width: calc(100vw - 20px);
+        max-height: calc(100dvh - 20px);
+    }
+
+    .stock-dialog-card {
+        padding: 18px;
+    }
+
+    .stock-operation-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .stock-operation-card p {
+        min-height: 0;
+    }
 }
 
 @media (max-width: 560px) {
@@ -862,7 +1067,6 @@ textarea {
     }
 
     .table {
-        min-width: 480px;
         font-size: 0.875rem;
     }
 

@@ -39,7 +39,7 @@
                           class="low-stock">Estoque baixo</span>
                     <span th:if="${item.produto.ativo && item.quantidadeAtual.compareTo(item.quantidadeMinima) > 0}">OK</span>
                 </td>
-                <td style="min-width:260px;">
+                <td class="actions">
                     <a th:href="@{/estoque/produtos/{id}/editar(id=${item.produto.id})}"
                        class="btn btn-secondary btn-sm">Editar</a>
                     <form th:if="${item.produto.ativo}"
@@ -49,37 +49,70 @@
                         <button type="submit" class="btn btn-danger btn-sm"
                                 onclick="return confirm('Inativar este produto?')">Inativar</button>
                     </form>
-
-                    <details th:if="${item.produto.ativo}" style="margin-top:8px;">
-                        <summary style="cursor:pointer;font-weight:600;">Movimentar / alterar mínimo</summary>
-                        <div style="display:grid;gap:8px;margin-top:8px;">
-                            <form th:action="@{/estoque/produtos/{id}/entrada(id=${item.produto.id})}"
-                                  method="post" style="display:flex;gap:6px;">
-                                <div th:replace="~{fragments/csrf :: csrf}"></div>
-                                <input type="number" name="quantidade" min="0.001" step="0.001"
-                                       placeholder="Quantidade" aria-label="Quantidade de entrada" required/>
-                                <button type="submit" class="btn btn-primary btn-sm">Entrada</button>
-                            </form>
-                            <form th:action="@{/estoque/produtos/{id}/saida(id=${item.produto.id})}"
-                                  method="post" style="display:flex;gap:6px;">
-                                <div th:replace="~{fragments/csrf :: csrf}"></div>
-                                <input type="number" name="quantidade" min="0.001" step="0.001"
-                                       placeholder="Quantidade" aria-label="Quantidade de saída" required/>
-                                <button type="submit" class="btn btn-secondary btn-sm">Saída</button>
-                            </form>
-                            <form th:action="@{/estoque/produtos/{id}/minimo(id=${item.produto.id})}"
-                                  method="post" style="display:flex;gap:6px;">
-                                <div th:replace="~{fragments/csrf :: csrf}"></div>
-                                <input type="number" name="quantidadeMinima" min="0" step="0.001"
-                                       th:value="${item.quantidadeMinima}" aria-label="Quantidade mínima" required/>
-                                <button type="submit" class="btn btn-secondary btn-sm">Alterar mínimo</button>
-                            </form>
-                        </div>
-                    </details>
+                    <button th:if="${item.produto.ativo}" type="button"
+                            class="btn btn-primary btn-sm stock-action-button"
+                            th:attr="data-produto=${item.produto.nome},
+                                     data-saldo=${item.quantidadeAtual.stripTrailingZeros().toPlainString()},
+                                     data-minimo=${item.quantidadeMinima.stripTrailingZeros().toPlainString()},
+                                     data-entrada-url=@{/estoque/produtos/{id}/entrada(id=${item.produto.id})},
+                                     data-saida-url=@{/estoque/produtos/{id}/saida(id=${item.produto.id})},
+                                     data-minimo-url=@{/estoque/produtos/{id}/minimo(id=${item.produto.id})}">
+                        Movimentar
+                    </button>
                 </td>
             </tr>
             </tbody>
         </table>
+
+        <dialog id="stock-dialog" class="stock-dialog" aria-labelledby="stock-dialog-title">
+            <div class="stock-dialog-card">
+                <div class="stock-dialog-header">
+                    <div>
+                        <span class="muted">Gerenciar estoque</span>
+                        <h2 id="stock-dialog-title">Produto</h2>
+                    </div>
+                    <button type="button" class="dialog-close" data-stock-dialog-close
+                            aria-label="Fechar">×</button>
+                </div>
+
+                <div class="stock-summary">
+                    <div><span>Saldo atual</span><strong id="stock-dialog-saldo">0</strong></div>
+                    <div><span>Mínimo</span><strong id="stock-dialog-minimo">0</strong></div>
+                </div>
+
+                <div class="stock-operation-grid">
+                    <form id="stock-entry-form" method="post" class="stock-operation-card">
+                        <div th:replace="~{fragments/csrf :: csrf}"></div>
+                        <h3>Adicionar ao estoque</h3>
+                        <p class="muted">A compra será registrada automaticamente como despesa.</p>
+                        <label for="stock-entry-quantity">Quantidade comprada</label>
+                        <input id="stock-entry-quantity" type="number" name="quantidade"
+                               min="0.001" step="0.001" required/>
+                        <button type="submit" class="btn btn-primary">Registrar entrada</button>
+                    </form>
+
+                    <form id="stock-exit-form" method="post" class="stock-operation-card">
+                        <div th:replace="~{fragments/csrf :: csrf}"></div>
+                        <h3>Remover do estoque</h3>
+                        <p class="muted">Use para registrar itens consumidos ou ajustes de saída.</p>
+                        <label for="stock-exit-quantity">Quantidade utilizada</label>
+                        <input id="stock-exit-quantity" type="number" name="quantidade"
+                               min="0.001" step="0.001" required/>
+                        <button type="submit" class="btn btn-secondary">Registrar saída</button>
+                    </form>
+
+                    <form id="stock-minimum-form" method="post" class="stock-operation-card">
+                        <div th:replace="~{fragments/csrf :: csrf}"></div>
+                        <h3>Alerta de estoque</h3>
+                        <p class="muted">Defina quando o produto deve aparecer nos alertas.</p>
+                        <label for="stock-minimum-quantity">Quantidade mínima</label>
+                        <input id="stock-minimum-quantity" type="number" name="quantidadeMinima"
+                               min="0" step="0.001" required/>
+                        <button type="submit" class="btn btn-secondary">Salvar mínimo</button>
+                    </form>
+                </div>
+            </div>
+        </dialog>
 
         <h2 style="margin-top:28px;">Movimentações recentes</h2>
         <table class="table">
@@ -108,5 +141,6 @@
         </table>
     </main>
 </div>
+<script th:src="@{/js/stock-dialog.js}"></script>
 </body>
 </html>

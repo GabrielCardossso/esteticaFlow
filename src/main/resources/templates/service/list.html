@@ -11,6 +11,23 @@
             <div class="spacer"></div>
             <a th:href="@{/servicos/novo}" class="btn btn-primary">+ Novo serviço</a>
         </div>
+
+        <div class="card category-manager">
+            <div>
+                <h3>Categorias de serviços</h3>
+                <div class="category-list" th:if="${!categorias.isEmpty()}">
+                    <span class="category-chip" th:each="categoria : ${categorias}"
+                          th:text="${categoria.nome}"></span>
+                </div>
+                <p class="muted" th:if="${categorias.isEmpty()}">Nenhuma categoria cadastrada.</p>
+            </div>
+            <form th:action="@{/servicos/categorias}" method="post" class="inline-form">
+                <div th:replace="~{fragments/csrf :: csrf}"></div>
+                <input type="text" name="nome" maxlength="100" placeholder="Nova categoria" required/>
+                <button type="submit" class="btn btn-primary">Adicionar categoria</button>
+            </form>
+        </div>
+
         <table class="table">
             <thead>
             <tr>

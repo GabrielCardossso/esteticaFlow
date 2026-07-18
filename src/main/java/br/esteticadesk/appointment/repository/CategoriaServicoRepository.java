@@ -9,4 +9,6 @@ public interface CategoriaServicoRepository extends JpaRepository<CategoriaServi
     List<CategoriaServico> findByEmpresaIdAndAtivoTrueOrderByNome(Long empresaId);
 
     Optional<CategoriaServico> findByIdAndEmpresaIdAndAtivoTrue(Long id, Long empresaId);
+
+    boolean existsByEmpresaIdAndNomeIgnoreCase(Long empresaId, String nome);
 }

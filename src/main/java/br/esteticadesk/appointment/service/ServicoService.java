@@ -34,6 +34,25 @@ public class ServicoService {
         return categorias.findByEmpresaIdAndAtivoTrueOrderByNome(sessao.empresaObrigatoria());
     }
 
+    public CategoriaServico criarCategoria(String nome) {
+        var nomeNormalizado = nome == null ? "" : nome.trim();
+        if (nomeNormalizado.isEmpty()) {
+            throw new IllegalArgumentException("Nome da categoria é obrigatório.");
+        }
+        if (nomeNormalizado.length() > 100) {
+            throw new IllegalArgumentException("O nome da categoria deve ter no máximo 100 caracteres.");
+        }
+        var empresaId = sessao.empresaObrigatoria();
+        if (categorias.existsByEmpresaIdAndNomeIgnoreCase(empresaId, nomeNormalizado)) {
+            throw new IllegalArgumentException("Já existe uma categoria de serviço com este nome.");
+        }
+        var categoria = new CategoriaServico();
+        categoria.setEmpresaId(empresaId);
+        categoria.setNome(nomeNormalizado);
+        categoria.setAtivo(true);
+        return categorias.save(categoria);
+    }
+
     @Transactional(readOnly = true)
     public ServicoDTO obter(Long id) {
         var servico = buscar(id);
