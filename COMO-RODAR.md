@@ -15,14 +15,8 @@ cd d:\Projetos\esteticaFlow
 docker compose up -d --build
 ```
 
-Acesse: http://localhost:8080
+Acessar: http://localhost:8080
 
-| Item | Valor |
-|------|--------|
-| Login | `gabrielcardossso@gmail.com` |
-| Senha | `Sync@933` |
-| App | porta `8080` |
-| Postgres Docker | porta `5433` |
 
 Parar:
 
@@ -38,8 +32,6 @@ powershell -ExecutionPolicy Bypass -File .\scripts\docker-up.ps1
 mvn spring-boot:run "-Dspring-boot.run.profiles=local-docker"
 ```
 
-Acesse: http://localhost:8080  
-Login: `gabrielcardossso@gmail.com` / `Sync@933`
 
 ## Opção C — PostgreSQL instalado no Windows
 
@@ -56,25 +48,6 @@ powershell -ExecutionPolicy Bypass -File .\scripts\setup-postgres.ps1
 mvn spring-boot:run
 ```
 
-## Conta principal
-
-A conta `gabrielcardossso@gmail.com` é **SUPER_ADMIN** do sistema.  
-Em **Configurações** você pode:
-
-- alterar tema (claro / escuro / sistema) e cor de destaque
-- criar novas empresas (cada uma com seu administrador)
-
-## Tema
-
-Em **Configurações → Aparência**:
-
-- Modo: Claro, Escuro ou Sistema
-- Cores: teal, verde, azul, roxo, laranja, vermelho
-
-## Agenda
-
-Em **Agenda**, use o botão **+ Agendar** para criar um novo agendamento.
-
 ## Observações
 
 - Pasta do projeto: `d:\Projetos\esteticaFlow`
@@ -82,4 +55,3 @@ Em **Agenda**, use o botão **+ Agendar** para criar um novo agendamento.
 - Containers/DB Docker ainda usam o prefixo `esteticadesk-*` (só nomes técnicos).
 - O nome de produto na interface é **EsteticaFlow**.
 - Flyway aplica as migrações automaticamente na subida da aplicação.
-- Se o Cursor/IDE ainda apontar para `esteticaDesk`, reabra a pasta: **File → Open Folder → `d:\Projetos\esteticaFlow`**.
