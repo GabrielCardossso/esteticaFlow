@@ -1,6 +1,4 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" th:fragment="sidebar">
-<nav class="side-menu">
+<nav class="side-menu" th:fragment="sidebar">
     <div class="brand">EsteticaDesk</div>
     <hr/>
     <a th:href="@{/dashboard}" class="menu-button" th:classappend="${menuAtivo == 'dashboard'} ? ' active'">Dashboard</a>
@@ -11,8 +9,7 @@
     <a th:href="@{/relatorios}" class="menu-button" th:classappend="${menuAtivo == 'relatorios'} ? ' active'">Relatórios</a>
     <a th:href="@{/configuracoes}" class="menu-button" th:classappend="${menuAtivo == 'configuracoes'} ? ' active'">Configurações</a>
     <form th:action="@{/logout}" method="post" style="margin-top: auto;">
-        <div th:replace="~{fragments/csrf :: csrf}"></div>
+        <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
         <button type="submit" class="menu-button logout" style="width:100%;background:none;border:none;text-align:left;cursor:pointer;">Sair</button>
     </form>
 </nav>
-</html>

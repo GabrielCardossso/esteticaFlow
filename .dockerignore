@@ -1,0 +1,14 @@
+target/
+.git/
+.idea/
+.vscode/
+*.iml
+logs/
+*.backup
+.env
+.env.local
+**/node_modules/
+Dockerfile
+docker-compose*.yml
+scripts/
+README*
