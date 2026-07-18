@@ -2,7 +2,10 @@ package br.esteticadesk.web.controller;
 
 import br.esteticadesk.auth.SessaoUsuario;
 import br.esteticadesk.enums.PapelUsuario;
+import br.esteticadesk.enums.RecursoPlano;
+import br.esteticadesk.company.service.AssinaturaService;
 import br.esteticadesk.settings.service.ConfiguracaoService;
+import java.util.Arrays;
 import java.util.List;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -19,19 +22,29 @@ public class ConfiguracaoWebController {
 
     private final ConfiguracaoService configuracaoService;
     private final SessaoUsuario sessao;
+    private final AssinaturaService assinaturas;
 
-    public ConfiguracaoWebController(ConfiguracaoService configuracaoService, SessaoUsuario sessao) {
+    public ConfiguracaoWebController(ConfiguracaoService configuracaoService, SessaoUsuario sessao,
+            AssinaturaService assinaturas) {
         this.configuracaoService = configuracaoService;
         this.sessao = sessao;
+        this.assinaturas = assinaturas;
     }
 
     @GetMapping
     public String index(Model model) {
         model.addAttribute("empresa", configuracaoService.empresaAtual());
-        model.addAttribute("usuarios", sessao.isAdministrador() ? configuracaoService.usuarios() : List.of());
-        model.addAttribute("administrador", sessao.isAdministrador());
-        model.addAttribute("formasPagamento", configuracaoService.formasPagamento());
-        model.addAttribute("categorias", configuracaoService.categorias());
+        model.addAttribute("usuarios", sessao.isAdministradorEmpresa() ? configuracaoService.usuarios() : List.of());
+        model.addAttribute("administrador", sessao.isAdministradorEmpresa());
+        model.addAttribute("superAdmin", sessao.isSuperAdmin());
+        model.addAttribute("formasPagamento", assinaturas.permite(RecursoPlano.FINANCEIRO)
+                ? configuracaoService.formasPagamento() : List.of());
+        model.addAttribute("categorias", assinaturas.permite(RecursoPlano.ESTOQUE)
+                ? configuracaoService.categorias() : List.of());
+        model.addAttribute("temaCor", configuracaoService.temaCor());
+        model.addAttribute("papeis", Arrays.stream(PapelUsuario.values())
+                .filter(p -> p != PapelUsuario.SUPER_ADMIN)
+                .toList());
         model.addAttribute("menuAtivo", "configuracoes");
         return "settings/index";
     }
@@ -39,8 +52,25 @@ public class ConfiguracaoWebController {
     @PostMapping("/empresa")
     public String salvarEmpresa(@ModelAttribute("empresa") br.esteticadesk.company.entity.Empresa empresa,
             RedirectAttributes redirectAttributes) {
-        configuracaoService.salvarEmpresa(empresa);
-        redirectAttributes.addFlashAttribute("sucesso", "Dados da empresa atualizados.");
+        try {
+            configuracaoService.salvarEmpresa(empresa);
+            redirectAttributes.addFlashAttribute("sucesso", "Dados da empresa atualizados.");
+        } catch (RuntimeException exception) {
+            redirectAttributes.addFlashAttribute("erro", exception.getMessage());
+        }
+        return "redirect:/configuracoes";
+    }
+
+    @PostMapping("/tema")
+    public String salvarTema(@RequestParam String cor,
+            RedirectAttributes redirectAttributes) {
+        try {
+            configuracaoService.salvarTema(cor);
+            redirectAttributes.addFlashAttribute("sucesso", "Cor de destaque atualizada.");
+            redirectAttributes.addFlashAttribute("temaCorFlash", cor);
+        } catch (RuntimeException exception) {
+            redirectAttributes.addFlashAttribute("erro", exception.getMessage());
+        }
         return "redirect:/configuracoes";
     }
 
@@ -59,15 +89,23 @@ public class ConfiguracaoWebController {
 
     @PostMapping("/formas-pagamento")
     public String criarFormaPagamento(@RequestParam String nome, RedirectAttributes redirectAttributes) {
-        configuracaoService.criarFormaPagamento(nome);
-        redirectAttributes.addFlashAttribute("sucesso", "Forma de pagamento criada.");
+        try {
+            configuracaoService.criarFormaPagamento(nome);
+            redirectAttributes.addFlashAttribute("sucesso", "Forma de pagamento criada.");
+        } catch (RuntimeException exception) {
+            redirectAttributes.addFlashAttribute("erro", exception.getMessage());
+        }
         return "redirect:/configuracoes";
     }
 
     @PostMapping("/categorias")
     public String criarCategoria(@RequestParam String nome, RedirectAttributes redirectAttributes) {
-        configuracaoService.criarCategoria(nome);
-        redirectAttributes.addFlashAttribute("sucesso", "Categoria criada.");
+        try {
+            configuracaoService.criarCategoria(nome);
+            redirectAttributes.addFlashAttribute("sucesso", "Categoria criada.");
+        } catch (RuntimeException exception) {
+            redirectAttributes.addFlashAttribute("erro", exception.getMessage());
+        }
         return "redirect:/configuracoes";
     }
 }

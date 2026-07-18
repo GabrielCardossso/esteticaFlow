@@ -14,7 +14,7 @@ public class WebExceptionHandler {
         return "error/nao-encontrado";
     }
 
-    @ExceptionHandler({IllegalArgumentException.class, SecurityException.class})
+    @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class, SecurityException.class})
     public String regraDeNegocio(RuntimeException exception, Model model) {
         model.addAttribute("erro", exception.getMessage());
         return "error/erro";

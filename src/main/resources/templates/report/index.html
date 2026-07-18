@@ -5,13 +5,164 @@
 <div class="app-shell">
     <div th:replace="~{fragments/sidebar :: sidebar}"></div>
     <main class="content">
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
         <div class="page-header">
             <h1 class="page-title">Relatórios</h1>
         </div>
 
-        <div class="card">
-            <p>Exportação de relatórios em PDF e Excel será disponibilizada nesta área.</p>
-            <p style="color:#64748b;">Os serviços de geração (OpenPDF e Apache POI) já estão configurados no backend.</p>
+        <div class="card form-card" style="margin-bottom:20px;">
+            <form th:action="@{/relatorios}" method="get">
+                <div class="form-grid">
+                    <label for="filtro">Período</label>
+                    <select id="filtro" name="filtro" required>
+                        <option value="">Selecione</option>
+                        <option th:each="opcao : ${filtros}"
+                                th:value="${opcao}"
+                                th:text="${opcao.descricao}"
+                                th:selected="${opcao == filtroSelecionado}"></option>
+                    </select>
+
+                    <label for="referencia">Data de referência</label>
+                    <input id="referencia" name="referencia" type="date"
+                           th:value="${#temporals.format(dataReferencia, 'yyyy-MM-dd')}"/>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Gerar relatório</button>
+                </div>
+            </form>
+        </div>
+
+        <div th:if="${relatorio != null}">
+            <div class="page-header">
+                <div>
+                    <h2 style="margin:0;">Resultado</h2>
+                    <span class="muted"
+                          th:text="${#temporals.format(relatorio.periodo().inicio(), 'dd/MM/yyyy')} + ' a '
+                            + ${#temporals.format(relatorio.periodo().fim(), 'dd/MM/yyyy')}"></span>
+                </div>
+                <div class="spacer"></div>
+                <div class="actions">
+                    <a class="btn btn-secondary"
+                       th:href="@{/relatorios/pdf(filtro=${filtroSelecionado},referencia=${dataReferencia})}">
+                        Baixar PDF
+                    </a>
+                    <a th:if="${podeExcel}" class="btn btn-secondary"
+                       th:href="@{/relatorios/excel(filtro=${filtroSelecionado},referencia=${dataReferencia})}">
+                        Baixar Excel
+                    </a>
+                </div>
+            </div>
+
+            <div class="kpi-grid">
+                <div class="card">
+                    <div class="kpi-label">Receita</div>
+                    <div class="kpi-value"
+                         th:text="'R$ ' + ${#numbers.formatDecimal(relatorio.receita(), 1, 'POINT', 2, 'COMMA')}"></div>
+                </div>
+                <div class="card">
+                    <div class="kpi-label">Despesa</div>
+                    <div class="kpi-value"
+                         th:text="'R$ ' + ${#numbers.formatDecimal(relatorio.despesa(), 1, 'POINT', 2, 'COMMA')}"></div>
+                </div>
+                <div class="card">
+                    <div class="kpi-label">Saldo</div>
+                    <div class="kpi-value"
+                         th:text="'R$ ' + ${#numbers.formatDecimal(relatorio.saldo(), 1, 'POINT', 2, 'COMMA')}"></div>
+                </div>
+                <div class="card">
+                    <div class="kpi-label">Ticket médio</div>
+                    <div class="kpi-value"
+                         th:text="'R$ ' + ${#numbers.formatDecimal(relatorio.ticketMedio(), 1, 'POINT', 2, 'COMMA')}"></div>
+                </div>
+                <div class="card">
+                    <div class="kpi-label">Agendamentos concluídos</div>
+                    <div class="kpi-value" th:text="${relatorio.agendamentosConcluidos()}"></div>
+                </div>
+            </div>
+
+            <div th:if="${relatorio.possuiRankings()}" class="two-columns" style="margin-bottom:20px;">
+                <div class="card">
+                    <h3>Ranking de serviços</h3>
+                    <table class="table">
+                        <thead><tr><th>Serviço</th><th>Quantidade</th><th>Valor</th></tr></thead>
+                        <tbody>
+                        <tr th:if="${relatorio.servicos().isEmpty()}"><td colspan="3" class="empty-state">Sem dados.</td></tr>
+                        <tr th:each="item : ${relatorio.servicos()}">
+                            <td th:text="${item.nome()}"></td>
+                            <td th:text="${item.quantidade()}"></td>
+                            <td th:text="'R$ ' + ${#numbers.formatDecimal(item.valor(), 1, 'POINT', 2, 'COMMA')}"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="card">
+                    <h3>Despesas por categoria</h3>
+                    <table class="table">
+                        <thead><tr><th>Categoria</th><th>Valor</th></tr></thead>
+                        <tbody>
+                        <tr th:if="${relatorio.categorias().isEmpty()}"><td colspan="2" class="empty-state">Sem dados.</td></tr>
+                        <tr th:each="item : ${relatorio.categorias()}">
+                            <td th:text="${item.categoria()}"></td>
+                            <td th:text="'R$ ' + ${#numbers.formatDecimal(item.valor(), 1, 'POINT', 2, 'COMMA')}"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div th:if="${relatorio.possuiDetalhes()}">
+                <div class="card" style="margin-bottom:20px;">
+                    <h3>Receitas</h3>
+                    <table class="table">
+                        <thead><tr><th>Data</th><th>Descrição</th><th>Forma</th><th>Valor</th></tr></thead>
+                        <tbody>
+                        <tr th:if="${relatorio.receitas().isEmpty()}"><td colspan="4" class="empty-state">Sem dados.</td></tr>
+                        <tr th:each="item : ${relatorio.receitas()}">
+                            <td th:text="${#temporals.format(item.data(), 'dd/MM/yyyy')}"></td>
+                            <td th:text="${item.descricao()}"></td>
+                            <td th:text="${item.formaPagamento()}"></td>
+                            <td th:text="'R$ ' + ${#numbers.formatDecimal(item.valor(), 1, 'POINT', 2, 'COMMA')}"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card" style="margin-bottom:20px;">
+                    <h3>Despesas</h3>
+                    <table class="table">
+                        <thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Valor</th></tr></thead>
+                        <tbody>
+                        <tr th:if="${relatorio.despesas().isEmpty()}"><td colspan="4" class="empty-state">Sem dados.</td></tr>
+                        <tr th:each="item : ${relatorio.despesas()}">
+                            <td th:text="${#temporals.format(item.data(), 'dd/MM/yyyy')}"></td>
+                            <td th:text="${item.descricao()}"></td>
+                            <td th:text="${item.categoria()}"></td>
+                            <td th:text="'R$ ' + ${#numbers.formatDecimal(item.valor(), 1, 'POINT', 2, 'COMMA')}"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="card">
+                    <h3>Agendamentos</h3>
+                    <table class="table">
+                        <thead>
+                        <tr><th>Data</th><th>Cliente</th><th>Veículo</th><th>Serviços</th><th>Status</th><th>Total</th></tr>
+                        </thead>
+                        <tbody>
+                        <tr th:if="${relatorio.agendamentos().isEmpty()}"><td colspan="6" class="empty-state">Sem dados.</td></tr>
+                        <tr th:each="item : ${relatorio.agendamentos()}">
+                            <td th:text="${#temporals.format(item.dataHora(), 'dd/MM/yyyy HH:mm')}"></td>
+                            <td th:text="${item.cliente()}"></td>
+                            <td th:text="${item.veiculo()}"></td>
+                            <td th:text="${item.servicos()}"></td>
+                            <td th:text="${item.status()}"></td>
+                            <td th:text="'R$ ' + ${#numbers.formatDecimal(item.total(), 1, 'POINT', 2, 'COMMA')}"></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </main>
 </div>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Empresas')}"></head>
+<body>
+<div class="app-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="content">
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+        <div class="page-header"><h1 class="page-title">Empresas e assinaturas</h1></div>
+
+        <div class="card" style="margin-bottom:20px;">
+            <h3>Cadastrar empresa</h3>
+            <form th:action="@{/empresas}" method="post" class="form-grid" style="margin-top:16px;">
+                <div th:replace="~{fragments/csrf :: csrf}"></div>
+                <label>Razão social</label><input name="razaoSocial" required maxlength="150"/>
+                <label>Nome fantasia</label><input name="nomeFantasia" required maxlength="150"/>
+                <label>CNPJ</label><input name="cnpj" required maxlength="18"/>
+                <label>Telefone</label><input name="telefone" maxlength="20"/>
+                <label>E-mail da empresa</label><input type="email" name="email" maxlength="150"/>
+                <label>Administrador inicial</label><input name="adminNome" required maxlength="150"/>
+                <label>E-mail do administrador</label><input type="email" name="adminEmail" required maxlength="150"/>
+                <label>Senha inicial</label><input type="password" name="adminSenha" required minlength="6"/>
+                <label>Plano</label>
+                <select name="plano" required><option th:each="p : ${planos}" th:value="${p}" th:text="${p}"></option></select>
+                <label>Mensalidade</label><input type="number" name="valorMensalidade" required min="0" step="0.01"/>
+                <label>Próximo vencimento</label><input type="date" name="proximoVencimento" required/>
+                <div></div><button class="btn btn-primary" type="submit">Cadastrar empresa</button>
+            </form>
+        </div>
+
+        <div class="card" th:each="empresa : ${empresas}" style="margin-bottom:20px;">
+            <h3 th:text="${empresa.nomeFantasia} + ' — ' + ${empresa.cnpj}"></h3>
+            <p class="muted" th:text="'Status: ' + ${empresa.statusAssinatura} + ' | Ativa: ' + ${empresa.ativo}"></p>
+
+            <form th:action="@{/empresas/{id}/assinatura(id=${empresa.id})}" method="post"
+                  class="form-grid" style="margin-top:16px;">
+                <div th:replace="~{fragments/csrf :: csrf}"></div>
+                <label>Plano</label>
+                <select name="plano" required>
+                    <option th:each="p : ${planos}" th:value="${p}" th:text="${p}" th:selected="${p == empresa.plano}"></option>
+                </select>
+                <label>Mensalidade</label>
+                <input type="number" name="valorMensalidade" min="0" step="0.01" required th:value="${empresa.valorMensalidade}"/>
+                <label>Vencimento</label>
+                <input type="date" name="proximoVencimento" required th:value="${empresa.proximoVencimento}"/>
+                <div></div><button class="btn btn-primary" type="submit">Salvar assinatura</button>
+            </form>
+
+            <div class="actions" style="margin-top:16px;">
+                <form th:action="@{/empresas/{id}/pagamento(id=${empresa.id})}" method="post">
+                    <div th:replace="~{fragments/csrf :: csrf}"></div>
+                    <button class="btn btn-secondary" type="submit">Registrar pagamento</button>
+                </form>
+                <form th:if="${empresa.statusAssinatura.name() != 'BLOQUEADA'}"
+                      th:action="@{/empresas/{id}/bloquear(id=${empresa.id})}" method="post" class="payment-form">
+                    <div th:replace="~{fragments/csrf :: csrf}"></div>
+                    <input name="motivo" required maxlength="500" placeholder="Motivo do bloqueio"/>
+                    <label><input type="checkbox" name="manual" value="true"/> Manual</label>
+                    <button class="btn btn-secondary" type="submit">Bloquear</button>
+                </form>
+                <form th:if="${empresa.statusAssinatura.name() == 'BLOQUEADA'}"
+                      th:action="@{/empresas/{id}/desbloquear(id=${empresa.id})}" method="post">
+                    <div th:replace="~{fragments/csrf :: csrf}"></div>
+                    <button class="btn btn-secondary" type="submit">Desbloquear</button>
+                </form>
+                <form th:if="${empresa.ativo}" th:action="@{/empresas/{id}/inativar(id=${empresa.id})}" method="post">
+                    <div th:replace="~{fragments/csrf :: csrf}"></div>
+                    <button class="btn btn-secondary" type="submit">Inativar</button>
+                </form>
+                <form th:unless="${empresa.ativo}" th:action="@{/empresas/{id}/reativar(id=${empresa.id})}" method="post">
+                    <div th:replace="~{fragments/csrf :: csrf}"></div>
+                    <button class="btn btn-primary" type="submit">Reativar</button>
+                </form>
+            </div>
+        </div>
+    </main>
+</div>
+</body>
+</html>

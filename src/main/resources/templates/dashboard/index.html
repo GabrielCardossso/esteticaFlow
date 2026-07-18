@@ -8,25 +8,32 @@
         <div th:replace="~{fragments/alerts :: alerts}"></div>
 
         <div class="page-header">
-            <h1 class="page-title">Dashboard</h1>
+            <div>
+                <h1 class="page-title" th:text="'Olá, ' + ${nomeSaudacao} + '!'">Olá!</h1>
+                <span class="muted">Veja como está o seu negócio hoje.</span>
+            </div>
             <div class="spacer"></div>
             <a th:href="@{/dashboard}" class="btn btn-secondary">Atualizar</a>
         </div>
 
+        <div th:if="${assinaturaEmAtraso}" class="alert alert-error" style="margin-bottom:20px;"
+             th:text="'Mensalidade em atraso há ' + ${diasAtrasoAssinatura} + ' dia(s). Regularize a assinatura para evitar bloqueio após a tolerância de 7 dias.'">
+        </div>
+
         <div class="kpi-grid">
-            <div class="card">
+            <div class="card" th:if="${podeFinanceiro}">
                 <div class="kpi-label">Receita do mês</div>
                 <div class="kpi-value" th:text="'R$ ' + ${#numbers.formatDecimal(dados.receitaDoMes(), 1, 'POINT', 2, 'COMMA')}"></div>
             </div>
-            <div class="card">
+            <div class="card" th:if="${podeFinanceiro}">
                 <div class="kpi-label">Despesas</div>
                 <div class="kpi-value" th:text="'R$ ' + ${#numbers.formatDecimal(dados.despesasDoMes(), 1, 'POINT', 2, 'COMMA')}"></div>
             </div>
-            <div class="card">
+            <div class="card" th:if="${podeFinanceiro}">
                 <div class="kpi-label">Saldo</div>
                 <div class="kpi-value" th:text="'R$ ' + ${#numbers.formatDecimal(dados.saldoDoMes(), 1, 'POINT', 2, 'COMMA')}"></div>
             </div>
-            <div class="card">
+            <div class="card" th:if="${podeFinanceiro}">
                 <div class="kpi-label">Ticket médio</div>
                 <div class="kpi-value" th:text="'R$ ' + ${#numbers.formatDecimal(dados.ticketMedio(), 1, 'POINT', 2, 'COMMA')}"></div>
             </div>
@@ -40,16 +47,16 @@
             </div>
         </div>
 
-        <div class="chart-container">
+        <div class="chart-container" th:if="${podeFinanceiro}">
             <canvas id="faturamentoChart" height="80"></canvas>
         </div>
 
         <div class="two-columns">
-            <div class="card">
+            <div class="card" th:if="${podeEstoque}">
                 <h3>Alertas de estoque baixo</h3>
                 <ul th:if="${!dados.alertasEstoque().isEmpty()}">
                     <li th:each="alerta : ${dados.alertasEstoque()}" class="low-stock"
-                        th:text="${alerta.produto()} + ': ' + ${alerta.atual()} + ' / mínimo ' + ${alerta.minimo()}"></li>
+                        th:text="${alerta.produto()} + ': ' + ${alerta.atual().stripTrailingZeros().toPlainString()} + ' / mínimo ' + ${alerta.minimo().stripTrailingZeros().toPlainString()}"></li>
                 </ul>
                 <p th:if="${dados.alertasEstoque().isEmpty()}" style="color:#64748b;">Nenhum alerta no momento.</p>
             </div>
@@ -69,7 +76,9 @@
 <script th:inline="javascript">
     const labels = /*[[${dados.graficoFaturamento().![mes]}]]*/ [];
     const valores = /*[[${dados.graficoFaturamento().![valor]}]]*/ [];
-    new Chart(document.getElementById('faturamentoChart'), {
+    const faturamentoCanvas = document.getElementById('faturamentoChart');
+    if (faturamentoCanvas) {
+    new Chart(faturamentoCanvas, {
         type: 'line',
         data: {
             labels: labels,
@@ -88,6 +97,7 @@
             scales: { y: { beginAtZero: true } }
         }
     });
+    }
 </script>
 </body>
 </html>

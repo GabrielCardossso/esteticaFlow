@@ -3,6 +3,9 @@ package br.esteticadesk.web.controller;
 import br.esteticadesk.customer.dto.ClienteDTO;
 import br.esteticadesk.customer.service.ClienteService;
 import br.esteticadesk.exception.CpfJaCadastradoException;
+import br.esteticadesk.exception.PlacaJaCadastradaException;
+import br.esteticadesk.vehicle.entity.Veiculo;
+import br.esteticadesk.vehicle.service.VeiculoService;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -20,9 +23,11 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class ClienteWebController {
 
     private final ClienteService clienteService;
+    private final VeiculoService veiculoService;
 
-    public ClienteWebController(ClienteService clienteService) {
+    public ClienteWebController(ClienteService clienteService, VeiculoService veiculoService) {
         this.clienteService = clienteService;
+        this.veiculoService = veiculoService;
     }
 
     @GetMapping
@@ -37,8 +42,22 @@ public class ClienteWebController {
 
     @GetMapping("/novo")
     public String novo(Model model) {
-        model.addAttribute("cliente", new ClienteDTO(null, "", "", "", "", true));
+        model.addAttribute("cliente", clienteVazio());
         model.addAttribute("menuAtivo", "clientes");
+        return "customer/form";
+    }
+
+    @GetMapping("/{id}/editar")
+    public String editar(@PathVariable Long id, Model model) {
+        model.addAttribute("cliente", clienteService.buscarPorId(id));
+        prepararFicha(model, id, new Veiculo(), false);
+        return "customer/form";
+    }
+
+    @GetMapping("/{clienteId}/veiculos/{veiculoId}/editar")
+    public String editarVeiculo(@PathVariable Long clienteId, @PathVariable Long veiculoId, Model model) {
+        model.addAttribute("cliente", clienteService.buscarPorId(clienteId));
+        prepararFicha(model, clienteId, veiculoService.buscarPorId(veiculoId, clienteId), true);
         return "customer/form";
     }
 
@@ -60,10 +79,80 @@ public class ClienteWebController {
         }
     }
 
+    @PostMapping("/{id}")
+    public String atualizar(@PathVariable Long id, @Valid @ModelAttribute("cliente") ClienteDTO cliente,
+            BindingResult bindingResult, RedirectAttributes redirectAttributes, Model model) {
+        if (bindingResult.hasErrors()) {
+            prepararFicha(model, id, new Veiculo(), false);
+            return "customer/form";
+        }
+        try {
+            clienteService.atualizar(id, cliente);
+            redirectAttributes.addFlashAttribute("sucesso", "Cliente atualizado com sucesso.");
+            return "redirect:/clientes/" + id + "/editar";
+        } catch (CpfJaCadastradoException | IllegalArgumentException exception) {
+            model.addAttribute("erro", exception.getMessage());
+            prepararFicha(model, id, new Veiculo(), false);
+            return "customer/form";
+        }
+    }
+
+    @PostMapping("/{clienteId}/veiculos")
+    public String salvarVeiculo(@PathVariable Long clienteId,
+            @Valid @ModelAttribute("veiculo") Veiculo veiculo, BindingResult bindingResult,
+            RedirectAttributes redirectAttributes, Model model) {
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("cliente", clienteService.buscarPorId(clienteId));
+            prepararFicha(model, clienteId, veiculo, veiculo.getId() != null);
+            return "customer/form";
+        }
+        try {
+            var atualizacao = veiculo.getId() != null;
+            veiculoService.salvar(veiculo, clienteId);
+            redirectAttributes.addFlashAttribute("sucesso",
+                    atualizacao ? "Veículo atualizado com sucesso." : "Veículo adicionado com sucesso.");
+            return "redirect:/clientes/" + clienteId + "/editar";
+        } catch (PlacaJaCadastradaException | IllegalArgumentException exception) {
+            model.addAttribute("cliente", clienteService.buscarPorId(clienteId));
+            model.addAttribute("erro", exception.getMessage());
+            prepararFicha(model, clienteId, veiculo, veiculo.getId() != null);
+            return "customer/form";
+        }
+    }
+
+    @PostMapping("/{clienteId}/veiculos/{veiculoId}/inativar")
+    public String inativarVeiculo(@PathVariable Long clienteId, @PathVariable Long veiculoId,
+            RedirectAttributes redirectAttributes) {
+        veiculoService.inativar(veiculoId, clienteId);
+        redirectAttributes.addFlashAttribute("sucesso", "Veículo inativado com sucesso.");
+        return "redirect:/clientes/" + clienteId + "/editar";
+    }
+
     @PostMapping("/{id}/inativar")
     public String inativar(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         clienteService.inativar(id);
         redirectAttributes.addFlashAttribute("sucesso", "Cliente inativado com sucesso.");
         return "redirect:/clientes";
+    }
+
+    @PostMapping("/{id}/reativar")
+    public String reativar(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        clienteService.reativar(id);
+        redirectAttributes.addFlashAttribute("sucesso", "Cliente reativado com sucesso.");
+        return "redirect:/clientes";
+    }
+
+    private void prepararFicha(Model model, Long clienteId, Veiculo veiculo, boolean editandoVeiculo) {
+        if (!model.containsAttribute("cliente"))
+            model.addAttribute("cliente", clienteService.buscarPorId(clienteId));
+        if (!model.containsAttribute("veiculo"))
+            model.addAttribute("veiculo", veiculo);
+        model.addAttribute("veiculos", veiculoService.listarPorCliente(clienteId));
+        model.addAttribute("editandoVeiculo", editandoVeiculo);
+        model.addAttribute("menuAtivo", "clientes");
+    }
+
+    private ClienteDTO clienteVazio() {
+        return new ClienteDTO(null, "", "", "", "", "", "", "", "", "", "", "", true);
     }
 }

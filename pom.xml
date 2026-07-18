@@ -14,8 +14,8 @@
     <groupId>br.esteticadesk</groupId>
     <artifactId>esteticadesk</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>esteticaDesk</name>
-    <description>Sistema de gestao para empresas de estetica automotiva</description>
+    <name>EsteticaFlow</name>
+    <description>Sistema web de gestao para empresas de estetica automotiva</description>
 
     <properties>
         <java.version>21</java.version>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Serviços')}"></head>
+<body>
+<div class="app-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="content">
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+        <div class="page-header">
+            <h1 class="page-title">Serviços</h1>
+            <div class="spacer"></div>
+            <a th:href="@{/servicos/novo}" class="btn btn-primary">+ Novo serviço</a>
+        </div>
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Categoria</th>
+                <th>Preço</th>
+                <th>Duração</th>
+                <th>Status</th>
+                <th>Ações</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${servicos.isEmpty()}">
+                <td colspan="6" class="empty-state">Nenhum serviço cadastrado.</td>
+            </tr>
+            <tr th:each="servico : ${servicos}">
+                <td th:text="${servico.nome}"></td>
+                <td th:text="${servico.categoriaServico.nome}"></td>
+                <td th:text="'R$ ' + ${#numbers.formatDecimal(servico.preco, 1, 'POINT', 2, 'COMMA')}"></td>
+                <td th:text="${servico.tempoEstimadoMinutos} + ' min'"></td>
+                <td th:text="${servico.ativo} ? 'Ativo' : 'Inativo'"></td>
+                <td class="actions">
+                    <a th:href="@{/servicos/{id}/editar(id=${servico.id})}" class="btn btn-secondary btn-sm">Editar</a>
+                    <form th:if="${servico.ativo}" th:action="@{/servicos/{id}/inativar(id=${servico.id})}"
+                          method="post">
+                        <div th:replace="~{fragments/csrf :: csrf}"></div>
+                        <button type="submit" class="btn btn-danger btn-sm"
+                                onclick="return confirm('Inativar este serviço?')">Inativar</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </main>
+</div>
+</body>
+</html>

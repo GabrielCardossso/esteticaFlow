@@ -50,7 +50,15 @@ public class SessaoUsuario implements Serializable {
     }
 
     public boolean isAdministrador() {
+        return getPapel() != null && getPapel().isAdminEmpresa();
+    }
+
+    public boolean isAdministradorEmpresa() {
         return getPapel() == PapelUsuario.ADMINISTRADOR;
+    }
+
+    public boolean isSuperAdmin() {
+        return getPapel() != null && getPapel().isSuperAdmin();
     }
 
     public Usuario getUsuarioLogado() {

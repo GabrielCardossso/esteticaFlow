@@ -9,7 +9,9 @@ public interface AgendamentoService {
 
     void iniciar(Long id);
 
-    void finalizarServico(Long id, List<ItemConsumidoDTO> itens, Long formaPagamentoId);
+    void concluir(Long id, List<ItemConsumidoDTO> itens, boolean pago, Long formaPagamentoId);
+
+    void registrarPagamento(Long id, Long formaPagamentoId);
 
     void cancelar(Long id);
 }

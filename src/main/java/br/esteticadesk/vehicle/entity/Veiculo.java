@@ -29,6 +29,7 @@ public class Veiculo extends EntidadeEmpresaBase {
     @Size(max = 30)
     private String cor;
     @Min(1950)
+    @Max(2100)
     @JdbcTypeCode(Types.SMALLINT)
     private Integer ano;
     @NotNull

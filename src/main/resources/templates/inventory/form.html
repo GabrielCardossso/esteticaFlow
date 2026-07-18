@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Produto')}"></head>
+<body>
+<div class="app-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="content">
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+        <div class="page-header">
+            <h1 class="page-title" th:text="${produto.id() == null ? 'Novo produto' : 'Editar produto'}"></h1>
+            <div class="spacer"></div>
+            <a th:href="@{/estoque}" class="btn btn-secondary">Voltar</a>
+        </div>
+
+        <div class="card" style="max-width:780px;">
+            <form th:action="@{/estoque/produtos}" th:object="${produto}" method="post">
+                <div th:replace="~{fragments/csrf :: csrf}"></div>
+                <input type="hidden" th:field="*{id}"/>
+                <input th:if="*{id != null}" type="hidden" th:field="*{quantidadeInicial}"/>
+
+                <div class="form-grid">
+                    <label for="nome">Nome *</label>
+                    <div>
+                        <input id="nome" type="text" th:field="*{nome}" maxlength="150" required/>
+                        <div class="error-text" th:if="${#fields.hasErrors('nome')}" th:errors="*{nome}"></div>
+                    </div>
+
+                    <label for="categoriaProdutoId">Categoria *</label>
+                    <div>
+                        <select id="categoriaProdutoId" th:field="*{categoriaProdutoId}" required>
+                            <option value="">Selecione</option>
+                            <option th:each="categoria : ${categorias}" th:value="${categoria.id}"
+                                    th:text="${categoria.nome}"></option>
+                        </select>
+                        <div class="error-text" th:if="${#fields.hasErrors('categoriaProdutoId')}"
+                             th:errors="*{categoriaProdutoId}"></div>
+                        <div class="muted" style="margin-top:6px;">
+                            Não encontrou a categoria?
+                            <a th:href="@{/configuracoes#categorias-produto}" style="color:var(--accent);font-weight:600;">
+                                Criar ou gerenciar categorias em Configurações
+                            </a>
+                        </div>
+                    </div>
+
+                    <label for="unidadeMedida">Unidade *</label>
+                    <div>
+                        <select id="unidadeMedida" th:field="*{unidadeMedida}" required>
+                            <option th:each="unidade : ${unidades}" th:value="${unidade}" th:text="${unidade}"></option>
+                        </select>
+                    </div>
+
+                    <label for="precoCusto">Preço de custo *</label>
+                    <div>
+                        <input id="precoCusto" type="number" th:field="*{precoCusto}" min="0" step="0.01" required/>
+                        <div class="error-text" th:if="${#fields.hasErrors('precoCusto')}"
+                             th:errors="*{precoCusto}"></div>
+                    </div>
+
+                    <th:block th:if="*{id == null}">
+                        <label for="quantidadeInicial">Estoque inicial *</label>
+                        <div>
+                            <input id="quantidadeInicial" type="number" th:field="*{quantidadeInicial}"
+                                   min="0" step="0.001" required/>
+                            <div class="error-text" th:if="${#fields.hasErrors('quantidadeInicial')}"
+                                 th:errors="*{quantidadeInicial}"></div>
+                        </div>
+                    </th:block>
+
+                    <label for="quantidadeMinima">Quantidade mínima *</label>
+                    <div>
+                        <input id="quantidadeMinima" type="number" th:field="*{quantidadeMinima}"
+                               min="0" step="0.001" required/>
+                        <div class="error-text" th:if="${#fields.hasErrors('quantidadeMinima')}"
+                             th:errors="*{quantidadeMinima}"></div>
+                    </div>
+                </div>
+
+                <div style="margin-top:20px;">
+                    <button type="submit" class="btn btn-primary">Salvar produto</button>
+                </div>
+            </form>
+        </div>
+    </main>
+</div>
+</body>
+</html>

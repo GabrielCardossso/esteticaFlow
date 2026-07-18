@@ -44,9 +44,15 @@
                 <td th:text="${cliente.veiculos()}"></td>
                 <td th:text="${cliente.ativo()} ? 'Ativo' : 'Inativo'"></td>
                 <td>
+                    <a th:href="@{/clientes/{id}/editar(id=${cliente.id()})}"
+                       class="btn btn-secondary btn-sm">Editar</a>
                     <form th:if="${cliente.ativo()}" th:action="@{/clientes/{id}/inativar(id=${cliente.id()})}" method="post" style="display:inline;">
                         <div th:replace="~{fragments/csrf :: csrf}"></div>
                         <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Inativar este cliente?')">Inativar</button>
+                    </form>
+                    <form th:unless="${cliente.ativo()}" th:action="@{/clientes/{id}/reativar(id=${cliente.id()})}" method="post" style="display:inline;">
+                        <div th:replace="~{fragments/csrf :: csrf}"></div>
+                        <button type="submit" class="btn btn-primary btn-sm">Reativar</button>
                     </form>
                 </td>
             </tr>

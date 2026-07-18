@@ -36,6 +36,7 @@ public class SecurityConfig {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/css/**", "/js/**", "/login", "/error").permitAll()
+                        .requestMatchers("/empresas/**").hasAuthority("SUPER_ADMIN")
                         .anyRequest().authenticated())
                 .formLogin(form -> form
                         .loginPage("/login")

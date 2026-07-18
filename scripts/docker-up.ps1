@@ -10,7 +10,7 @@ docker compose up -d postgres
 Write-Host "Aguardando healthcheck..."
 $ready = $false
 for ($i = 0; $i -lt 30; $i++) {
-    $status = docker inspect --format="{{.State.Health.Status}}" esteticadesk-postgres 2>$null
+    $status = docker inspect --format="{{.State.Health.Status}}" esteticaflow-postgres 2>$null
     if ($status -eq "healthy") {
         $ready = $true
         break
@@ -30,4 +30,4 @@ Write-Host ""
 Write-Host "Para subir app + banco no Docker:"
 Write-Host "  docker compose up -d --build"
 Write-Host ""
-Write-Host "Login: admin@esteticadesk.com / admin123"
+Write-Host "Login: gabrielcardossso@gmail.com / Sync@933"

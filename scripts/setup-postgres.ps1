@@ -42,4 +42,4 @@ Write-Host "Banco pronto. Tabelas e dados iniciais serao aplicados pelo Flyway a
 Write-Host "Proximos passos:"
 Write-Host "  mvn spring-boot:run"
 Write-Host "  http://localhost:8080"
-Write-Host "  Login: admin@esteticadesk.com / admin123"
+Write-Host "  Login: gabrielcardossso@gmail.com / Sync@933"

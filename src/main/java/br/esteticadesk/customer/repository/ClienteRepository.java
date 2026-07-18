@@ -8,7 +8,14 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface ClienteRepository extends JpaRepository<Cliente, Long> {
-    boolean existsByEmpresaIdAndCpfCnpjAndAtivoTrue(Long empresaId, String cpfCnpj);
+    @Query("""
+            SELECT (COUNT(c) > 0) FROM Cliente c
+            WHERE c.empresaId = :empresaId
+            AND REPLACE(REPLACE(REPLACE(c.cpfCnpj, '.', ''), '-', ''), '/', '') = :cpfCnpj
+            AND (:id IS NULL OR c.id <> :id)
+            """)
+    boolean existeCpfCnpjNormalizado(@Param("empresaId") Long empresaId, @Param("cpfCnpj") String cpfCnpj,
+            @Param("id") Long id);
 
     Optional<Cliente> findByIdAndEmpresaId(Long id, Long empresaId);
 

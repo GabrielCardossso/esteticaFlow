@@ -13,9 +13,10 @@
             <a th:href="@{/agenda(data=${dataAnterior})}" class="btn btn-secondary">‹ Dia anterior</a>
             <a th:href="@{/agenda}" class="btn btn-secondary">Hoje</a>
             <a th:href="@{/agenda(data=${dataProxima})}" class="btn btn-secondary">Próximo dia ›</a>
+            <a th:href="@{/agenda/novo(data=${data})}" class="btn btn-primary">+ Agendar</a>
         </div>
 
-        <p style="margin-bottom:16px;color:#64748b;">
+        <p style="margin-bottom:16px;color:var(--text-muted);">
             Agendamentos de <strong th:text="${#temporals.format(data, 'dd/MM/yyyy')}"></strong>
         </p>
 
@@ -25,25 +26,71 @@
                 <th>Horário</th>
                 <th>Cliente</th>
                 <th>Veículo</th>
-                <th>Serviço</th>
+                <th>Serviços</th>
+                <th>Total</th>
                 <th>Status</th>
+                <th>Pagamento</th>
+                <th>Ações</th>
             </tr>
             </thead>
             <tbody>
             <tr th:if="${agendamentos.isEmpty()}">
-                <td colspan="5" style="text-align:center;color:#64748b;">Nenhum agendamento para este dia.</td>
+                <td colspan="8" class="empty-state">Nenhum agendamento para este dia.</td>
             </tr>
             <tr th:each="ag : ${agendamentos}">
                 <td th:text="${#temporals.format(ag.dataHora, 'HH:mm')}"></td>
                 <td th:text="${ag.cliente.nome}"></td>
                 <td th:text="${ag.veiculo.modelo} + ' — ' + ${ag.veiculo.placa}"></td>
-                <td th:text="${ag.servico.nome}"></td>
+                <td th:text="${ag.nomesServicos()}"></td>
+                <td>
+                    <strong th:text="'R$ ' + ${#numbers.formatDecimal(ag.total, 1, 'POINT', 2, 'COMMA')}"></strong>
+                    <small th:if="${ag.desconto.signum() > 0}" class="muted"
+                           th:text="' (desconto R$ ' + ${#numbers.formatDecimal(ag.desconto, 1, 'POINT', 2, 'COMMA')} + ')'"></small>
+                </td>
                 <td>
                     <span class="status-badge"
                           th:classappend="${ag.status.name() == 'AGENDADO'} ? ' status-agendado' :
                                           (${ag.status.name() == 'EM_ANDAMENTO'} ? ' status-em-andamento' :
                                           (${ag.status.name() == 'CONCLUIDO'} ? ' status-concluido' : ' status-cancelado'))"
                           th:text="${ag.status}"></span>
+                </td>
+                <td th:text="${ag.pago} ? 'Pago' : 'Pendente'"></td>
+                <td class="appointment-actions">
+                    <form th:if="${ag.status.name() == 'AGENDADO'}"
+                          th:action="@{/agenda/{id}/iniciar(id=${ag.id})}" method="post">
+                        <div th:replace="~{fragments/csrf :: csrf}"></div>
+                        <input type="hidden" name="data" th:value="${data}"/>
+                        <button class="btn btn-primary btn-sm" type="submit">Iniciar</button>
+                    </form>
+                    <form th:if="${ag.status.name() == 'AGENDADO' || ag.status.name() == 'EM_ANDAMENTO'}"
+                          th:action="@{/agenda/{id}/cancelar(id=${ag.id})}" method="post">
+                        <div th:replace="~{fragments/csrf :: csrf}"></div>
+                        <input type="hidden" name="data" th:value="${data}"/>
+                        <button class="btn btn-danger btn-sm" type="submit"
+                                onclick="return confirm('Cancelar este agendamento?')">Cancelar</button>
+                    </form>
+                    <form th:if="${ag.status.name() == 'EM_ANDAMENTO'}" class="payment-form"
+                          th:action="@{/agenda/{id}/concluir(id=${ag.id})}" method="post">
+                        <div th:replace="~{fragments/csrf :: csrf}"></div>
+                        <input type="hidden" name="data" th:value="${data}"/>
+                        <label><input type="checkbox" name="pago" value="true"
+                                      onchange="this.form.querySelector('select').disabled = !this.checked"/> Já foi pago?</label>
+                        <select name="formaPagamentoId" disabled>
+                            <option value="">Forma de pagamento</option>
+                            <option th:each="forma : ${formasPagamento}" th:value="${forma.id}" th:text="${forma.nome}"></option>
+                        </select>
+                        <button class="btn btn-primary btn-sm" type="submit">Concluir</button>
+                    </form>
+                    <form th:if="${ag.status.name() == 'CONCLUIDO' && !ag.pago}" class="payment-form"
+                          th:action="@{/agenda/{id}/pagamento(id=${ag.id})}" method="post">
+                        <div th:replace="~{fragments/csrf :: csrf}"></div>
+                        <input type="hidden" name="data" th:value="${data}"/>
+                        <select name="formaPagamentoId" required>
+                            <option value="">Forma de pagamento</option>
+                            <option th:each="forma : ${formasPagamento}" th:value="${forma.id}" th:text="${forma.nome}"></option>
+                        </select>
+                        <button class="btn btn-primary btn-sm" type="submit">Registrar pagamento</button>
+                    </form>
                 </td>
             </tr>
             </tbody>

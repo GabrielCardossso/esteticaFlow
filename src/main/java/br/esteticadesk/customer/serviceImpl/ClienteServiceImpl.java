@@ -10,6 +10,7 @@ import br.esteticadesk.customer.service.ClienteService;
 import br.esteticadesk.exception.*;
 import br.esteticadesk.validation.DocumentoValidator;
 import java.util.List;
+import java.util.Locale;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,22 +29,40 @@ public class ClienteServiceImpl implements ClienteService {
 
     public ClienteDTO salvar(ClienteDTO dto) {
         var empresaId = sessao.empresaObrigatoria();
-        if (!DocumentoValidator.cpfOuCnpjValido(dto.cpfCnpj()))
-            throw new IllegalArgumentException("CPF/CNPJ inválido.");
-        if (dto.cpfCnpj() != null && !dto.cpfCnpj().isBlank()
-                && repository.existsByEmpresaIdAndCpfCnpjAndAtivoTrue(empresaId, dto.cpfCnpj()))
-            throw new CpfJaCadastradoException();
+        validarDocumento(dto.cpfCnpj(), empresaId, null);
         Cliente entity = mapper.paraEntidade(dto);
         entity.setEmpresaId(empresaId);
-        if (entity.getAtivo() == null)
-            entity.setAtivo(true);
+        entity.setAtivo(true);
+        normalizar(entity);
         return mapper.paraDto(repository.save(entity));
     }
 
+    @Override
+    public ClienteDTO atualizar(Long id, ClienteDTO dto) {
+        var empresaId = sessao.empresaObrigatoria();
+        var cliente = buscarEntidade(id, empresaId);
+        validarDocumento(dto.cpfCnpj(), empresaId, id);
+        mapper.atualizarEntidade(dto, cliente);
+        normalizar(cliente);
+        return mapper.paraDto(repository.save(cliente));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ClienteDTO buscarPorId(Long id) {
+        return mapper.paraDto(buscarEntidade(id, sessao.empresaObrigatoria()));
+    }
+
     public ClienteDTO inativar(Long id) {
-        var cliente = repository.findByIdAndEmpresaId(id, sessao.empresaObrigatoria())
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Cliente não encontrado."));
+        var cliente = buscarEntidade(id, sessao.empresaObrigatoria());
         cliente.setAtivo(false);
+        return mapper.paraDto(repository.save(cliente));
+    }
+
+    @Override
+    public ClienteDTO reativar(Long id) {
+        var cliente = buscarEntidade(id, sessao.empresaObrigatoria());
+        cliente.setAtivo(true);
         return mapper.paraDto(repository.save(cliente));
     }
 
@@ -62,5 +81,51 @@ public class ClienteServiceImpl implements ClienteService {
                         cliente.getVeiculos().size(),
                         Boolean.TRUE.equals(cliente.getAtivo())))
                 .toList();
+    }
+
+    private Cliente buscarEntidade(Long id, Long empresaId) {
+        return repository.findByIdAndEmpresaId(id, empresaId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Cliente não encontrado."));
+    }
+
+    private void validarDocumento(String cpfCnpj, Long empresaId, Long id) {
+        if (!DocumentoValidator.cpfOuCnpjValido(cpfCnpj))
+            throw new IllegalArgumentException("CPF/CNPJ inválido.");
+        var documento = somenteDigitos(cpfCnpj);
+        if (documento != null && repository.existeCpfCnpjNormalizado(empresaId, documento, id))
+            throw new CpfJaCadastradoException();
+    }
+
+    private void normalizar(Cliente cliente) {
+        cliente.setNome(textoObrigatorio(cliente.getNome(), "Nome é obrigatório."));
+        cliente.setCpfCnpj(somenteDigitos(cliente.getCpfCnpj()));
+        cliente.setTelefone(textoObrigatorio(cliente.getTelefone(), "Telefone é obrigatório."));
+        cliente.setEmail(textoOpcional(cliente.getEmail()));
+        cliente.setCep(textoOpcional(cliente.getCep()));
+        cliente.setLogradouro(textoOpcional(cliente.getLogradouro()));
+        cliente.setNumero(textoOpcional(cliente.getNumero()));
+        cliente.setComplemento(textoOpcional(cliente.getComplemento()));
+        cliente.setBairro(textoOpcional(cliente.getBairro()));
+        cliente.setCidade(textoOpcional(cliente.getCidade()));
+        var uf = textoOpcional(cliente.getUf());
+        cliente.setUf(uf == null ? null : uf.toUpperCase(Locale.ROOT));
+    }
+
+    private String somenteDigitos(String valor) {
+        var texto = textoOpcional(valor);
+        return texto == null ? null : texto.replaceAll("\\D", "");
+    }
+
+    private String textoOpcional(String valor) {
+        if (valor == null || valor.isBlank())
+            return null;
+        return valor.trim();
+    }
+
+    private String textoObrigatorio(String valor, String mensagem) {
+        var texto = textoOpcional(valor);
+        if (texto == null)
+            throw new IllegalArgumentException(mensagem);
+        return texto;
     }
 }

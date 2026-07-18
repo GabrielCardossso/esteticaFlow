@@ -28,6 +28,27 @@ public class Cliente extends EntidadeEmpresaBase {
     @Email
     @Size(max = 150)
     private String email;
+    @Size(max = 9)
+    @Column(length = 9)
+    private String cep;
+    @Size(max = 150)
+    @Column(length = 150)
+    private String logradouro;
+    @Size(max = 20)
+    @Column(length = 20)
+    private String numero;
+    @Size(max = 100)
+    @Column(length = 100)
+    private String complemento;
+    @Size(max = 100)
+    @Column(length = 100)
+    private String bairro;
+    @Size(max = 100)
+    @Column(length = 100)
+    private String cidade;
+    @Size(max = 2)
+    @Column(length = 2)
+    private String uf;
     @NotNull
     @Column(nullable = false)
     private Boolean ativo = true;

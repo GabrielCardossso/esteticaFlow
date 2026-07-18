@@ -1,6 +1,8 @@
 package br.esteticadesk.finance.serviceImpl;
 
 import br.esteticadesk.auth.SessaoUsuario;
+import br.esteticadesk.company.service.AssinaturaService;
+import br.esteticadesk.enums.RecursoPlano;
 import br.esteticadesk.finance.entity.Despesa;
 import br.esteticadesk.finance.repository.*;
 import br.esteticadesk.finance.service.FinanceiroService;
@@ -15,14 +17,18 @@ public class FinanceiroServiceImpl implements FinanceiroService {
     private final DespesaRepository despesas;
     private final ReceitaRepository receitas;
     private final SessaoUsuario sessao;
+    private final AssinaturaService assinaturas;
 
-    public FinanceiroServiceImpl(DespesaRepository despesas, ReceitaRepository receitas, SessaoUsuario sessao) {
+    public FinanceiroServiceImpl(DespesaRepository despesas, ReceitaRepository receitas, SessaoUsuario sessao,
+            AssinaturaService assinaturas) {
         this.despesas = despesas;
         this.receitas = receitas;
         this.sessao = sessao;
+        this.assinaturas = assinaturas;
     }
 
     public Despesa registrarDespesa(Despesa despesa) {
+        assinaturas.exigirRecurso(RecursoPlano.FINANCEIRO);
         if (despesa.getValor() == null || despesa.getValor().signum() <= 0)
             throw new IllegalArgumentException("Valor deve ser maior que zero.");
         despesa.setEmpresaId(sessao.empresaObrigatoria());
@@ -31,6 +37,7 @@ public class FinanceiroServiceImpl implements FinanceiroService {
 
     @Transactional(readOnly = true)
     public BigDecimal calcularFluxoCaixa(LocalDate inicio, LocalDate fim) {
+        assinaturas.exigirRecurso(RecursoPlano.FINANCEIRO);
         var empresaId = sessao.empresaObrigatoria();
         var entradas = receitas.findByEmpresaIdAndDataRecebimentoBetween(empresaId, inicio, fim).stream()
                 .map(r -> r.getValor()).reduce(BigDecimal.ZERO, BigDecimal::add);

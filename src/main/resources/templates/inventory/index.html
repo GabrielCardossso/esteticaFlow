@@ -9,29 +9,100 @@
 
         <div class="page-header">
             <h1 class="page-title">Estoque</h1>
+            <div class="spacer"></div>
+            <a th:href="@{/estoque/produtos/novo}" class="btn btn-primary">+ Adicionar produto</a>
         </div>
 
         <table class="table">
             <thead>
             <tr>
                 <th>Produto</th>
+                <th>Unidade</th>
                 <th>Quantidade atual</th>
                 <th>Quantidade mínima</th>
                 <th>Status</th>
+                <th>Ações</th>
             </tr>
             </thead>
             <tbody>
             <tr th:if="${estoques.isEmpty()}">
-                <td colspan="4" style="text-align:center;color:#64748b;">Nenhum produto em estoque.</td>
+                <td colspan="6" style="text-align:center;color:#64748b;">Nenhum produto em estoque.</td>
             </tr>
             <tr th:each="item : ${estoques}">
                 <td th:text="${item.produto.nome}"></td>
-                <td th:text="${item.quantidadeAtual}" th:classappend="${item.quantidadeAtual.compareTo(item.quantidadeMinima) <= 0} ? ' low-stock'"></td>
-                <td th:text="${item.quantidadeMinima}"></td>
+                <td th:text="${item.produto.unidadeMedida}"></td>
+                <td th:text="${item.quantidadeAtual.stripTrailingZeros().toPlainString()}" th:classappend="${item.quantidadeAtual.compareTo(item.quantidadeMinima) <= 0} ? ' low-stock'"></td>
+                <td th:text="${item.quantidadeMinima.stripTrailingZeros().toPlainString()}"></td>
                 <td>
-                    <span th:if="${item.quantidadeAtual.compareTo(item.quantidadeMinima) <= 0}" class="low-stock">Estoque baixo</span>
-                    <span th:unless="${item.quantidadeAtual.compareTo(item.quantidadeMinima) <= 0}">OK</span>
+                    <span th:unless="${item.produto.ativo}">Inativo</span>
+                    <span th:if="${item.produto.ativo && item.quantidadeAtual.compareTo(item.quantidadeMinima) <= 0}"
+                          class="low-stock">Estoque baixo</span>
+                    <span th:if="${item.produto.ativo && item.quantidadeAtual.compareTo(item.quantidadeMinima) > 0}">OK</span>
                 </td>
+                <td style="min-width:260px;">
+                    <a th:href="@{/estoque/produtos/{id}/editar(id=${item.produto.id})}"
+                       class="btn btn-secondary btn-sm">Editar</a>
+                    <form th:if="${item.produto.ativo}"
+                          th:action="@{/estoque/produtos/{id}/inativar(id=${item.produto.id})}"
+                          method="post" style="display:inline;">
+                        <div th:replace="~{fragments/csrf :: csrf}"></div>
+                        <button type="submit" class="btn btn-danger btn-sm"
+                                onclick="return confirm('Inativar este produto?')">Inativar</button>
+                    </form>
+
+                    <details th:if="${item.produto.ativo}" style="margin-top:8px;">
+                        <summary style="cursor:pointer;font-weight:600;">Movimentar / alterar mínimo</summary>
+                        <div style="display:grid;gap:8px;margin-top:8px;">
+                            <form th:action="@{/estoque/produtos/{id}/entrada(id=${item.produto.id})}"
+                                  method="post" style="display:flex;gap:6px;">
+                                <div th:replace="~{fragments/csrf :: csrf}"></div>
+                                <input type="number" name="quantidade" min="0.001" step="0.001"
+                                       placeholder="Quantidade" aria-label="Quantidade de entrada" required/>
+                                <button type="submit" class="btn btn-primary btn-sm">Entrada</button>
+                            </form>
+                            <form th:action="@{/estoque/produtos/{id}/saida(id=${item.produto.id})}"
+                                  method="post" style="display:flex;gap:6px;">
+                                <div th:replace="~{fragments/csrf :: csrf}"></div>
+                                <input type="number" name="quantidade" min="0.001" step="0.001"
+                                       placeholder="Quantidade" aria-label="Quantidade de saída" required/>
+                                <button type="submit" class="btn btn-secondary btn-sm">Saída</button>
+                            </form>
+                            <form th:action="@{/estoque/produtos/{id}/minimo(id=${item.produto.id})}"
+                                  method="post" style="display:flex;gap:6px;">
+                                <div th:replace="~{fragments/csrf :: csrf}"></div>
+                                <input type="number" name="quantidadeMinima" min="0" step="0.001"
+                                       th:value="${item.quantidadeMinima}" aria-label="Quantidade mínima" required/>
+                                <button type="submit" class="btn btn-secondary btn-sm">Alterar mínimo</button>
+                            </form>
+                        </div>
+                    </details>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+
+        <h2 style="margin-top:28px;">Movimentações recentes</h2>
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Data</th>
+                <th>Produto</th>
+                <th>Tipo</th>
+                <th>Quantidade</th>
+                <th>Origem</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${movimentacoes.isEmpty()}">
+                <td colspan="5" style="text-align:center;color:#64748b;">Nenhuma movimentação registrada.</td>
+            </tr>
+            <tr th:each="movimentacao : ${movimentacoes}">
+                <td th:text="${#temporals.format(movimentacao.dataMovimentacao, 'dd/MM/yyyy HH:mm')}"></td>
+                <td th:text="${movimentacao.produto.nome}"></td>
+                <td th:text="${movimentacao.tipo}"></td>
+                <td th:text="${movimentacao.quantidade.stripTrailingZeros().toPlainString()}"
+                    th:classappend="${movimentacao.tipo.name() == 'SAIDA'} ? ' low-stock'"></td>
+                <td th:text="${movimentacao.origem}"></td>
             </tr>
             </tbody>
         </table>

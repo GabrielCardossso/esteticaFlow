@@ -14,4 +14,12 @@ public interface ClienteMapper {
     @Mapping(target = "dataAtualizacao", ignore = true)
     @Mapping(target = "veiculos", ignore = true)
     Cliente paraEntidade(ClienteDTO dto);
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "empresaId", ignore = true)
+    @Mapping(target = "dataCriacao", ignore = true)
+    @Mapping(target = "dataAtualizacao", ignore = true)
+    @Mapping(target = "veiculos", ignore = true)
+    @Mapping(target = "ativo", ignore = true)
+    void atualizarEntidade(ClienteDTO dto, @MappingTarget Cliente cliente);
 }

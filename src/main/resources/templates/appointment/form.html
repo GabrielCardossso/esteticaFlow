@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Novo agendamento')}"></head>
+<body>
+<div class="app-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="content">
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+        <div class="page-header">
+            <h1 class="page-title">Novo agendamento</h1>
+            <div class="spacer"></div>
+            <a th:href="@{/agenda(data=${data})}" class="btn btn-secondary">Voltar</a>
+        </div>
+
+        <div class="card" style="max-width:780px;">
+            <form th:action="@{/agenda}" method="post" class="form-grid" id="formAgendamento">
+                <div th:replace="~{fragments/csrf :: csrf}"></div>
+
+                <label for="clienteId">Cliente *</label>
+                <select id="clienteId" name="clienteId" required>
+                    <option value="">Selecione...</option>
+                    <option th:each="c : ${clientes}" th:value="${c.id}" th:text="${c.nome}"></option>
+                </select>
+
+                <label for="veiculoId">Veículo *</label>
+                <select id="veiculoId" name="veiculoId" required disabled>
+                    <option value="">Selecione o cliente primeiro</option>
+                </select>
+
+                <label>Serviços *</label>
+                <div class="service-picker">
+                    <label th:each="s : ${servicos}" class="check-option">
+                        <input type="checkbox" name="servicoIds" th:value="${s.id}" th:attr="data-preco=${s.preco}"/>
+                        <span th:text="${s.nome} + ' — R$ ' + ${#numbers.formatDecimal(s.preco, 1, 'POINT', 2, 'COMMA')}"></span>
+                    </label>
+                </div>
+
+                <label for="desconto">Desconto</label>
+                <input id="desconto" type="number" name="desconto" min="0" step="0.01" value="0"/>
+
+                <label>Totais</label>
+                <div class="totals-preview">
+                    <span>Subtotal: <strong id="subtotalPreview">R$ 0,00</strong></span>
+                    <span>Total: <strong id="totalPreview">R$ 0,00</strong></span>
+                </div>
+
+                <label for="funcionarioId">Funcionário</label>
+                <select id="funcionarioId" name="funcionarioId">
+                    <option value="">Opcional</option>
+                    <option th:each="f : ${funcionarios}" th:value="${f.id}" th:text="${f.usuario.nome}"></option>
+                </select>
+
+                <label for="dataHora">Data e hora *</label>
+                <input id="dataHora" type="datetime-local" name="dataHora" required
+                       th:value="${data != null ? data.toString() + 'T09:00' : ''}"/>
+
+                <label for="observacoes">Observações</label>
+                <textarea id="observacoes" name="observacoes" rows="3" maxlength="500"></textarea>
+
+                <div></div>
+                <button type="submit" class="btn btn-primary">Salvar agendamento</button>
+            </form>
+        </div>
+    </main>
+</div>
+
+<script th:inline="javascript">
+    const veiculoSelect = document.getElementById('veiculoId');
+    const clienteSelect = document.getElementById('clienteId');
+    const veiculosUrl = /*[[@{/agenda/veiculos}]]*/ '/agenda/veiculos';
+    const servicos = Array.from(document.querySelectorAll('input[name="servicoIds"]'));
+    const desconto = document.getElementById('desconto');
+
+    function atualizarTotais() {
+        const subtotal = servicos.filter(s => s.checked)
+            .reduce((total, s) => total + Number(s.dataset.preco), 0);
+        const valorDesconto = Number(desconto.value || 0);
+        document.getElementById('subtotalPreview').textContent =
+            subtotal.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+        document.getElementById('totalPreview').textContent =
+            Math.max(0, subtotal - valorDesconto).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
+    }
+
+    servicos.forEach(s => s.addEventListener('change', atualizarTotais));
+    desconto.addEventListener('input', atualizarTotais);
+    document.getElementById('formAgendamento').addEventListener('submit', function (event) {
+        if (!servicos.some(s => s.checked)) {
+            event.preventDefault();
+            alert('Selecione ao menos um serviço.');
+        }
+    });
+
+    clienteSelect.addEventListener('change', async function () {
+        const clienteId = this.value;
+        veiculoSelect.innerHTML = '<option value="">Carregando...</option>';
+        veiculoSelect.disabled = true;
+        if (!clienteId) {
+            veiculoSelect.innerHTML = '<option value="">Selecione o cliente primeiro</option>';
+            return;
+        }
+        const response = await fetch(veiculosUrl + '?clienteId=' + encodeURIComponent(clienteId));
+        const veiculos = await response.json();
+        veiculoSelect.innerHTML = '<option value="">Selecione...</option>';
+        veiculos.forEach(function (v) {
+            const opt = document.createElement('option');
+            opt.value = v.id;
+            opt.textContent = v.label;
+            veiculoSelect.appendChild(opt);
+        });
+        if (veiculos.length === 0) {
+            veiculoSelect.innerHTML = '<option value="">Cliente sem veículos ativos</option>';
+        } else {
+            veiculoSelect.disabled = false;
+        }
+    });
+</script>
+</body>
+</html>

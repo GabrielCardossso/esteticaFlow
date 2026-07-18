@@ -1,6 +1,8 @@
 package br.esteticadesk.web.controller;
 
 import br.esteticadesk.auth.SessaoUsuario;
+import br.esteticadesk.company.service.AssinaturaService;
+import br.esteticadesk.enums.RecursoPlano;
 import br.esteticadesk.finance.repository.DespesaRepository;
 import br.esteticadesk.finance.repository.ReceitaRepository;
 import br.esteticadesk.finance.service.FinanceiroService;
@@ -18,17 +20,20 @@ public class FinanceiroWebController {
     private final DespesaRepository despesas;
     private final FinanceiroService financeiroService;
     private final SessaoUsuario sessao;
+    private final AssinaturaService assinaturas;
 
     public FinanceiroWebController(ReceitaRepository receitas, DespesaRepository despesas,
-            FinanceiroService financeiroService, SessaoUsuario sessao) {
+            FinanceiroService financeiroService, SessaoUsuario sessao, AssinaturaService assinaturas) {
         this.receitas = receitas;
         this.despesas = despesas;
         this.financeiroService = financeiroService;
         this.sessao = sessao;
+        this.assinaturas = assinaturas;
     }
 
     @GetMapping
     public String index(Model model) {
+        assinaturas.exigirRecurso(RecursoPlano.FINANCEIRO);
         var empresaId = sessao.empresaObrigatoria();
         var inicio = LocalDate.now().withDayOfMonth(1);
         var fim = LocalDate.now().withDayOfMonth(LocalDate.now().lengthOfMonth());

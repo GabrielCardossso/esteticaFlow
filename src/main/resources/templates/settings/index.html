@@ -11,6 +11,41 @@
             <h1 class="page-title">Configurações</h1>
         </div>
 
+        <div class="card" style="margin-bottom:20px;" th:if="${podePersonalizarTema}">
+            <h3>Aparência</h3>
+            <form th:action="@{/configuracoes/tema}" method="post" id="formTema" style="margin-top:16px;"
+                  oninput="window.EsteticaFlowTheme && EsteticaFlowTheme.syncFromForm(this)">
+                <div th:replace="~{fragments/csrf :: csrf}"></div>
+
+                <p style="color:var(--text-muted);margin-bottom:10px;">Cor de destaque</p>
+                <div class="theme-swatches" style="margin-bottom:16px;">
+                    <input class="theme-swatch" type="radio" name="cor" value="teal" title="Teal"
+                           th:checked="${temaCor == 'teal' || temaCor == null}"/>
+                    <input class="theme-swatch" type="radio" name="cor" value="verde" title="Verde"
+                           th:checked="${temaCor == 'verde'}"/>
+                    <input class="theme-swatch" type="radio" name="cor" value="azul" title="Azul"
+                           th:checked="${temaCor == 'azul'}"/>
+                    <input class="theme-swatch" type="radio" name="cor" value="roxo" title="Roxo"
+                           th:checked="${temaCor == 'roxo'}"/>
+                    <input class="theme-swatch" type="radio" name="cor" value="laranja" title="Laranja"
+                           th:checked="${temaCor == 'laranja'}"/>
+                    <input class="theme-swatch" type="radio" name="cor" value="vermelho" title="Vermelho"
+                           th:checked="${temaCor == 'vermelho'}"/>
+                    <input class="theme-swatch" type="radio" name="cor" value="rosa" title="Rosa"
+                           th:checked="${temaCor == 'rosa'}"/>
+                    <input class="theme-swatch" type="radio" name="cor" value="dourado" title="Dourado"
+                           th:checked="${temaCor == 'dourado'}"/>
+                    <input class="theme-swatch" type="radio" name="cor" value="grafite" title="Grafite"
+                           th:checked="${temaCor == 'grafite'}"/>
+                </div>
+                <button type="submit" class="btn btn-primary">Salvar aparência</button>
+            </form>
+        </div>
+        <div class="card" style="margin-bottom:20px;" th:unless="${podePersonalizarTema}">
+            <h3>Aparência</h3>
+            <p class="muted">A personalização de tema está disponível nos planos PRO e EXCLUSIVE.</p>
+        </div>
+
         <div class="card" style="margin-bottom:20px;">
             <h3>Dados da empresa</h3>
             <form th:action="@{/configuracoes/empresa}" th:object="${empresa}" method="post" class="form-grid" style="margin-top:16px;">
@@ -26,6 +61,10 @@
                 <input type="text" th:field="*{telefone}"/>
                 <label>E-mail</label>
                 <input type="email" th:field="*{email}"/>
+                <label>Plano</label>
+                <input type="text" readonly th:value="${empresa.plano}"/>
+                <label>Próximo vencimento</label>
+                <input type="date" readonly th:value="${empresa.proximoVencimento}"/>
                 <div></div>
                 <button type="submit" class="btn btn-primary">Salvar empresa</button>
             </form>
@@ -37,7 +76,7 @@
                 <ul th:if="${!usuarios.isEmpty()}">
                     <li th:each="u : ${usuarios}" th:text="${u.nome} + ' (' + ${u.email} + ') — ' + ${u.papel}"></li>
                 </ul>
-                <p th:if="${usuarios.isEmpty()}" style="color:#64748b;">Nenhum usuário cadastrado.</p>
+                <p th:if="${usuarios.isEmpty()}" style="color:var(--text-muted);">Nenhum usuário cadastrado.</p>
 
                 <form th:if="${administrador}" th:action="@{/configuracoes/usuarios}" method="post" style="margin-top:16px;">
                     <div th:replace="~{fragments/csrf :: csrf}"></div>
@@ -50,8 +89,7 @@
                         <input type="password" name="senha" required minlength="6"/>
                         <label>Papel</label>
                         <select name="papel" required>
-                            <option th:each="p : ${T(br.esteticadesk.enums.PapelUsuario).values()}"
-                                    th:value="${p}" th:text="${p}"></option>
+                            <option th:each="p : ${papeis}" th:value="${p}" th:text="${p}"></option>
                         </select>
                     </div>
                     <button type="submit" class="btn btn-primary" style="margin-top:12px;">Criar usuário</button>
@@ -59,7 +97,7 @@
             </div>
 
             <div>
-                <div class="card" style="margin-bottom:16px;">
+                <div class="card" style="margin-bottom:16px;" th:if="${podeFinanceiro}">
                     <h3>Formas de pagamento</h3>
                     <ul th:if="${!formasPagamento.isEmpty()}">
                         <li th:each="f : ${formasPagamento}" th:text="${f.nome}"></li>
@@ -71,7 +109,7 @@
                     </form>
                 </div>
 
-                <div class="card">
+                <div id="categorias-produto" class="card" th:if="${podeEstoque}">
                     <h3>Categorias de produto</h3>
                     <ul th:if="${!categorias.isEmpty()}">
                         <li th:each="c : ${categorias}" th:text="${c.nome}"></li>
