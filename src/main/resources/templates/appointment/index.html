@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Agenda')}"></head>
+<body>
+<div class="app-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="content">
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+        <div class="page-header">
+            <h1 class="page-title">Agenda</h1>
+            <div class="spacer"></div>
+            <a th:href="@{/agenda(data=${dataAnterior})}" class="btn btn-secondary">‹ Dia anterior</a>
+            <a th:href="@{/agenda}" class="btn btn-secondary">Hoje</a>
+            <a th:href="@{/agenda(data=${dataProxima})}" class="btn btn-secondary">Próximo dia ›</a>
+        </div>
+
+        <p style="margin-bottom:16px;color:#64748b;">
+            Agendamentos de <strong th:text="${#temporals.format(data, 'dd/MM/yyyy')}"></strong>
+        </p>
+
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Horário</th>
+                <th>Cliente</th>
+                <th>Veículo</th>
+                <th>Serviço</th>
+                <th>Status</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${agendamentos.isEmpty()}">
+                <td colspan="5" style="text-align:center;color:#64748b;">Nenhum agendamento para este dia.</td>
+            </tr>
+            <tr th:each="ag : ${agendamentos}">
+                <td th:text="${#temporals.format(ag.dataHora, 'HH:mm')}"></td>
+                <td th:text="${ag.cliente.nome}"></td>
+                <td th:text="${ag.veiculo.modelo} + ' — ' + ${ag.veiculo.placa}"></td>
+                <td th:text="${ag.servico.nome}"></td>
+                <td>
+                    <span class="status-badge"
+                          th:classappend="${ag.status.name() == 'AGENDADO'} ? ' status-agendado' :
+                                          (${ag.status.name() == 'EM_ANDAMENTO'} ? ' status-em-andamento' :
+                                          (${ag.status.name() == 'CONCLUIDO'} ? ' status-concluido' : ' status-cancelado'))"
+                          th:text="${ag.status}"></span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </main>
+</div>
+</body>
+</html>

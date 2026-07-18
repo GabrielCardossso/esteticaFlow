@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Clientes')}"></head>
+<body>
+<div class="app-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="content">
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+        <div class="page-header">
+            <h1 class="page-title">Clientes</h1>
+            <div class="spacer"></div>
+            <a th:href="@{/clientes/novo}" class="btn btn-primary">+ Novo cliente</a>
+        </div>
+
+        <form method="get" th:action="@{/clientes}" style="display:flex;gap:10px;margin-bottom:16px;">
+            <input type="text" name="busca" th:value="${busca}" placeholder="Buscar por nome, telefone ou CPF/CNPJ" style="flex:1;"/>
+            <select name="ativos">
+                <option th:value="true" th:selected="${ativos}">Ativos</option>
+                <option th:value="false" th:selected="${!ativos}">Todos</option>
+            </select>
+            <button type="submit" class="btn btn-secondary">Buscar</button>
+        </form>
+
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Nome</th>
+                <th>Telefone</th>
+                <th>CPF/CNPJ</th>
+                <th>Veículos</th>
+                <th>Status</th>
+                <th>Ações</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${clientes.isEmpty()}">
+                <td colspan="6" style="text-align:center;color:#64748b;">Nenhum cliente encontrado.</td>
+            </tr>
+            <tr th:each="cliente : ${clientes}">
+                <td th:text="${cliente.nome()}"></td>
+                <td th:text="${cliente.telefone()}"></td>
+                <td th:text="${cliente.cpfCnpj()} ?: '—'"></td>
+                <td th:text="${cliente.veiculos()}"></td>
+                <td th:text="${cliente.ativo()} ? 'Ativo' : 'Inativo'"></td>
+                <td>
+                    <form th:if="${cliente.ativo()}" th:action="@{/clientes/{id}/inativar(id=${cliente.id()})}" method="post" style="display:inline;">
+                        <div th:replace="~{fragments/csrf :: csrf}"></div>
+                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Inativar este cliente?')">Inativar</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Login')}"></head>
+<body>
+<div class="login-page">
+    <form class="login-card" th:action="@{/login}" method="post">
+        <div th:replace="~{fragments/csrf :: csrf}"></div>
+        <div class="logo">EsteticaDesk</div>
+        <div class="subtitle">Gestão para estética automotiva</div>
+
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+        <input type="email" name="email" placeholder="E-mail" required autofocus/>
+        <input type="password" name="senha" placeholder="Senha" required/>
+        <button type="submit" class="btn btn-primary" style="width:100%;padding:12px;">ENTRAR</button>
+    </form>
+</div>
+</body>
+</html>

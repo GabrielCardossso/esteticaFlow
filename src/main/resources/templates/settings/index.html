@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Configurações')}"></head>
+<body>
+<div class="app-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="content">
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+        <div class="page-header">
+            <h1 class="page-title">Configurações</h1>
+        </div>
+
+        <div class="card" style="margin-bottom:20px;">
+            <h3>Dados da empresa</h3>
+            <form th:action="@{/configuracoes/empresa}" th:object="${empresa}" method="post" class="form-grid" style="margin-top:16px;">
+                <div th:replace="~{fragments/csrf :: csrf}"></div>
+                <input type="hidden" th:field="*{id}"/>
+                <label>Razão social</label>
+                <input type="text" th:field="*{razaoSocial}" required/>
+                <label>Nome fantasia</label>
+                <input type="text" th:field="*{nomeFantasia}" required/>
+                <label>CNPJ</label>
+                <input type="text" th:field="*{cnpj}" required/>
+                <label>Telefone</label>
+                <input type="text" th:field="*{telefone}"/>
+                <label>E-mail</label>
+                <input type="email" th:field="*{email}"/>
+                <div></div>
+                <button type="submit" class="btn btn-primary">Salvar empresa</button>
+            </form>
+        </div>
+
+        <div class="two-columns">
+            <div class="card">
+                <h3>Usuários</h3>
+                <ul th:if="${!usuarios.isEmpty()}">
+                    <li th:each="u : ${usuarios}" th:text="${u.nome} + ' (' + ${u.email} + ') — ' + ${u.papel}"></li>
+                </ul>
+                <p th:if="${usuarios.isEmpty()}" style="color:#64748b;">Nenhum usuário cadastrado.</p>
+
+                <form th:if="${administrador}" th:action="@{/configuracoes/usuarios}" method="post" style="margin-top:16px;">
+                    <div th:replace="~{fragments/csrf :: csrf}"></div>
+                    <div class="form-grid">
+                        <label>Nome</label>
+                        <input type="text" name="nome" required/>
+                        <label>E-mail</label>
+                        <input type="email" name="email" required/>
+                        <label>Senha</label>
+                        <input type="password" name="senha" required minlength="6"/>
+                        <label>Papel</label>
+                        <select name="papel" required>
+                            <option th:each="p : ${T(br.esteticadesk.enums.PapelUsuario).values()}"
+                                    th:value="${p}" th:text="${p}"></option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="margin-top:12px;">Criar usuário</button>
+                </form>
+            </div>
+
+            <div>
+                <div class="card" style="margin-bottom:16px;">
+                    <h3>Formas de pagamento</h3>
+                    <ul th:if="${!formasPagamento.isEmpty()}">
+                        <li th:each="f : ${formasPagamento}" th:text="${f.nome}"></li>
+                    </ul>
+                    <form th:action="@{/configuracoes/formas-pagamento}" method="post" style="display:flex;gap:8px;margin-top:12px;">
+                        <div th:replace="~{fragments/csrf :: csrf}"></div>
+                        <input type="text" name="nome" placeholder="Nova forma" required style="flex:1;"/>
+                        <button type="submit" class="btn btn-primary btn-sm">Adicionar</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <h3>Categorias de produto</h3>
+                    <ul th:if="${!categorias.isEmpty()}">
+                        <li th:each="c : ${categorias}" th:text="${c.nome}"></li>
+                    </ul>
+                    <form th:action="@{/configuracoes/categorias}" method="post" style="display:flex;gap:8px;margin-top:12px;">
+                        <div th:replace="~{fragments/csrf :: csrf}"></div>
+                        <input type="text" name="nome" placeholder="Nova categoria" required style="flex:1;"/>
+                        <button type="submit" class="btn btn-primary btn-sm">Adicionar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+</body>
+</html>

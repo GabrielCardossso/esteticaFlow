@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Relatórios')}"></head>
+<body>
+<div class="app-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="content">
+        <div class="page-header">
+            <h1 class="page-title">Relatórios</h1>
+        </div>
+
+        <div class="card">
+            <p>Exportação de relatórios em PDF e Excel será disponibilizada nesta área.</p>
+            <p style="color:#64748b;">Os serviços de geração (OpenPDF e Apache POI) já estão configurados no backend.</p>
+        </div>
+    </main>
+</div>
+</body>
+</html>

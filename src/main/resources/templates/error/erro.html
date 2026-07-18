@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Erro')}"></head>
+<body>
+<div class="login-page">
+    <div class="login-card">
+        <div class="logo">Erro</div>
+        <p class="error-text" th:text="${erro}">Ocorreu um erro.</p>
+        <a th:href="@{/dashboard}" class="btn btn-primary" style="text-align:center;">Voltar ao dashboard</a>
+    </div>
+</div>
+</body>
+</html>

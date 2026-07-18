@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Novo cliente')}"></head>
+<body>
+<div class="app-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="content">
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+        <div class="page-header">
+            <h1 class="page-title">Novo cliente</h1>
+            <div class="spacer"></div>
+            <a th:href="@{/clientes}" class="btn btn-secondary">Voltar</a>
+        </div>
+
+        <div class="card" style="max-width:780px;">
+            <form th:action="@{/clientes}" th:object="${cliente}" method="post">
+                <div th:replace="~{fragments/csrf :: csrf}"></div>
+                <div class="form-grid">
+                    <label for="nome">Nome *</label>
+                    <div>
+                        <input id="nome" type="text" th:field="*{nome}" placeholder="Nome completo" required/>
+                        <div class="error-text" th:if="${#fields.hasErrors('nome')}" th:errors="*{nome}"></div>
+                    </div>
+
+                    <label for="cpfCnpj">CPF/CNPJ</label>
+                    <div>
+                        <input id="cpfCnpj" type="text" th:field="*{cpfCnpj}" placeholder="000.000.000-00"/>
+                    </div>
+
+                    <label for="telefone">Telefone *</label>
+                    <div>
+                        <input id="telefone" type="text" th:field="*{telefone}" placeholder="(00) 00000-0000" required/>
+                        <div class="error-text" th:if="${#fields.hasErrors('telefone')}" th:errors="*{telefone}"></div>
+                    </div>
+
+                    <label for="email">E-mail</label>
+                    <div>
+                        <input id="email" type="email" th:field="*{email}" placeholder="email@exemplo.com"/>
+                        <div class="error-text" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
+                    </div>
+                </div>
+
+                <div style="margin-top:20px;">
+                    <button type="submit" class="btn btn-primary">Salvar cliente</button>
+                </div>
+            </form>
+        </div>
+    </main>
+</div>
+</body>
+</html>

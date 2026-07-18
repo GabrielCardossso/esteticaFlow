@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Estoque')}"></head>
+<body>
+<div class="app-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="content">
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+        <div class="page-header">
+            <h1 class="page-title">Estoque</h1>
+        </div>
+
+        <table class="table">
+            <thead>
+            <tr>
+                <th>Produto</th>
+                <th>Quantidade atual</th>
+                <th>Quantidade mínima</th>
+                <th>Status</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${estoques.isEmpty()}">
+                <td colspan="4" style="text-align:center;color:#64748b;">Nenhum produto em estoque.</td>
+            </tr>
+            <tr th:each="item : ${estoques}">
+                <td th:text="${item.produto.nome}"></td>
+                <td th:text="${item.quantidadeAtual}" th:classappend="${item.quantidadeAtual.compareTo(item.quantidadeMinima) <= 0} ? ' low-stock'"></td>
+                <td th:text="${item.quantidadeMinima}"></td>
+                <td>
+                    <span th:if="${item.quantidadeAtual.compareTo(item.quantidadeMinima) <= 0}" class="low-stock">Estoque baixo</span>
+                    <span th:unless="${item.quantidadeAtual.compareTo(item.quantidadeMinima) <= 0}">OK</span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </main>
+</div>
+</body>
+</html>

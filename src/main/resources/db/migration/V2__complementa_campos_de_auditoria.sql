@@ -1,0 +1,14 @@
+-- Capítulo 8: todas as entidades de negócio possuem auditoria comum.
+-- Esta migração complementa o schema inicial sem alterar a migração V1 já versionada.
+ALTER TABLE categoria_servico ADD COLUMN data_criacao TIMESTAMP NOT NULL DEFAULT NOW(), ADD COLUMN data_atualizacao TIMESTAMP NOT NULL DEFAULT NOW();
+ALTER TABLE categoria_produto ADD COLUMN data_criacao TIMESTAMP NOT NULL DEFAULT NOW(), ADD COLUMN data_atualizacao TIMESTAMP NOT NULL DEFAULT NOW();
+ALTER TABLE fornecedor ADD COLUMN data_criacao TIMESTAMP NOT NULL DEFAULT NOW(), ADD COLUMN data_atualizacao TIMESTAMP NOT NULL DEFAULT NOW();
+ALTER TABLE estoque ADD COLUMN data_criacao TIMESTAMP NOT NULL DEFAULT NOW();
+ALTER TABLE item_servico ADD COLUMN data_criacao TIMESTAMP NOT NULL DEFAULT NOW(), ADD COLUMN data_atualizacao TIMESTAMP NOT NULL DEFAULT NOW();
+ALTER TABLE movimentacao_estoque ADD COLUMN data_criacao TIMESTAMP NOT NULL DEFAULT NOW(), ADD COLUMN data_atualizacao TIMESTAMP NOT NULL DEFAULT NOW();
+ALTER TABLE forma_pagamento ADD COLUMN data_criacao TIMESTAMP NOT NULL DEFAULT NOW(), ADD COLUMN data_atualizacao TIMESTAMP NOT NULL DEFAULT NOW();
+ALTER TABLE receita ADD COLUMN data_atualizacao TIMESTAMP NOT NULL DEFAULT NOW();
+ALTER TABLE despesa ADD COLUMN data_atualizacao TIMESTAMP NOT NULL DEFAULT NOW();
+ALTER TABLE log ADD COLUMN data_criacao TIMESTAMP NOT NULL DEFAULT NOW(), ADD COLUMN data_atualizacao TIMESTAMP NOT NULL DEFAULT NOW();
+ALTER TABLE configuracao ADD COLUMN data_criacao TIMESTAMP NOT NULL DEFAULT NOW(), ADD COLUMN data_atualizacao TIMESTAMP NOT NULL DEFAULT NOW();
+ALTER TABLE backup ADD COLUMN data_criacao TIMESTAMP NOT NULL DEFAULT NOW(), ADD COLUMN data_atualizacao TIMESTAMP NOT NULL DEFAULT NOW();

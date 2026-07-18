@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Financeiro')}"></head>
+<body>
+<div class="app-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="content">
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+        <div class="page-header">
+            <h1 class="page-title">Financeiro</h1>
+        </div>
+
+        <div class="card" style="margin-bottom:20px;">
+            <div class="kpi-label">Fluxo de caixa do mês</div>
+            <div class="kpi-value" th:text="'R$ ' + ${#numbers.formatDecimal(fluxoCaixa, 1, 'POINT', 2, 'COMMA')}"></div>
+        </div>
+
+        <div class="two-columns">
+            <div>
+                <h3>Receitas</h3>
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Descrição</th>
+                        <th>Data</th>
+                        <th>Valor</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:if="${receitas.isEmpty()}">
+                        <td colspan="3" style="text-align:center;color:#64748b;">Nenhuma receita registrada.</td>
+                    </tr>
+                    <tr th:each="r : ${receitas}">
+                        <td th:text="${r.descricao}"></td>
+                        <td th:text="${#temporals.format(r.dataRecebimento, 'dd/MM/yyyy')}"></td>
+                        <td th:text="'R$ ' + ${#numbers.formatDecimal(r.valor, 1, 'POINT', 2, 'COMMA')}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div>
+                <h3>Despesas</h3>
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Descrição</th>
+                        <th>Categoria</th>
+                        <th>Data</th>
+                        <th>Valor</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:if="${despesas.isEmpty()}">
+                        <td colspan="4" style="text-align:center;color:#64748b;">Nenhuma despesa registrada.</td>
+                    </tr>
+                    <tr th:each="d : ${despesas}">
+                        <td th:text="${d.descricao}"></td>
+                        <td th:text="${d.categoria}"></td>
+                        <td th:text="${#temporals.format(d.dataPagamento, 'dd/MM/yyyy')}"></td>
+                        <td th:text="'R$ ' + ${#numbers.formatDecimal(d.valor, 1, 'POINT', 2, 'COMMA')}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+</body>
+</html>
