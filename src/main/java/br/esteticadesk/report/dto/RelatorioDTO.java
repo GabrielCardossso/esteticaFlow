@@ -1,6 +1,7 @@
 package br.esteticadesk.report.dto;
 
 import br.esteticadesk.enums.PlanoAssinatura;
+import br.esteticadesk.enums.RecursoPlano;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -31,11 +32,11 @@ public record RelatorioDTO(
     }
 
     public boolean possuiRankings() {
-        return plano == PlanoAssinatura.PRO || plano == PlanoAssinatura.EXCLUSIVE;
+        return plano.permite(RecursoPlano.RELATORIO_DETALHADO);
     }
 
     public boolean possuiDetalhes() {
-        return plano == PlanoAssinatura.EXCLUSIVE;
+        return plano.permite(RecursoPlano.RELATORIO_DETALHADO);
     }
 
     public record ServicoRankingDTO(String nome, long quantidade, BigDecimal valor) {

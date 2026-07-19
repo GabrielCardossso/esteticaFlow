@@ -39,8 +39,8 @@
             </tr>
             <tr th:each="cliente : ${clientes}">
                 <td th:text="${cliente.nome()}"></td>
-                <td th:text="${cliente.telefone()}"></td>
-                <td th:text="${cliente.cpfCnpj()} ?: '—'"></td>
+                <td th:text="${cliente.telefoneFormatado()}"></td>
+                <td th:text="${cliente.documentoFormatado()} ?: '—'"></td>
                 <td th:text="${cliente.veiculos()}"></td>
                 <td th:text="${cliente.ativo()} ? 'Ativo' : 'Inativo'"></td>
                 <td>

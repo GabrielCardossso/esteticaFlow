@@ -28,9 +28,10 @@ public class EstoqueWebController {
     }
 
     @GetMapping
-    public String index(Model model) {
-        model.addAttribute("estoques", estoqueService.listarEstoques());
+    public String index(@RequestParam(defaultValue = "false") boolean mostrarTodos, Model model) {
+        model.addAttribute("estoques", estoqueService.listarEstoques(mostrarTodos));
         model.addAttribute("movimentacoes", estoqueService.listarMovimentacoesRecentes());
+        model.addAttribute("mostrarTodos", mostrarTodos);
         model.addAttribute("menuAtivo", "estoque");
         return "inventory/index";
     }
@@ -39,14 +40,15 @@ public class EstoqueWebController {
     public String novoProduto(Model model) {
         model.addAttribute("produto", new ProdutoEstoqueDTO(null, "", UnidadeMedida.UN, BigDecimal.ZERO, null,
                 BigDecimal.ZERO, BigDecimal.ZERO));
-        prepararFormulario(model);
+        prepararFormulario(model, null);
         return "inventory/form";
     }
 
     @GetMapping("/produtos/{id}/editar")
     public String editarProduto(@PathVariable Long id, Model model) {
-        model.addAttribute("produto", estoqueService.obterProduto(id));
-        prepararFormulario(model);
+        var produto = estoqueService.obterProduto(id);
+        model.addAttribute("produto", produto);
+        prepararFormulario(model, produto.categoriaProdutoId());
         return "inventory/form";
     }
 
@@ -54,7 +56,7 @@ public class EstoqueWebController {
     public String salvarProduto(@Valid @ModelAttribute("produto") ProdutoEstoqueDTO produto,
             BindingResult bindingResult, Model model, RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
-            prepararFormulario(model);
+            prepararFormulario(model, produto.categoriaProdutoId());
             return "inventory/form";
         }
         try {
@@ -64,7 +66,7 @@ public class EstoqueWebController {
             return "redirect:/estoque";
         } catch (IllegalArgumentException exception) {
             model.addAttribute("erro", exception.getMessage());
-            prepararFormulario(model);
+            prepararFormulario(model, produto.categoriaProdutoId());
             return "inventory/form";
         }
     }
@@ -73,7 +75,14 @@ public class EstoqueWebController {
     public String inativarProduto(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         estoqueService.inativarProduto(id);
         redirectAttributes.addFlashAttribute("sucesso", "Produto inativado com sucesso.");
-        return "redirect:/estoque";
+        return "redirect:/estoque?mostrarTodos=true";
+    }
+
+    @PostMapping("/produtos/{id}/reativar")
+    public String reativarProduto(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        estoqueService.reativarProduto(id);
+        redirectAttributes.addFlashAttribute("sucesso", "Produto reativado com sucesso.");
+        return "redirect:/estoque?mostrarTodos=true";
     }
 
     @PostMapping("/produtos/{id}/entrada")
@@ -107,14 +116,14 @@ public class EstoqueWebController {
         try {
             acao.run();
             redirectAttributes.addFlashAttribute("sucesso", mensagemSucesso);
-        } catch (IllegalArgumentException | EstoqueInsuficienteException exception) {
+        } catch (IllegalArgumentException | IllegalStateException | EstoqueInsuficienteException exception) {
             redirectAttributes.addFlashAttribute("erro", exception.getMessage());
         }
         return "redirect:/estoque";
     }
 
-    private void prepararFormulario(Model model) {
-        model.addAttribute("categorias", estoqueService.listarCategoriasAtivas());
+    private void prepararFormulario(Model model, Long categoriaAtualId) {
+        model.addAttribute("categorias", estoqueService.listarCategoriasParaFormulario(categoriaAtualId));
         model.addAttribute("unidades", UnidadeMedida.values());
         model.addAttribute("menuAtivo", "estoque");
     }

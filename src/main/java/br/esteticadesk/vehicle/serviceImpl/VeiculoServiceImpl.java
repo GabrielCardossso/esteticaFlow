@@ -1,6 +1,7 @@
 package br.esteticadesk.vehicle.serviceImpl;
 
 import br.esteticadesk.auth.SessaoUsuario;
+import br.esteticadesk.company.repository.EmpresaRepository;
 import br.esteticadesk.customer.repository.ClienteRepository;
 import br.esteticadesk.exception.*;
 import br.esteticadesk.validation.DocumentoValidator;
@@ -17,11 +18,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class VeiculoServiceImpl implements VeiculoService {
     private final VeiculoRepository veiculos;
     private final ClienteRepository clientes;
+    private final EmpresaRepository empresas;
     private final SessaoUsuario sessao;
 
-    public VeiculoServiceImpl(VeiculoRepository veiculos, ClienteRepository clientes, SessaoUsuario sessao) {
+    public VeiculoServiceImpl(VeiculoRepository veiculos, ClienteRepository clientes, EmpresaRepository empresas,
+            SessaoUsuario sessao) {
         this.veiculos = veiculos;
         this.clientes = clientes;
+        this.empresas = empresas;
         this.sessao = sessao;
     }
 
@@ -59,23 +63,42 @@ public class VeiculoServiceImpl implements VeiculoService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Veiculo> listarPorCliente(Long clienteId) {
+    public List<Veiculo> listarPorCliente(Long clienteId, boolean mostrarTodos) {
         var empresaId = sessao.empresaObrigatoria();
         clientes.findByIdAndEmpresaId(clienteId, empresaId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Cliente não encontrado."));
-        return veiculos.findByEmpresaIdAndClienteIdOrderByAtivoDescModelo(empresaId, clienteId);
+        return mostrarTodos
+                ? veiculos.findByEmpresaIdAndClienteIdOrderByAtivoDescModelo(empresaId, clienteId)
+                : veiculos.findByEmpresaIdAndClienteIdAndAtivoTrueOrderByModelo(empresaId, clienteId);
     }
 
     @Override
     public Veiculo inativar(Long id, Long clienteId) {
-        var veiculo = buscarEntidade(id, clienteId, sessao.empresaObrigatoria());
+        var veiculo = buscarEntidade(id, clienteId, sessao.empresaObrigatoria(), true);
         veiculo.setAtivo(false);
         return veiculos.save(veiculo);
     }
 
+    @Override
+    public Veiculo reativar(Long id, Long clienteId) {
+        var empresaId = sessao.empresaObrigatoria();
+        empresas.findByIdAndAtivoTrue(empresaId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Empresa ativa não encontrada."));
+        clientes.findByIdAndEmpresaId(clienteId, empresaId)
+                .filter(cliente -> Boolean.TRUE.equals(cliente.getAtivo()))
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Cliente ativo não encontrado."));
+        var veiculo = buscarEntidade(id, clienteId, empresaId, false);
+        veiculo.setAtivo(true);
+        return veiculos.save(veiculo);
+    }
+
     private Veiculo buscarEntidade(Long id, Long clienteId, Long empresaId) {
+        return buscarEntidade(id, clienteId, empresaId, true);
+    }
+
+    private Veiculo buscarEntidade(Long id, Long clienteId, Long empresaId, boolean somenteAtivo) {
         return veiculos.findByIdAndEmpresaId(id, empresaId)
-                .filter(veiculo -> Boolean.TRUE.equals(veiculo.getAtivo()))
+                .filter(veiculo -> !somenteAtivo || Boolean.TRUE.equals(veiculo.getAtivo()))
                 .filter(veiculo -> veiculo.getCliente().getId().equals(clienteId))
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Veículo não encontrado."));
     }

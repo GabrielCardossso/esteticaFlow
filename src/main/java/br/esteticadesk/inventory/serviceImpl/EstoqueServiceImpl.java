@@ -14,6 +14,7 @@ import br.esteticadesk.inventory.service.EstoqueService;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,9 +43,11 @@ public class EstoqueServiceImpl implements EstoqueService {
     }
 
     @Transactional(readOnly = true)
-    public List<Estoque> listarEstoques() {
+    public List<Estoque> listarEstoques(boolean mostrarTodos) {
         exigirAcesso();
-        return estoques.findByEmpresaId(sessao.empresaObrigatoria());
+        var empresaId = sessao.empresaObrigatoria();
+        return mostrarTodos ? estoques.findByEmpresaId(empresaId)
+                : estoques.findByEmpresaIdAndProdutoAtivoTrue(empresaId);
     }
 
     @Transactional(readOnly = true)
@@ -53,10 +56,16 @@ public class EstoqueServiceImpl implements EstoqueService {
         return movimentacoes.findTop20ByEmpresaIdOrderByDataMovimentacaoDesc(sessao.empresaObrigatoria());
     }
 
+    @Override
     @Transactional(readOnly = true)
-    public List<CategoriaProduto> listarCategoriasAtivas() {
+    public List<CategoriaProduto> listarCategoriasParaFormulario(Long categoriaAtualId) {
         exigirAcesso();
-        return categorias.findByEmpresaIdAndAtivoTrueOrderByNome(sessao.empresaObrigatoria());
+        var empresaId = sessao.empresaObrigatoria();
+        var disponiveis = new ArrayList<>(categorias.findByEmpresaIdAndAtivoTrueOrderByNome(empresaId));
+        if (categoriaAtualId != null && disponiveis.stream().noneMatch(c -> c.getId().equals(categoriaAtualId))) {
+            categorias.findByIdAndEmpresaId(categoriaAtualId, empresaId).ifPresent(disponiveis::add);
+        }
+        return disponiveis;
     }
 
     @Transactional(readOnly = true)
@@ -75,8 +84,15 @@ public class EstoqueServiceImpl implements EstoqueService {
         exigirAcesso();
         validarProduto(dados);
         var empresaId = sessao.empresaObrigatoria();
+        var produtoExistente = dados.id() == null ? null : buscarProduto(dados.id(), empresaId);
         var categoria = categorias.findByIdAndEmpresaIdAndAtivoTrue(dados.categoriaProdutoId(), empresaId)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Categoria de produto não encontrada."));
+                .orElseGet(() -> {
+                    if (produtoExistente != null
+                            && produtoExistente.getCategoriaProduto().getId().equals(dados.categoriaProdutoId())) {
+                        return produtoExistente.getCategoriaProduto();
+                    }
+                    throw new RecursoNaoEncontradoException("Categoria de produto não encontrada ou inativa.");
+                });
 
         if (dados.id() == null) {
             var produto = new Produto();
@@ -98,7 +114,7 @@ public class EstoqueServiceImpl implements EstoqueService {
             return;
         }
 
-        var produto = buscarProduto(dados.id(), empresaId);
+        var produto = produtoExistente;
         preencherProduto(produto, dados, categoria);
         var estoque = buscarEstoqueParaAtualizacao(empresaId, produto.getId());
         estoque.setQuantidadeMinima(dados.quantidadeMinima());
@@ -110,11 +126,18 @@ public class EstoqueServiceImpl implements EstoqueService {
         produto.setAtivo(false);
     }
 
+    @Override
+    public void reativarProduto(Long produtoId) {
+        exigirAcesso();
+        buscarProduto(produtoId, sessao.empresaObrigatoria()).setAtivo(true);
+    }
+
     public void registrarEntrada(Long produtoId, BigDecimal quantidade) {
         exigirAcesso();
         validarQuantidadePositiva(quantidade);
         var empresaId = sessao.empresaObrigatoria();
         var estoque = buscarEstoqueParaAtualizacao(empresaId, produtoId);
+        exigirProdutoAtivo(estoque);
         estoque.setQuantidadeAtual(estoque.getQuantidadeAtual().add(quantidade));
         registrarMovimentacao(empresaId, estoque.getProduto(), TipoMovimentacao.ENTRADA, quantidade);
         registrarDespesaDeEntrada(estoque.getProduto(), quantidade);
@@ -125,6 +148,7 @@ public class EstoqueServiceImpl implements EstoqueService {
         validarQuantidadePositiva(quantidade);
         var empresaId = sessao.empresaObrigatoria();
         var estoque = buscarEstoqueParaAtualizacao(empresaId, produtoId);
+        exigirProdutoAtivo(estoque);
         if (estoque.getQuantidadeAtual().compareTo(quantidade) < 0)
             throw new EstoqueInsuficienteException(estoque.getProduto().getNome());
         estoque.setQuantidadeAtual(estoque.getQuantidadeAtual().subtract(quantidade));
@@ -147,6 +171,12 @@ public class EstoqueServiceImpl implements EstoqueService {
     private Produto buscarProduto(Long produtoId, Long empresaId) {
         return produtos.findByIdAndEmpresaId(produtoId, empresaId)
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Produto não encontrado."));
+    }
+
+    private void exigirProdutoAtivo(Estoque estoque) {
+        if (!Boolean.TRUE.equals(estoque.getProduto().getAtivo())) {
+            throw new IllegalStateException("Não é permitido movimentar um produto inativo.");
+        }
     }
 
     private void registrarMovimentacao(Long empresaId, Produto produto, TipoMovimentacao tipo,

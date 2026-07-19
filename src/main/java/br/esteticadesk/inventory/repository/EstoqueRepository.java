@@ -28,4 +28,12 @@ public interface EstoqueRepository extends JpaRepository<Estoque, Long> {
             ORDER BY e.produto.nome
             """)
     List<Estoque> findByEmpresaId(@Param("empresaId") Long empresaId);
+
+    @Query("""
+            SELECT e FROM Estoque e
+            JOIN FETCH e.produto
+            WHERE e.empresaId = :empresaId AND e.produto.ativo = true
+            ORDER BY e.produto.nome
+            """)
+    List<Estoque> findByEmpresaIdAndProdutoAtivoTrue(@Param("empresaId") Long empresaId);
 }

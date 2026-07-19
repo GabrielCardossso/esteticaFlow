@@ -8,5 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     Optional<Usuario> findByEmail(String email);
     List<Usuario> findByEmpresaIdOrderByNome(Long empresaId);
+    List<Usuario> findByEmpresaIdAndAtivoTrueOrderByNome(Long empresaId);
+    Optional<Usuario> findByIdAndEmpresaId(Long id, Long empresaId);
     long countByEmpresaIdAndAtivoTrueAndPapelNot(Long empresaId, PapelUsuario papel);
 }

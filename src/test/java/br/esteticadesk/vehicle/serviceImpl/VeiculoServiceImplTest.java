@@ -5,8 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 import br.esteticadesk.auth.SessaoUsuario;
+import br.esteticadesk.company.entity.Empresa;
+import br.esteticadesk.company.repository.EmpresaRepository;
 import br.esteticadesk.customer.entity.Cliente;
 import br.esteticadesk.customer.repository.ClienteRepository;
+import br.esteticadesk.exception.RecursoNaoEncontradoException;
 import br.esteticadesk.exception.PlacaJaCadastradaException;
 import br.esteticadesk.vehicle.entity.Veiculo;
 import br.esteticadesk.vehicle.repository.VeiculoRepository;
@@ -24,13 +27,15 @@ class VeiculoServiceImplTest {
     @Mock
     private ClienteRepository clientes;
     @Mock
+    private EmpresaRepository empresas;
+    @Mock
     private SessaoUsuario sessao;
 
     private VeiculoServiceImpl service;
 
     @BeforeEach
     void configurar() {
-        service = new VeiculoServiceImpl(veiculos, clientes, sessao);
+        service = new VeiculoServiceImpl(veiculos, clientes, empresas, sessao);
         when(sessao.empresaObrigatoria()).thenReturn(7L);
     }
 
@@ -67,6 +72,40 @@ class VeiculoServiceImplTest {
         when(veiculos.existePlacaNormalizada(7L, "ABC1D23", 20L)).thenReturn(true);
 
         assertThrows(PlacaJaCadastradaException.class, () -> service.salvar(alteracoes, 10L));
+
+        verify(veiculos, never()).save(any());
+    }
+
+    @Test
+    void reativaVeiculoSomenteComEmpresaEClienteAtivos() {
+        var empresa = new Empresa();
+        empresa.setId(7L);
+        empresa.setAtivo(true);
+        var cliente = clienteAtivo();
+        var veiculo = veiculoExistente(cliente);
+        veiculo.setAtivo(false);
+        when(empresas.findByIdAndAtivoTrue(7L)).thenReturn(Optional.of(empresa));
+        when(clientes.findByIdAndEmpresaId(10L, 7L)).thenReturn(Optional.of(cliente));
+        when(veiculos.findByIdAndEmpresaId(20L, 7L)).thenReturn(Optional.of(veiculo));
+        when(veiculos.save(veiculo)).thenReturn(veiculo);
+
+        var reativado = service.reativar(20L, 10L);
+
+        assertEquals(true, reativado.getAtivo());
+        verify(veiculos).save(veiculo);
+    }
+
+    @Test
+    void naoReativaVeiculoDeClienteInativo() {
+        var empresa = new Empresa();
+        empresa.setId(7L);
+        empresa.setAtivo(true);
+        var cliente = clienteAtivo();
+        cliente.setAtivo(false);
+        when(empresas.findByIdAndAtivoTrue(7L)).thenReturn(Optional.of(empresa));
+        when(clientes.findByIdAndEmpresaId(10L, 7L)).thenReturn(Optional.of(cliente));
+
+        assertThrows(RecursoNaoEncontradoException.class, () -> service.reativar(20L, 10L));
 
         verify(veiculos, never()).save(any());
     }

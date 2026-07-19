@@ -35,7 +35,7 @@ public class SecurityConfig {
             EncerrarSessaoLogoutHandler logoutHandler) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/css/**", "/js/**", "/login", "/error").permitAll()
+                        .requestMatchers("/", "/login", "/error", "/css/**", "/js/**").permitAll()
                         .requestMatchers("/empresas/**").hasAuthority("SUPER_ADMIN")
                         .anyRequest().authenticated())
                 .formLogin(form -> form

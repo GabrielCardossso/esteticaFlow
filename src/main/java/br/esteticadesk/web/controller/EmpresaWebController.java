@@ -27,11 +27,12 @@ public class EmpresaWebController {
     }
 
     @GetMapping
-    public String index(Model model) {
-        var empresas = configuracoes.listarEmpresas();
+    public String index(@RequestParam(defaultValue = "false") boolean mostrarTodas, Model model) {
+        var empresas = configuracoes.listarEmpresas(mostrarTodas);
         empresas.forEach(empresa -> assinaturas.recalcularSituacao(empresa, LocalDate.now()));
         model.addAttribute("empresas", empresas);
         model.addAttribute("planos", PlanoAssinatura.values());
+        model.addAttribute("mostrarTodas", mostrarTodas);
         model.addAttribute("menuAtivo", "empresas");
         return "company/index";
     }
@@ -41,7 +42,7 @@ public class EmpresaWebController {
             @RequestParam String cnpj, @RequestParam(required = false) String telefone,
             @RequestParam(required = false) String email, @RequestParam String adminNome,
             @RequestParam String adminEmail, @RequestParam String adminSenha,
-            @RequestParam PlanoAssinatura plano, @RequestParam BigDecimal valorMensalidade,
+            @RequestParam PlanoAssinatura plano, @RequestParam(required = false) BigDecimal valorMensalidade,
             @RequestParam LocalDate proximoVencimento, RedirectAttributes redirectAttributes) {
         return executar(() -> configuracoes.criarEmpresa(razaoSocial, nomeFantasia, cnpj, telefone, email,
                 adminNome, adminEmail, adminSenha, plano, valorMensalidade, proximoVencimento),
@@ -73,13 +74,17 @@ public class EmpresaWebController {
     }
 
     @PostMapping("/{id}/inativar")
-    public String inativar(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public String inativar(@PathVariable Long id, @RequestParam(defaultValue = "false") boolean mostrarTodas,
+            RedirectAttributes redirectAttributes) {
+        redirectAttributes.addAttribute("mostrarTodas", mostrarTodas);
         return executar(() -> assinaturas.inativar(id), "Empresa inativada e assinatura cancelada.",
                 redirectAttributes);
     }
 
     @PostMapping("/{id}/reativar")
-    public String reativar(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    public String reativar(@PathVariable Long id, @RequestParam(defaultValue = "false") boolean mostrarTodas,
+            RedirectAttributes redirectAttributes) {
+        redirectAttributes.addAttribute("mostrarTodas", mostrarTodas);
         return executar(() -> assinaturas.reativar(id), "Empresa reativada.", redirectAttributes);
     }
 

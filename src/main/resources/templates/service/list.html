@@ -9,15 +9,41 @@
         <div class="page-header">
             <h1 class="page-title">Serviços</h1>
             <div class="spacer"></div>
+            <form method="get" th:action="@{/servicos}" class="inline-form">
+                <input type="hidden" name="mostrarTodasCategorias" th:value="${mostrarTodasCategorias}"/>
+                <select name="mostrarTodos" onchange="this.form.submit()">
+                    <option value="false" th:selected="${!mostrarTodos}">Ativos</option>
+                    <option value="true" th:selected="${mostrarTodos}">Todos</option>
+                </select>
+            </form>
             <a th:href="@{/servicos/novo}" class="btn btn-primary">+ Novo serviço</a>
         </div>
 
         <div class="card category-manager">
             <div>
                 <h3>Categorias de serviços</h3>
+                <form method="get" th:action="@{/servicos}" class="inline-form">
+                    <input type="hidden" name="mostrarTodos" th:value="${mostrarTodos}"/>
+                    <select name="mostrarTodasCategorias" onchange="this.form.submit()">
+                        <option value="false" th:selected="${!mostrarTodasCategorias}">Ativas</option>
+                        <option value="true" th:selected="${mostrarTodasCategorias}">Todas</option>
+                    </select>
+                </form>
                 <div class="category-list" th:if="${!categorias.isEmpty()}">
-                    <span class="category-chip" th:each="categoria : ${categorias}"
-                          th:text="${categoria.nome}"></span>
+                    <div th:each="categoria : ${categorias}" class="actions">
+                        <span class="category-chip"
+                              th:text="${categoria.nome} + ' — ' + (${categoria.ativo} ? 'Ativa' : 'Inativa')"></span>
+                        <form th:if="${categoria.ativo}"
+                              th:action="@{/servicos/categorias/{id}/inativar(id=${categoria.id})}" method="post">
+                            <div th:replace="~{fragments/csrf :: csrf}"></div>
+                            <button class="btn btn-danger btn-sm" type="submit">Inativar</button>
+                        </form>
+                        <form th:unless="${categoria.ativo}"
+                              th:action="@{/servicos/categorias/{id}/reativar(id=${categoria.id})}" method="post">
+                            <div th:replace="~{fragments/csrf :: csrf}"></div>
+                            <button class="btn btn-primary btn-sm" type="submit">Reativar</button>
+                        </form>
+                    </div>
                 </div>
                 <p class="muted" th:if="${categorias.isEmpty()}">Nenhuma categoria cadastrada.</p>
             </div>
@@ -56,6 +82,11 @@
                         <div th:replace="~{fragments/csrf :: csrf}"></div>
                         <button type="submit" class="btn btn-danger btn-sm"
                                 onclick="return confirm('Inativar este serviço?')">Inativar</button>
+                    </form>
+                    <form th:unless="${servico.ativo}" th:action="@{/servicos/{id}/reativar(id=${servico.id})}"
+                          method="post">
+                        <div th:replace="~{fragments/csrf :: csrf}"></div>
+                        <button type="submit" class="btn btn-primary btn-sm">Reativar</button>
                     </form>
                 </td>
             </tr>

@@ -27,9 +27,12 @@ public class ServicoWebController {
     }
 
     @GetMapping
-    public String listar(Model model) {
-        model.addAttribute("servicos", servicoService.listar());
-        model.addAttribute("categorias", servicoService.categoriasAtivas());
+    public String listar(@RequestParam(defaultValue = "false") boolean mostrarTodos,
+            @RequestParam(defaultValue = "false") boolean mostrarTodasCategorias, Model model) {
+        model.addAttribute("servicos", servicoService.listar(mostrarTodos));
+        model.addAttribute("categorias", servicoService.listarCategorias(mostrarTodasCategorias));
+        model.addAttribute("mostrarTodos", mostrarTodos);
+        model.addAttribute("mostrarTodasCategorias", mostrarTodasCategorias);
         model.addAttribute("menuAtivo", "servicos");
         return "service/list";
     }
@@ -70,7 +73,14 @@ public class ServicoWebController {
     public String inativar(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         servicoService.inativar(id);
         redirectAttributes.addFlashAttribute("sucesso", "Serviço inativado com sucesso.");
-        return "redirect:/servicos";
+        return "redirect:/servicos?mostrarTodos=true";
+    }
+
+    @PostMapping("/{id}/reativar")
+    public String reativar(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        servicoService.reativar(id);
+        redirectAttributes.addFlashAttribute("sucesso", "Serviço reativado com sucesso.");
+        return "redirect:/servicos?mostrarTodos=true";
     }
 
     @PostMapping("/categorias")
@@ -86,9 +96,23 @@ public class ServicoWebController {
         return "redirect:/servicos";
     }
 
+    @PostMapping("/categorias/{id}/inativar")
+    public String inativarCategoria(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        servicoService.inativarCategoria(id);
+        redirectAttributes.addFlashAttribute("sucesso", "Categoria de serviço inativada com sucesso.");
+        return "redirect:/servicos?mostrarTodasCategorias=true";
+    }
+
+    @PostMapping("/categorias/{id}/reativar")
+    public String reativarCategoria(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        servicoService.reativarCategoria(id);
+        redirectAttributes.addFlashAttribute("sucesso", "Categoria de serviço reativada com sucesso.");
+        return "redirect:/servicos?mostrarTodasCategorias=true";
+    }
+
     private void prepararFormulario(Model model, ServicoDTO servico) {
         model.addAttribute("servico", servico);
-        model.addAttribute("categorias", servicoService.categoriasAtivas());
+        model.addAttribute("categorias", servicoService.categoriasParaFormulario(servico.categoriaServicoId()));
         model.addAttribute("menuAtivo", "servicos");
     }
 }

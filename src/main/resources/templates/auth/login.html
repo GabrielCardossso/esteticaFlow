@@ -13,9 +13,13 @@
             A empresa está inativa, bloqueada ou com a assinatura cancelada. Contate o suporte.
         </div>
 
-        <input type="email" name="email" placeholder="E-mail" required autofocus/>
-        <input type="password" name="senha" placeholder="Senha" required/>
-        <button type="submit" class="btn btn-primary" style="width:100%;padding:12px;">ENTRAR</button>
+        <label class="sr-only" for="login-email">E-mail</label>
+        <input id="login-email" type="email" name="email" placeholder="E-mail" autocomplete="username" required autofocus/>
+        <label class="sr-only" for="login-senha">Senha</label>
+        <input id="login-senha" type="password" name="senha" placeholder="Senha" autocomplete="current-password" required/>
+        <button type="submit" class="btn btn-primary login-submit">ENTRAR</button>
+        <a th:href="@{/#planos}" class="login-signup-link">Não tem uma conta? Faça a sua</a>
+        <a th:href="@{/}" class="login-home-link">← Voltar para a página inicial</a>
     </form>
 </div>
 </body>

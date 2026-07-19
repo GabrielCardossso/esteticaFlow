@@ -24,19 +24,17 @@ import org.junit.jupiter.api.Test;
 
 class RelatorioExporterTest {
 
-    private final RelatorioDTO relatorio = criarRelatorio();
-
     @Test
     void geraPdfValidoEmMemoria() throws Exception {
-        var bytes = new RelatorioPdfExporter().exportar(relatorio);
+        var bytes = new RelatorioPdfExporter().exportar(criarRelatorio(PlanoAssinatura.BASICO));
 
         assertTrue(bytes.length > 100);
         assertArrayEquals("%PDF".getBytes(StandardCharsets.US_ASCII), java.util.Arrays.copyOf(bytes, 4));
     }
 
     @Test
-    void geraWorkbookLegivelComAbasDoPlanoExclusive() throws Exception {
-        var bytes = new RelatorioExcelExporter().exportar(relatorio);
+    void geraWorkbookLegivelComAbasDoPlanoCompleto() throws Exception {
+        var bytes = new RelatorioExcelExporter().exportar(criarRelatorio(PlanoAssinatura.COMPLETO));
 
         try (var workbook = new XSSFWorkbook(new ByteArrayInputStream(bytes))) {
             assertEquals(6, workbook.getNumberOfSheets());
@@ -52,12 +50,12 @@ class RelatorioExporterTest {
         }
     }
 
-    private RelatorioDTO criarRelatorio() {
+    private RelatorioDTO criarRelatorio(PlanoAssinatura plano) {
         var inicio = LocalDate.of(2026, 7, 1);
         var fim = LocalDate.of(2026, 7, 31);
         return new RelatorioDTO(
                 "Empresa",
-                PlanoAssinatura.EXCLUSIVE,
+                plano,
                 FiltroPeriodoRelatorio.MES,
                 new PeriodoRelatorio(inicio, fim),
                 new BigDecimal("100.00"),

@@ -127,11 +127,39 @@ class EstoqueServiceImplTest {
         verify(movimentacoes, never()).save(org.mockito.ArgumentMatchers.any());
     }
 
+    @Test
+    void rejeitaMovimentacaoDeProdutoInativo() {
+        when(sessao.empresaObrigatoria()).thenReturn(7L);
+        var estoque = estoque("Produto", "10.000");
+        estoque.getProduto().setAtivo(false);
+        when(estoques.findByEmpresaIdAndProdutoIdForUpdate(7L, 3L)).thenReturn(Optional.of(estoque));
+
+        var exception = assertThrows(IllegalStateException.class,
+                () -> service.registrarEntrada(3L, BigDecimal.ONE));
+
+        assertEquals("Não é permitido movimentar um produto inativo.", exception.getMessage());
+        verify(movimentacoes, never()).save(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void reativaProdutoApenasNaEmpresaDaSessao() {
+        when(sessao.empresaObrigatoria()).thenReturn(7L);
+        var produto = new Produto();
+        produto.setAtivo(false);
+        when(produtos.findByIdAndEmpresaId(3L, 7L)).thenReturn(Optional.of(produto));
+
+        service.reativarProduto(3L);
+
+        assertEquals(true, produto.getAtivo());
+        verify(produtos).findByIdAndEmpresaId(3L, 7L);
+    }
+
     private Estoque estoque(String nomeProduto, String quantidade) {
         var produto = new Produto();
         produto.setNome(nomeProduto);
         produto.setPrecoCusto(new BigDecimal("30.00"));
         produto.setUnidadeMedida(UnidadeMedida.L);
+        produto.setAtivo(true);
         var estoque = new Estoque();
         estoque.setProduto(produto);
         estoque.setQuantidadeAtual(new BigDecimal(quantidade));

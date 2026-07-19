@@ -18,6 +18,6 @@ public class WebConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(empresaAcessoInterceptor)
                 .addPathPatterns("/**")
-                .excludePathPatterns("/login", "/logout", "/error", "/css/**", "/js/**");
+                .excludePathPatterns("/", "/login", "/logout", "/error", "/css/**", "/js/**");
     }
 }

@@ -8,4 +8,8 @@ public interface FormaPagamentoRepository extends JpaRepository<FormaPagamento, 
     Optional<FormaPagamento> findByIdAndEmpresaIdAndAtivoTrue(Long id, Long empresaId);
 
     List<FormaPagamento> findByEmpresaIdAndAtivoTrueOrderByNome(Long empresaId);
+
+    List<FormaPagamento> findByEmpresaIdOrderByAtivoDescNomeAsc(Long empresaId);
+
+    Optional<FormaPagamento> findByIdAndEmpresaId(Long id, Long empresaId);
 }

@@ -1,6 +1,7 @@
 package br.esteticadesk.web.controller;
 
 import br.esteticadesk.auth.SessaoUsuario;
+import br.esteticadesk.company.entity.Empresa;
 import br.esteticadesk.enums.PapelUsuario;
 import br.esteticadesk.enums.RecursoPlano;
 import br.esteticadesk.company.service.AssinaturaService;
@@ -10,7 +11,7 @@ import java.util.List;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -32,15 +33,21 @@ public class ConfiguracaoWebController {
     }
 
     @GetMapping
-    public String index(Model model) {
+    public String index(@RequestParam(defaultValue = "false") boolean mostrarTodosUsuarios,
+            @RequestParam(defaultValue = "false") boolean mostrarTodasFormas,
+            @RequestParam(defaultValue = "false") boolean mostrarTodasCategorias, Model model) {
         model.addAttribute("empresa", configuracaoService.empresaAtual());
-        model.addAttribute("usuarios", sessao.isAdministradorEmpresa() ? configuracaoService.usuarios() : List.of());
+        model.addAttribute("usuarios", sessao.isAdministradorEmpresa()
+                ? configuracaoService.usuarios(mostrarTodosUsuarios) : List.of());
         model.addAttribute("administrador", sessao.isAdministradorEmpresa());
         model.addAttribute("superAdmin", sessao.isSuperAdmin());
         model.addAttribute("formasPagamento", assinaturas.permite(RecursoPlano.FINANCEIRO)
-                ? configuracaoService.formasPagamento() : List.of());
+                ? configuracaoService.formasPagamento(mostrarTodasFormas) : List.of());
         model.addAttribute("categorias", assinaturas.permite(RecursoPlano.ESTOQUE)
-                ? configuracaoService.categorias() : List.of());
+                ? configuracaoService.categorias(mostrarTodasCategorias) : List.of());
+        model.addAttribute("mostrarTodosUsuarios", mostrarTodosUsuarios);
+        model.addAttribute("mostrarTodasFormas", mostrarTodasFormas);
+        model.addAttribute("mostrarTodasCategorias", mostrarTodasCategorias);
         model.addAttribute("temaCor", configuracaoService.temaCor());
         model.addAttribute("papeis", Arrays.stream(PapelUsuario.values())
                 .filter(p -> p != PapelUsuario.SUPER_ADMIN)
@@ -50,9 +57,17 @@ public class ConfiguracaoWebController {
     }
 
     @PostMapping("/empresa")
-    public String salvarEmpresa(@ModelAttribute("empresa") br.esteticadesk.company.entity.Empresa empresa,
+    public String salvarEmpresa(@RequestParam String razaoSocial, @RequestParam String nomeFantasia,
+            @RequestParam String cnpj, @RequestParam(required = false) String telefone,
+            @RequestParam(required = false) String email,
             RedirectAttributes redirectAttributes) {
         try {
+            var empresa = new Empresa();
+            empresa.setRazaoSocial(razaoSocial);
+            empresa.setNomeFantasia(nomeFantasia);
+            empresa.setCnpj(cnpj);
+            empresa.setTelefone(telefone);
+            empresa.setEmail(email);
             configuracaoService.salvarEmpresa(empresa);
             redirectAttributes.addFlashAttribute("sucesso", "Dados da empresa atualizados.");
         } catch (RuntimeException exception) {
@@ -87,6 +102,18 @@ public class ConfiguracaoWebController {
         return "redirect:/configuracoes";
     }
 
+    @PostMapping("/usuarios/{id}/inativar")
+    public String inativarUsuario(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        return executar(() -> configuracaoService.inativarUsuario(id), "Usuário inativado.",
+                "redirect:/configuracoes?mostrarTodosUsuarios=true", redirectAttributes);
+    }
+
+    @PostMapping("/usuarios/{id}/reativar")
+    public String reativarUsuario(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        return executar(() -> configuracaoService.reativarUsuario(id), "Usuário reativado.",
+                "redirect:/configuracoes?mostrarTodosUsuarios=true", redirectAttributes);
+    }
+
     @PostMapping("/formas-pagamento")
     public String criarFormaPagamento(@RequestParam String nome, RedirectAttributes redirectAttributes) {
         try {
@@ -98,6 +125,18 @@ public class ConfiguracaoWebController {
         return "redirect:/configuracoes";
     }
 
+    @PostMapping("/formas-pagamento/{id}/inativar")
+    public String inativarFormaPagamento(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        return executar(() -> configuracaoService.inativarFormaPagamento(id), "Forma de pagamento inativada.",
+                "redirect:/configuracoes?mostrarTodasFormas=true", redirectAttributes);
+    }
+
+    @PostMapping("/formas-pagamento/{id}/reativar")
+    public String reativarFormaPagamento(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        return executar(() -> configuracaoService.reativarFormaPagamento(id), "Forma de pagamento reativada.",
+                "redirect:/configuracoes?mostrarTodasFormas=true", redirectAttributes);
+    }
+
     @PostMapping("/categorias")
     public String criarCategoria(@RequestParam String nome, RedirectAttributes redirectAttributes) {
         try {
@@ -107,5 +146,28 @@ public class ConfiguracaoWebController {
             redirectAttributes.addFlashAttribute("erro", exception.getMessage());
         }
         return "redirect:/configuracoes";
+    }
+
+    @PostMapping("/categorias/{id}/inativar")
+    public String inativarCategoria(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        return executar(() -> configuracaoService.inativarCategoria(id), "Categoria de produto inativada.",
+                "redirect:/configuracoes?mostrarTodasCategorias=true", redirectAttributes);
+    }
+
+    @PostMapping("/categorias/{id}/reativar")
+    public String reativarCategoria(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        return executar(() -> configuracaoService.reativarCategoria(id), "Categoria de produto reativada.",
+                "redirect:/configuracoes?mostrarTodasCategorias=true", redirectAttributes);
+    }
+
+    private String executar(Runnable acao, String sucesso, String redirect,
+            RedirectAttributes redirectAttributes) {
+        try {
+            acao.run();
+            redirectAttributes.addFlashAttribute("sucesso", sucesso);
+        } catch (RuntimeException exception) {
+            redirectAttributes.addFlashAttribute("erro", exception.getMessage());
+        }
+        return redirect;
     }
 }

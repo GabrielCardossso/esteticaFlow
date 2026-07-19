@@ -7,6 +7,7 @@ import br.esteticadesk.appointment.repository.CategoriaServicoRepository;
 import br.esteticadesk.appointment.repository.ServicoRepository;
 import br.esteticadesk.auth.SessaoUsuario;
 import br.esteticadesk.exception.RecursoNaoEncontradoException;
+import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,13 +26,27 @@ public class ServicoService {
     }
 
     @Transactional(readOnly = true)
-    public List<Servico> listar() {
-        return servicos.findByEmpresaIdOrderByAtivoDescNomeAsc(sessao.empresaObrigatoria());
+    public List<Servico> listar(boolean mostrarTodos) {
+        var empresaId = sessao.empresaObrigatoria();
+        return mostrarTodos ? servicos.findByEmpresaIdOrderByAtivoDescNomeAsc(empresaId)
+                : servicos.findByEmpresaIdAndAtivoTrueOrderByNome(empresaId);
     }
 
     @Transactional(readOnly = true)
-    public List<CategoriaServico> categoriasAtivas() {
-        return categorias.findByEmpresaIdAndAtivoTrueOrderByNome(sessao.empresaObrigatoria());
+    public List<CategoriaServico> categoriasParaFormulario(Long categoriaAtualId) {
+        var empresaId = sessao.empresaObrigatoria();
+        var disponiveis = new ArrayList<>(categorias.findByEmpresaIdAndAtivoTrueOrderByNome(empresaId));
+        if (categoriaAtualId != null && disponiveis.stream().noneMatch(c -> c.getId().equals(categoriaAtualId))) {
+            categorias.findByIdAndEmpresaId(categoriaAtualId, empresaId).ifPresent(disponiveis::add);
+        }
+        return disponiveis;
+    }
+
+    @Transactional(readOnly = true)
+    public List<CategoriaServico> listarCategorias(boolean mostrarTodas) {
+        var empresaId = sessao.empresaObrigatoria();
+        return mostrarTodas ? categorias.findByEmpresaIdOrderByAtivoDescNomeAsc(empresaId)
+                : categorias.findByEmpresaIdAndAtivoTrueOrderByNome(empresaId);
     }
 
     public CategoriaServico criarCategoria(String nome) {
@@ -64,7 +79,12 @@ public class ServicoService {
         var empresaId = sessao.empresaObrigatoria();
         var servico = dados.id() == null ? new Servico() : buscar(dados.id());
         var categoria = categorias.findByIdAndEmpresaIdAndAtivoTrue(dados.categoriaServicoId(), empresaId)
-                .orElseThrow(() -> new RecursoNaoEncontradoException("Categoria de serviço não encontrada."));
+                .orElseGet(() -> {
+                    if (dados.id() != null && servico.getCategoriaServico().getId().equals(dados.categoriaServicoId())) {
+                        return servico.getCategoriaServico();
+                    }
+                    throw new RecursoNaoEncontradoException("Categoria de serviço não encontrada ou inativa.");
+                });
         servico.setEmpresaId(empresaId);
         servico.setNome(dados.nome().trim());
         servico.setDescricao(normalizarOpcional(dados.descricao()));
@@ -81,9 +101,26 @@ public class ServicoService {
         buscar(id).setAtivo(false);
     }
 
+    public void reativar(Long id) {
+        buscar(id).setAtivo(true);
+    }
+
+    public void inativarCategoria(Long id) {
+        buscarCategoria(id).setAtivo(false);
+    }
+
+    public void reativarCategoria(Long id) {
+        buscarCategoria(id).setAtivo(true);
+    }
+
     private Servico buscar(Long id) {
         return servicos.findByIdAndEmpresaId(id, sessao.empresaObrigatoria())
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Serviço não encontrado."));
+    }
+
+    private CategoriaServico buscarCategoria(Long id) {
+        return categorias.findByIdAndEmpresaId(id, sessao.empresaObrigatoria())
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Categoria de serviço não encontrada."));
     }
 
     private String normalizarOpcional(String valor) {

@@ -23,25 +23,29 @@
                 <div class="form-grid">
                     <label for="nome">Nome *</label>
                     <div>
-                        <input id="nome" type="text" th:field="*{nome}" placeholder="Nome completo" required/>
+                        <input id="nome" type="text" th:field="*{nome}" placeholder="Nome completo" required
+                               maxlength="150" autocomplete="name"/>
                         <div class="error-text" th:if="${#fields.hasErrors('nome')}" th:errors="*{nome}"></div>
                     </div>
 
                     <label for="cpfCnpj">CPF/CNPJ</label>
                     <div>
-                        <input id="cpfCnpj" type="text" th:field="*{cpfCnpj}" placeholder="000.000.000-00"/>
+                        <input id="cpfCnpj" type="text" th:field="*{cpfCnpj}" placeholder="000.000.000-00"
+                               data-mask="cpf-cnpj" maxlength="18" inputmode="numeric" autocomplete="off"/>
                         <div class="error-text" th:if="${#fields.hasErrors('cpfCnpj')}" th:errors="*{cpfCnpj}"></div>
                     </div>
 
                     <label for="telefone">Telefone *</label>
                     <div>
-                        <input id="telefone" type="text" th:field="*{telefone}" placeholder="(00) 00000-0000" required/>
+                        <input id="telefone" type="tel" th:field="*{telefone}" placeholder="(00) 00000-0000" required
+                               data-mask="telefone" maxlength="15" inputmode="tel" autocomplete="tel"/>
                         <div class="error-text" th:if="${#fields.hasErrors('telefone')}" th:errors="*{telefone}"></div>
                     </div>
 
                     <label for="email">E-mail</label>
                     <div>
-                        <input id="email" type="email" th:field="*{email}" placeholder="email@exemplo.com"/>
+                        <input id="email" type="email" th:field="*{email}" placeholder="email@exemplo.com"
+                               maxlength="150" autocomplete="email"/>
                         <div class="error-text" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></div>
                     </div>
                 </div>
@@ -50,43 +54,48 @@
                 <div class="form-grid">
                     <label for="cep">CEP</label>
                     <div>
-                        <input id="cep" type="text" th:field="*{cep}" placeholder="00000-000"/>
+                        <input id="cep" type="text" th:field="*{cep}" placeholder="00000-000"
+                               data-mask="cep" maxlength="9" inputmode="numeric" autocomplete="postal-code"/>
                         <div class="error-text" th:if="${#fields.hasErrors('cep')}" th:errors="*{cep}"></div>
                     </div>
 
                     <label for="logradouro">Logradouro</label>
                     <div>
-                        <input id="logradouro" type="text" th:field="*{logradouro}" placeholder="Rua, avenida..."/>
+                        <input id="logradouro" type="text" th:field="*{logradouro}" placeholder="Rua, avenida..."
+                               maxlength="150" autocomplete="address-line1"/>
                         <div class="error-text" th:if="${#fields.hasErrors('logradouro')}" th:errors="*{logradouro}"></div>
                     </div>
 
                     <label for="numero">Número</label>
                     <div>
-                        <input id="numero" type="text" th:field="*{numero}"/>
+                        <input id="numero" type="text" th:field="*{numero}" maxlength="20" autocomplete="address-line2"/>
                         <div class="error-text" th:if="${#fields.hasErrors('numero')}" th:errors="*{numero}"></div>
                     </div>
 
                     <label for="complemento">Complemento</label>
                     <div>
-                        <input id="complemento" type="text" th:field="*{complemento}"/>
+                        <input id="complemento" type="text" th:field="*{complemento}" maxlength="100"
+                               autocomplete="address-line3"/>
                         <div class="error-text" th:if="${#fields.hasErrors('complemento')}" th:errors="*{complemento}"></div>
                     </div>
 
                     <label for="bairro">Bairro</label>
                     <div>
-                        <input id="bairro" type="text" th:field="*{bairro}"/>
+                        <input id="bairro" type="text" th:field="*{bairro}" maxlength="100"/>
                         <div class="error-text" th:if="${#fields.hasErrors('bairro')}" th:errors="*{bairro}"></div>
                     </div>
 
                     <label for="cidade">Cidade</label>
                     <div>
-                        <input id="cidade" type="text" th:field="*{cidade}"/>
+                        <input id="cidade" type="text" th:field="*{cidade}" maxlength="100"
+                               autocomplete="address-level2"/>
                         <div class="error-text" th:if="${#fields.hasErrors('cidade')}" th:errors="*{cidade}"></div>
                     </div>
 
                     <label for="uf">UF</label>
                     <div>
-                        <input id="uf" type="text" th:field="*{uf}" maxlength="2" placeholder="SP"/>
+                        <input id="uf" type="text" th:field="*{uf}" data-mask="uf" maxlength="2"
+                               placeholder="SP" autocomplete="address-level1"/>
                         <div class="error-text" th:if="${#fields.hasErrors('uf')}" th:errors="*{uf}"></div>
                     </div>
                 </div>
@@ -101,6 +110,10 @@
         <div th:if="${cliente.id() != null}" style="max-width:960px;margin-top:24px;">
             <div class="page-header">
                 <h2 style="margin:0;">Veículos</h2>
+                <div class="spacer"></div>
+                <a th:href="@{/clientes/{id}/editar(id=${cliente.id()},mostrarTodosVeiculos=${!mostrarTodosVeiculos})}"
+                   class="btn btn-secondary btn-sm"
+                   th:text="${mostrarTodosVeiculos} ? 'Mostrar ativos' : 'Mostrar todos'"></a>
             </div>
 
             <div class="card" th:if="${cliente.ativo()}">
@@ -112,26 +125,26 @@
                     <div class="form-grid">
                         <label for="placa">Placa *</label>
                         <div>
-                            <input id="placa" type="text" th:field="*{placa}" maxlength="8"
-                                   placeholder="ABC1D23" required/>
+                            <input id="placa" type="text" th:field="*{placa}" data-mask="placa" maxlength="8"
+                                   placeholder="ABC1D23" autocomplete="off" required/>
                             <div class="error-text" th:if="${#fields.hasErrors('placa')}" th:errors="*{placa}"></div>
                         </div>
 
                         <label for="modelo">Modelo *</label>
                         <div>
-                            <input id="modelo" type="text" th:field="*{modelo}" required/>
+                            <input id="modelo" type="text" th:field="*{modelo}" maxlength="100" required/>
                             <div class="error-text" th:if="${#fields.hasErrors('modelo')}" th:errors="*{modelo}"></div>
                         </div>
 
                         <label for="marca">Marca *</label>
                         <div>
-                            <input id="marca" type="text" th:field="*{marca}" required/>
+                            <input id="marca" type="text" th:field="*{marca}" maxlength="60" required/>
                             <div class="error-text" th:if="${#fields.hasErrors('marca')}" th:errors="*{marca}"></div>
                         </div>
 
                         <label for="cor">Cor</label>
                         <div>
-                            <input id="cor" type="text" th:field="*{cor}"/>
+                            <input id="cor" type="text" th:field="*{cor}" maxlength="30"/>
                             <div class="error-text" th:if="${#fields.hasErrors('cor')}" th:errors="*{cor}"></div>
                         </div>
 
@@ -181,6 +194,12 @@
                             <div th:replace="~{fragments/csrf :: csrf}"></div>
                             <button type="submit" class="btn btn-danger btn-sm"
                                     onclick="return confirm('Inativar este veículo?')">Inativar</button>
+                        </form>
+                        <form th:if="${!item.ativo and cliente.ativo()}"
+                              th:action="@{/clientes/{clienteId}/veiculos/{veiculoId}/reativar(clienteId=${cliente.id()},veiculoId=${item.id})}"
+                              method="post" style="display:inline;">
+                            <div th:replace="~{fragments/csrf :: csrf}"></div>
+                            <button type="submit" class="btn btn-primary btn-sm">Reativar</button>
                         </form>
                     </td>
                 </tr>

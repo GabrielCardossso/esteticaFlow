@@ -8,7 +8,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface CategoriaProdutoRepository extends JpaRepository<CategoriaProduto, Long> {
     List<CategoriaProduto> findByEmpresaIdAndAtivoTrueOrderByNome(Long empresaId);
 
+    List<CategoriaProduto> findByEmpresaIdOrderByAtivoDescNomeAsc(Long empresaId);
+
     boolean existsByEmpresaIdAndNomeIgnoreCase(Long empresaId, String nome);
 
     Optional<CategoriaProduto> findByIdAndEmpresaIdAndAtivoTrue(Long id, Long empresaId);
+
+    Optional<CategoriaProduto> findByIdAndEmpresaId(Long id, Long empresaId);
 }

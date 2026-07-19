@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+    <meta name="description"
+          content="EsteticaFlow: gestão de clientes, veículos, agenda, serviços, estoque, financeiro e relatórios para estética automotiva."/>
+    <meta name="robots" content="index, follow"/>
+    <meta name="theme-color" content="#0f766e"/>
+    <title>EsteticaFlow — Gestão para estética automotiva</title>
+    <link rel="stylesheet" th:href="@{/css/landing.css}"/>
+</head>
+<body>
+<svg hidden aria-hidden="true" focusable="false">
+    <symbol id="icon-whatsapp" viewBox="0 0 24 24">
+        <path fill="currentColor"
+              d="M12.04 2c-5.46 0-9.91 4.44-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.86 9.86 0 0 0 12.04 2zm0 18.15h-.01a8.2 8.2 0 0 1-4.18-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.2 8.2 0 0 1-1.26-4.38c0-4.54 3.7-8.23 8.24-8.23 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.83c0 4.54-3.7 8.22-8.23 8.22zm4.52-6.16c-.25-.12-1.47-.72-1.7-.8-.23-.09-.39-.12-.56.12-.16.25-.64.8-.78.96-.14.17-.29.19-.54.06-.25-.12-1.05-.39-2-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.02-.38.11-.51.11-.11.25-.29.37-.43.12-.14.16-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.35-.76-1.85-.2-.48-.4-.42-.56-.42h-.48c-.17 0-.43.06-.66.31-.23.25-.87.85-.87 2.07 0 1.22.89 2.4 1.01 2.56.12.17 1.75 2.67 4.23 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.48-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.14-1.18-.06-.1-.23-.17-.48-.29z"/>
+    </symbol>
+</svg>
+<a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
+<header class="site-header">
+    <div class="container header-content">
+        <a class="brand" href="#topo" aria-label="EsteticaFlow, início">Estetica<span>Flow</span></a>
+        <button type="button" class="nav-toggle" aria-expanded="false" aria-controls="site-nav"
+                aria-label="Abrir menu">
+            <span></span><span></span><span></span>
+        </button>
+        <nav id="site-nav" aria-label="Navegação principal">
+            <a href="#solucao">Solução</a>
+            <a href="#como-funciona">Como funciona</a>
+            <a href="#planos">Planos</a>
+            <a href="#faq">FAQ</a>
+            <a class="nav-whatsapp"
+               href="https://wa.me/5548991746960?text=Ol%C3%A1!%20Quero%20conhecer%20o%20EsteticaFlow."
+               target="_blank" rel="noopener noreferrer">WhatsApp</a>
+        </nav>
+        <a class="button button-small header-login" th:href="@{/login}">Entrar</a>
+    </div>
+</header>
+
+<main id="conteudo">
+    <section class="hero" id="topo">
+        <div class="container hero-grid">
+            <div>
+                <p class="eyebrow">Gestão clara para estética automotiva</p>
+                <h1>Organize a operação e acompanhe seu negócio em um só lugar.</h1>
+                <p class="hero-copy">Clientes, veículos, agenda, serviços e histórico conectados. Quando precisar,
+                    avance para estoque, financeiro e relatórios completos sem trocar de sistema.</p>
+                <div class="hero-actions">
+                    <a class="button"
+                       href="https://wa.me/5548991746960?text=Ol%C3%A1!%20Quero%20contratar%20o%20EsteticaFlow."
+                       target="_blank" rel="noopener noreferrer">
+                        Quero um plano
+                        <svg class="button-icon" width="20" height="20" aria-hidden="true" focusable="false"><use href="#icon-whatsapp"/></svg>
+                    </a>
+                    <a class="text-link" href="#planos">Ver planos e preços <span aria-hidden="true">→</span></a>
+                </div>
+                <ul class="hero-points" aria-label="Destaques">
+                    <li>✓ Acesso no celular e no computador</li>
+                    <li>✓ Dados separados por empresa</li>
+                    <li>✓ Atendimento direto no WhatsApp</li>
+                </ul>
+            </div>
+            <div class="browser hero-browser" aria-label="Demonstração fictícia do dashboard">
+                <div class="browser-bar"><i></i><i></i><i></i><span>Visão geral</span></div>
+                <div class="mock-shell">
+                    <aside><b>EF</b><span>▦</span><span>▤</span><span>◇</span><span>▥</span></aside>
+                    <div class="mock-content">
+                        <div class="mock-title"><div><small>Bom dia</small><strong>Visão geral</strong></div><em>Hoje</em></div>
+                        <div class="kpi-row">
+                            <div><small>Agendamentos</small><strong>8</strong><span>para hoje</span></div>
+                            <div><small>Concluídos</small><strong>5</strong><span>serviços</span></div>
+                            <div><small>Próximo horário</small><strong>14:30</strong><span>Higienização</span></div>
+                        </div>
+                        <div class="mock-chart"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section owner-benefits" id="por-que">
+        <div class="container section-heading">
+            <p class="eyebrow">Para quem cuida do negócio</p>
+            <h2>Feito para quem precisa controlar a operação sem complicar o dia a dia.</h2>
+        </div>
+        <div class="container owner-grid">
+            <article>
+                <span aria-hidden="true">⏱</span>
+                <h3>Menos retrabalho</h3>
+                <p>Cliente, veículo e agenda no mesmo fluxo. Você evita procurar informação em planilhas e mensagens.</p>
+            </article>
+            <article>
+                <span aria-hidden="true">▣</span>
+                <h3>Acesso onde estiver</h3>
+                <p>Consulte a agenda, confirme atendimento e acompanhe o status pelo celular, com layout pensado para toque.</p>
+            </article>
+            <article>
+                <span aria-hidden="true">◎</span>
+                <h3>Controle por empresa</h3>
+                <p>Cada negócio tem seus dados, usuários e permissões. Você define quem acessa o que.</p>
+            </article>
+            <article>
+                <span aria-hidden="true">◇</span>
+                <h3>Contratação simples</h3>
+                <p>Escolheu o plano? Fale no WhatsApp, tire dúvidas e comece sem burocracia desnecessária.</p>
+            </article>
+        </div>
+    </section>
+
+    <section class="section problem">
+        <div class="container narrow">
+            <p class="eyebrow">O problema</p>
+            <h2>Informações espalhadas tornam a rotina mais difícil.</h2>
+            <p>Agenda em um lugar, histórico em outro e controles manuais aumentam o retrabalho. Sem uma visão
+                integrada, localizar dados de clientes, veículos e serviços consome tempo que deveria estar na operação.</p>
+            <div class="problem-grid">
+                <article><span aria-hidden="true">⌕</span><h3>Busca demorada</h3><p>Cadastros e históricos difíceis de localizar.</p></article>
+                <article><span aria-hidden="true">□</span><h3>Rotina fragmentada</h3><p>Agenda e execução sem uma sequência clara.</p></article>
+                <article><span aria-hidden="true">↗</span><h3>Pouca visibilidade</h3><p>Decisões sem indicadores organizados.</p></article>
+            </div>
+        </div>
+    </section>
+
+    <section class="section solution" id="solucao">
+        <div class="container section-heading">
+            <p class="eyebrow">A solução</p>
+            <h2>Da chegada do cliente ao acompanhamento dos resultados.</h2>
+            <p>O EsteticaFlow reúne o fluxo essencial da estética automotiva com uma interface direta e responsiva.</p>
+        </div>
+        <div class="container benefit-grid">
+            <article><span>◎</span><h3>Clientes e veículos</h3><p>Cadastros relacionados e histórico de atendimentos acessível.</p></article>
+            <article><span>▣</span><h3>Agenda organizada</h3><p>Horários, serviços e status acompanhados no mesmo fluxo.</p></article>
+            <article><span>◫</span><h3>Serviços padronizados</h3><p>Catálogo para tornar o agendamento mais rápido e consistente.</p></article>
+            <article><span>▤</span><h3>Relatórios úteis</h3><p>KPIs e exportação conforme os recursos do plano contratado.</p></article>
+            <article><span>◇</span><h3>Controle de estoque</h3><p>Produtos, movimentações e alertas disponíveis no plano Completo.</p></article>
+            <article><span>◉</span><h3>Financeiro integrado</h3><p>Receitas, despesas e métricas no plano Completo.</p></article>
+        </div>
+    </section>
+
+    <section class="section steps" id="como-funciona">
+        <div class="container section-heading">
+            <p class="eyebrow">Fluxo de uso</p>
+            <h2>Uma rotina simples, do cadastro ao relatório.</h2>
+        </div>
+        <ol class="container step-list">
+            <li><span>1</span><div><h3>Cadastre</h3><p>Registre o cliente, o veículo e os serviços oferecidos.</p></div></li>
+            <li><span>2</span><div><h3>Agende</h3><p>Escolha serviços, data e horário em um único atendimento.</p></div></li>
+            <li><span>3</span><div><h3>Acompanhe</h3><p>Atualize o status e mantenha o histórico organizado.</p></div></li>
+            <li><span>4</span><div><h3>Analise</h3><p>Consulte indicadores e gere relatórios compatíveis com seu plano.</p></div></li>
+        </ol>
+    </section>
+
+    <section class="section showcase" id="demonstracao">
+        <div class="container section-heading">
+            <p class="eyebrow">Prévia interativa</p>
+            <h2>Experimente como é usar o EsteticaFlow.</h2>
+            <p>Toque nos botões abaixo e simule a rotina do seu negócio. Todos os dados são fictícios.</p>
+        </div>
+        <div class="container demo-wrap">
+            <div class="demo-tabs" role="tablist" aria-label="Prévia do sistema">
+                <button type="button" role="tab" id="tab-agenda" aria-controls="panel-agenda" aria-selected="true">Agenda</button>
+                <button type="button" role="tab" id="tab-estoque" aria-controls="panel-estoque" aria-selected="false">Estoque</button>
+                <button type="button" role="tab" id="tab-relatorio" aria-controls="panel-relatorio" aria-selected="false">Relatórios</button>
+            </div>
+            <div class="browser demo-browser">
+                <div class="browser-bar"><i></i><i></i><i></i><span id="demo-title">Agenda</span></div>
+
+                <div class="demo-panel agenda-demo" id="panel-agenda" role="tabpanel" aria-labelledby="tab-agenda">
+                    <div class="agenda-head"><b>Agenda de hoje</b><span>Toque em “Avançar” para mudar o status</span></div>
+                    <div class="agenda-item" data-status="0">
+                        <time>09:00</time>
+                        <p><b>Lavagem técnica</b><small>Veículo prata</small></p>
+                        <span class="status-badge">Agendado</span>
+                        <button type="button" class="demo-action agenda-advance">Avançar</button>
+                    </div>
+                    <div class="agenda-item" data-status="1">
+                        <time>11:30</time>
+                        <p><b>Polimento</b><small>Veículo preto</small></p>
+                        <span class="status-badge">Em andamento</span>
+                        <button type="button" class="demo-action agenda-advance">Avançar</button>
+                    </div>
+                    <div class="agenda-item" data-status="0">
+                        <time>14:30</time>
+                        <p><b>Higienização</b><small>Veículo branco</small></p>
+                        <span class="status-badge">Agendado</span>
+                        <button type="button" class="demo-action agenda-advance">Avançar</button>
+                    </div>
+                    <p class="demo-feedback" id="agenda-feedback" aria-live="polite">No sistema real, cada mudança fica registrada no histórico do cliente.</p>
+                </div>
+
+                <div class="demo-panel stock-demo" id="panel-estoque" role="tabpanel" aria-labelledby="tab-estoque" hidden>
+                    <div class="stock-head"><b>Produtos</b><span>Simule entradas e saídas</span></div>
+                    <div class="stock-item" data-qty="12" data-min="6">
+                        <p>Shampoo neutro<small><span class="stock-qty">12</span> unidades · mínimo 6</small></p>
+                        <meter min="0" max="20" value="12">12 de 20</meter>
+                        <div class="stock-actions">
+                            <button type="button" class="demo-action" data-delta="-1">− Saída</button>
+                            <button type="button" class="demo-action" data-delta="2">+ Entrada</button>
+                        </div>
+                    </div>
+                    <div class="stock-item" data-qty="5" data-min="6">
+                        <p>Cera premium<small><span class="stock-qty">5</span> unidades · mínimo 6</small></p>
+                        <meter min="0" max="20" value="5">5 de 20</meter>
+                        <div class="stock-actions">
+                            <button type="button" class="demo-action" data-delta="-1">− Saída</button>
+                            <button type="button" class="demo-action" data-delta="2">+ Entrada</button>
+                        </div>
+                    </div>
+                    <p class="demo-feedback" id="stock-feedback" aria-live="polite">Abaixo do mínimo, o produto entra nos alertas do dashboard.</p>
+                </div>
+
+                <div class="demo-panel report-demo" id="panel-relatorio" role="tabpanel" aria-labelledby="tab-relatorio" hidden>
+                    <div class="stock-head">
+                        <b>Faturamento</b>
+                        <span class="report-toggle" role="group" aria-label="Período">
+                            <button type="button" class="demo-action is-active" data-period="semana">Semana</button>
+                            <button type="button" class="demo-action" data-period="mes">Mês</button>
+                        </span>
+                    </div>
+                    <div class="mock-chart report-chart"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+                    <div class="mini-report">
+                        <span>Receita no período</span>
+                        <b id="report-total">R$ 2.140,00</b>
+                        <small>Exemplo fictício · no plano Completo, exportável em PDF e Excel</small>
+                    </div>
+                </div>
+            </div>
+            <p class="demo-note">Prévia ilustrativa. O sistema completo inclui clientes, veículos, serviços, financeiro e relatórios conforme o plano.</p>
+        </div>
+    </section>
+
+    <section class="section credibility">
+        <div class="container credibility-box">
+            <div>
+                <p class="eyebrow">Feito para a operação real</p>
+                <h2>Menos troca de contexto. Mais continuidade no atendimento.</h2>
+            </div>
+            <blockquote>“A proposta do EsteticaFlow é manter o trabalho diário organizado, com informação clara para
+                quem atende, executa e administra.”</blockquote>
+        </div>
+    </section>
+
+    <section class="section pricing" id="planos">
+        <div class="container section-heading">
+            <p class="eyebrow">Planos</p>
+            <h2>Dois planos, sem combinações confusas.</h2>
+            <p>Escolha o plano e fale conosco no WhatsApp para contratar. Atendimento direto: (48) 99174-6960.</p>
+        </div>
+        <div class="container pricing-grid">
+            <article class="price-card">
+                <p class="plan-name">Plano Básico</p>
+                <p class="price"><span>R$</span>59,90<small>/mês</small></p>
+                <p class="ideal">Ideal para autônomos e pequenas operações.</p>
+                <h3>Inclui</h3>
+                <ul>
+                    <li>Clientes e veículos</li>
+                    <li>Agenda e histórico</li>
+                    <li>Dashboard básico</li>
+                    <li>Pesquisa</li>
+                    <li>PDF simples</li>
+                    <li>Login seguro</li>
+                    <li>Backup automático</li>
+                </ul>
+                <div class="limitations">
+                    <h3>Limitações</h3>
+                    <p>Sem estoque, financeiro, relatórios avançados, Excel, personalização, alertas, métricas de
+                        faturamento ou produtos.</p>
+                </div>
+                <a class="button button-outline button-whatsapp"
+                   href="https://wa.me/5548991746960?text=Ol%C3%A1!%20Tenho%20interesse%20no%20Plano%20B%C3%A1sico%20do%20EsteticaFlow%20(R%24%2059%2C90%2Fm%C3%AAs)."
+                   target="_blank" rel="noopener noreferrer">
+                    Quero o Básico
+                    <svg class="button-icon" width="20" height="20" aria-hidden="true" focusable="false"><use href="#icon-whatsapp"/></svg>
+                </a>
+            </article>
+            <article class="price-card featured">
+                <p class="badge">Mais completo</p>
+                <p class="plan-name">Plano Completo</p>
+                <p class="price"><span>R$</span>119,90<small>/mês</small></p>
+                <p class="ideal">Tudo do Básico, com gestão avançada da operação.</p>
+                <h3>Inclui também</h3>
+                <ul class="two-column-list">
+                    <li>Estoque e alertas</li>
+                    <li>Produtos</li>
+                    <li>Relatórios completos</li>
+                    <li>PDF e Excel</li>
+                    <li>Dashboard avançado</li>
+                    <li>Gráficos e estatísticas</li>
+                    <li>Financeiro</li>
+                    <li>Receita mensal</li>
+                    <li>Ticket médio</li>
+                    <li>Serviços mais vendidos</li>
+                    <li>Produtos mais utilizados</li>
+                    <li>Cores e temas claros</li>
+                    <li>Filtros avançados</li>
+                    <li>Backup automático</li>
+                    <li>Atualizações prioritárias</li>
+                </ul>
+                <a class="button button-whatsapp"
+                   href="https://wa.me/5548991746960?text=Ol%C3%A1!%20Tenho%20interesse%20no%20Plano%20Completo%20do%20EsteticaFlow%20(R%24%20119%2C90%2Fm%C3%AAs)."
+                   target="_blank" rel="noopener noreferrer">
+                    Quero o Completo
+                    <svg class="button-icon" width="20" height="20" aria-hidden="true" focusable="false"><use href="#icon-whatsapp"/></svg>
+                </a>
+            </article>
+        </div>
+        <p class="container pricing-note">
+            Já tem conta?
+            <a th:href="@{/login}">Faça login</a>
+            · Prefere tirar dúvida antes?
+            <a href="https://wa.me/5548991746960?text=Ol%C3%A1!%20Quero%20tirar%20d%C3%BAvidas%20sobre%20o%20EsteticaFlow."
+               target="_blank" rel="noopener noreferrer">Chamar no WhatsApp</a>
+        </p>
+    </section>
+
+    <section class="section faq" id="faq">
+        <div class="container section-heading"><p class="eyebrow">Perguntas frequentes</p><h2>Antes de escolher seu plano</h2></div>
+        <div class="container faq-list">
+            <details>
+                <summary>Como faço para contratar?</summary>
+                <p>Escolha o plano e toque em “Quero o Básico” ou “Quero o Completo”. Você fala direto com o
+                    atendimento no WhatsApp (48) 99174-6960.</p>
+            </details>
+            <details>
+                <summary>O plano Básico inclui agenda e veículos?</summary>
+                <p>Sim. Clientes, veículos, serviços necessários à agenda, histórico e agenda fazem parte do plano Básico.</p>
+            </details>
+            <details>
+                <summary>Posso acessar pelo celular?</summary>
+                <p>Sim. A interface é responsiva e funciona em navegadores atuais de celular e computador.</p>
+            </details>
+            <details>
+                <summary>Qual plano possui estoque e financeiro?</summary>
+                <p>Esses módulos, junto com Excel, alertas, métricas e relatórios completos, estão no plano Completo.</p>
+            </details>
+            <details>
+                <summary>Os dois planos geram PDF?</summary>
+                <p>Sim. O Básico oferece PDF simples; o Completo inclui PDF e Excel com relatórios completos.</p>
+            </details>
+        </div>
+    </section>
+
+    <section class="section final-cta">
+        <div class="container">
+            <p class="eyebrow">Sua operação, em fluxo</p>
+            <h2>Escolha o plano e comece pelo WhatsApp.</h2>
+            <div class="final-actions">
+                <a class="button button-light"
+                   href="https://wa.me/5548991746960?text=Ol%C3%A1!%20Quero%20contratar%20o%20EsteticaFlow."
+                   target="_blank" rel="noopener noreferrer">
+                    Falar no WhatsApp
+                    <svg class="button-icon" width="20" height="20" aria-hidden="true" focusable="false"><use href="#icon-whatsapp"/></svg>
+                </a>
+                <a class="button button-ghost" th:href="@{/login}">Já tenho conta</a>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer>
+    <div class="container footer-content">
+        <a class="brand brand-light" href="#topo">Estetica<span>Flow</span></a>
+        <p>Gestão para estética automotiva · WhatsApp (48) 99174-6960</p>
+        <div class="footer-links">
+            <a th:href="@{/login}">Entrar</a>
+            <a href="https://wa.me/5548991746960?text=Ol%C3%A1!%20Quero%20conhecer%20o%20EsteticaFlow."
+               target="_blank" rel="noopener noreferrer">WhatsApp</a>
+        </div>
+    </div>
+</footer>
+
+<a class="whatsapp-float"
+   href="https://wa.me/5548991746960?text=Ol%C3%A1!%20Quero%20conhecer%20o%20EsteticaFlow."
+   target="_blank" rel="noopener noreferrer"
+   aria-label="Abrir conversa no WhatsApp">
+    <svg class="whatsapp-icon" width="22" height="22" aria-hidden="true" focusable="false"><use href="#icon-whatsapp"/></svg>
+    <span class="whatsapp-float-label">WhatsApp</span>
+</a>
+
+<div class="mobile-cta-bar" aria-label="Ações rápidas">
+    <a href="#planos">Ver planos</a>
+    <a class="button button-small"
+       href="https://wa.me/5548991746960?text=Ol%C3%A1!%20Quero%20contratar%20o%20EsteticaFlow."
+       target="_blank" rel="noopener noreferrer">WhatsApp</a>
+</div>
+
+<script th:src="@{/js/landing.js}" defer></script>
+</body>
+</html>

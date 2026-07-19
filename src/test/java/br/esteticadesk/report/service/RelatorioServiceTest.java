@@ -51,7 +51,7 @@ class RelatorioServiceTest {
         assinaturas = mock(AssinaturaService.class);
         empresa = new Empresa();
         empresa.setNomeFantasia("Empresa teste");
-        empresa.setPlano(PlanoAssinatura.PRO);
+        empresa.setPlano(PlanoAssinatura.COMPLETO);
         when(sessao.empresaObrigatoria()).thenReturn(7L);
         when(assinaturas.empresaAtual()).thenReturn(empresa);
         service = new RelatorioService(receitas, despesas, agendamentos, sessao, assinaturas);
@@ -85,7 +85,9 @@ class RelatorioServiceTest {
         assertEquals(2, relatorio.servicos().getFirst().quantidade());
         assertEquals(new BigDecimal("150.00"), relatorio.servicos().getFirst().valor());
         assertEquals(2, relatorio.categorias().size());
-        assertTrue(relatorio.receitas().isEmpty());
+        assertEquals(2, relatorio.receitas().size());
+        assertEquals(2, relatorio.despesas().size());
+        assertEquals(3, relatorio.agendamentos().size());
         verify(assinaturas).exigirRecurso(RecursoPlano.RELATORIO_SIMPLES);
     }
 
@@ -104,14 +106,14 @@ class RelatorioServiceTest {
     }
 
     @Test
-    void superAdminRecebeVisaoExclusiveSemRestricaoDePlano() {
+    void superAdminRecebeVisaoCompletaSemRestricaoDePlano() {
         empresa.setPlano(PlanoAssinatura.BASICO);
         when(sessao.isSuperAdmin()).thenReturn(true);
         prepararListasVazias();
 
         var relatorio = service.consultar(FiltroPeriodoRelatorio.DIA, LocalDate.of(2026, 7, 18));
 
-        assertEquals(PlanoAssinatura.EXCLUSIVE, relatorio.plano());
+        assertEquals(PlanoAssinatura.COMPLETO, relatorio.plano());
         assertTrue(relatorio.possuiDetalhes());
     }
 

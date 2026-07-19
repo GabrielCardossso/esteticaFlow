@@ -43,24 +43,25 @@
         </div>
         <div class="card" style="margin-bottom:20px;" th:unless="${podePersonalizarTema}">
             <h3>Aparência</h3>
-            <p class="muted">A personalização de tema está disponível nos planos PRO e EXCLUSIVE.</p>
+            <p class="muted">A personalização de tema está disponível no plano Completo.</p>
         </div>
 
         <div class="card" style="margin-bottom:20px;">
             <h3>Dados da empresa</h3>
             <form th:action="@{/configuracoes/empresa}" th:object="${empresa}" method="post" class="form-grid" style="margin-top:16px;">
                 <div th:replace="~{fragments/csrf :: csrf}"></div>
-                <input type="hidden" th:field="*{id}"/>
                 <label>Razão social</label>
-                <input type="text" th:field="*{razaoSocial}" required/>
+                <input type="text" th:field="*{razaoSocial}" required maxlength="150" autocomplete="organization"/>
                 <label>Nome fantasia</label>
-                <input type="text" th:field="*{nomeFantasia}" required/>
+                <input type="text" th:field="*{nomeFantasia}" required maxlength="150" autocomplete="organization"/>
                 <label>CNPJ</label>
-                <input type="text" th:field="*{cnpj}" required/>
+                <input type="text" th:field="*{cnpj}" required data-mask="cnpj" maxlength="18"
+                       inputmode="numeric" autocomplete="off"/>
                 <label>Telefone</label>
-                <input type="text" th:field="*{telefone}"/>
+                <input type="tel" th:field="*{telefone}" data-mask="telefone" maxlength="15"
+                       inputmode="tel" autocomplete="tel"/>
                 <label>E-mail</label>
-                <input type="email" th:field="*{email}"/>
+                <input type="email" th:field="*{email}" maxlength="150" autocomplete="email"/>
                 <label>Plano</label>
                 <input type="text" readonly th:value="${empresa.plano}"/>
                 <label>Próximo vencimento</label>
@@ -73,8 +74,28 @@
         <div class="two-columns">
             <div class="card">
                 <h3>Usuários</h3>
+                <form method="get" th:action="@{/configuracoes}" class="inline-form">
+                    <input type="hidden" name="mostrarTodasFormas" th:value="${mostrarTodasFormas}"/>
+                    <input type="hidden" name="mostrarTodasCategorias" th:value="${mostrarTodasCategorias}"/>
+                    <select name="mostrarTodosUsuarios" onchange="this.form.submit()">
+                        <option value="false" th:selected="${!mostrarTodosUsuarios}">Ativos</option>
+                        <option value="true" th:selected="${mostrarTodosUsuarios}">Todos</option>
+                    </select>
+                </form>
                 <ul th:if="${!usuarios.isEmpty()}">
-                    <li th:each="u : ${usuarios}" th:text="${u.nome} + ' (' + ${u.email} + ') — ' + ${u.papel}"></li>
+                    <li th:each="u : ${usuarios}" class="actions">
+                        <span th:text="${u.nome} + ' (' + ${u.email} + ') — ' + ${u.papel} + ' — ' + (${u.ativo} ? 'Ativo' : 'Inativo')"></span>
+                        <form th:if="${administrador and u.ativo}"
+                              th:action="@{/configuracoes/usuarios/{id}/inativar(id=${u.id})}" method="post">
+                            <div th:replace="~{fragments/csrf :: csrf}"></div>
+                            <button type="submit" class="btn btn-danger btn-sm">Inativar</button>
+                        </form>
+                        <form th:if="${administrador and !u.ativo}"
+                              th:action="@{/configuracoes/usuarios/{id}/reativar(id=${u.id})}" method="post">
+                            <div th:replace="~{fragments/csrf :: csrf}"></div>
+                            <button type="submit" class="btn btn-primary btn-sm">Reativar</button>
+                        </form>
+                    </li>
                 </ul>
                 <p th:if="${usuarios.isEmpty()}" style="color:var(--text-muted);">Nenhum usuário cadastrado.</p>
 
@@ -82,11 +103,11 @@
                     <div th:replace="~{fragments/csrf :: csrf}"></div>
                     <div class="form-grid">
                         <label>Nome</label>
-                        <input type="text" name="nome" required/>
+                        <input type="text" name="nome" required maxlength="150" autocomplete="name"/>
                         <label>E-mail</label>
-                        <input type="email" name="email" required/>
+                        <input type="email" name="email" required maxlength="150" autocomplete="username"/>
                         <label>Senha</label>
-                        <input type="password" name="senha" required minlength="6"/>
+                        <input type="password" name="senha" required minlength="6" autocomplete="new-password"/>
                         <label>Papel</label>
                         <select name="papel" required>
                             <option th:each="p : ${papeis}" th:value="${p}" th:text="${p}"></option>
@@ -99,24 +120,65 @@
             <div>
                 <div class="card" style="margin-bottom:16px;" th:if="${podeFinanceiro}">
                     <h3>Formas de pagamento</h3>
+                    <form method="get" th:action="@{/configuracoes}" class="inline-form">
+                        <input type="hidden" name="mostrarTodosUsuarios" th:value="${mostrarTodosUsuarios}"/>
+                        <input type="hidden" name="mostrarTodasCategorias" th:value="${mostrarTodasCategorias}"/>
+                        <select name="mostrarTodasFormas" onchange="this.form.submit()">
+                            <option value="false" th:selected="${!mostrarTodasFormas}">Ativas</option>
+                            <option value="true" th:selected="${mostrarTodasFormas}">Todas</option>
+                        </select>
+                    </form>
                     <ul th:if="${!formasPagamento.isEmpty()}">
-                        <li th:each="f : ${formasPagamento}" th:text="${f.nome}"></li>
+                        <li th:each="f : ${formasPagamento}" class="actions">
+                            <span th:text="${f.nome} + ' — ' + (${f.ativo} ? 'Ativa' : 'Inativa')"></span>
+                            <form th:if="${administrador and f.ativo}"
+                                  th:action="@{/configuracoes/formas-pagamento/{id}/inativar(id=${f.id})}" method="post">
+                                <div th:replace="~{fragments/csrf :: csrf}"></div>
+                                <button type="submit" class="btn btn-danger btn-sm">Inativar</button>
+                            </form>
+                            <form th:if="${administrador and !f.ativo}"
+                                  th:action="@{/configuracoes/formas-pagamento/{id}/reativar(id=${f.id})}" method="post">
+                                <div th:replace="~{fragments/csrf :: csrf}"></div>
+                                <button type="submit" class="btn btn-primary btn-sm">Reativar</button>
+                            </form>
+                        </li>
                     </ul>
-                    <form th:action="@{/configuracoes/formas-pagamento}" method="post" style="display:flex;gap:8px;margin-top:12px;">
+                    <form th:if="${administrador}" th:action="@{/configuracoes/formas-pagamento}" method="post" style="display:flex;gap:8px;margin-top:12px;">
                         <div th:replace="~{fragments/csrf :: csrf}"></div>
-                        <input type="text" name="nome" placeholder="Nova forma" required style="flex:1;"/>
+                        <input type="text" name="nome" placeholder="Nova forma" required maxlength="50" style="flex:1;"/>
                         <button type="submit" class="btn btn-primary btn-sm">Adicionar</button>
                     </form>
                 </div>
 
                 <div id="categorias-produto" class="card" th:if="${podeEstoque}">
                     <h3>Categorias de produto</h3>
+                    <form method="get" th:action="@{/configuracoes}" class="inline-form">
+                        <input type="hidden" name="mostrarTodosUsuarios" th:value="${mostrarTodosUsuarios}"/>
+                        <input type="hidden" name="mostrarTodasFormas" th:value="${mostrarTodasFormas}"/>
+                        <select name="mostrarTodasCategorias" onchange="this.form.submit()">
+                            <option value="false" th:selected="${!mostrarTodasCategorias}">Ativas</option>
+                            <option value="true" th:selected="${mostrarTodasCategorias}">Todas</option>
+                        </select>
+                    </form>
                     <ul th:if="${!categorias.isEmpty()}">
-                        <li th:each="c : ${categorias}" th:text="${c.nome}"></li>
+                        <li th:each="c : ${categorias}" class="actions">
+                            <span th:text="${c.nome} + ' — ' + (${c.ativo} ? 'Ativa' : 'Inativa')"></span>
+                            <form th:if="${administrador and c.ativo}"
+                                  th:action="@{/configuracoes/categorias/{id}/inativar(id=${c.id})}" method="post">
+                                <div th:replace="~{fragments/csrf :: csrf}"></div>
+                                <button type="submit" class="btn btn-danger btn-sm">Inativar</button>
+                            </form>
+                            <form th:if="${administrador and !c.ativo}"
+                                  th:action="@{/configuracoes/categorias/{id}/reativar(id=${c.id})}" method="post">
+                                <div th:replace="~{fragments/csrf :: csrf}"></div>
+                                <button type="submit" class="btn btn-primary btn-sm">Reativar</button>
+                            </form>
+                        </li>
                     </ul>
-                    <form th:action="@{/configuracoes/categorias}" method="post" style="display:flex;gap:8px;margin-top:12px;">
+                    <form th:if="${administrador}" th:action="@{/configuracoes/categorias}" method="post" style="display:flex;gap:8px;margin-top:12px;">
                         <div th:replace="~{fragments/csrf :: csrf}"></div>
-                        <input type="text" name="nome" placeholder="Nova categoria" required style="flex:1;"/>
+                        <input type="text" name="nome" placeholder="Nova categoria" required maxlength="100"
+                               style="flex:1;"/>
                         <button type="submit" class="btn btn-primary btn-sm">Adicionar</button>
                     </form>
                 </div>

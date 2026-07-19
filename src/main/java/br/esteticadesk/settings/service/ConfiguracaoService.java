@@ -12,6 +12,8 @@ import br.esteticadesk.employee.repository.UsuarioRepository;
 import br.esteticadesk.enums.PapelUsuario;
 import br.esteticadesk.enums.PlanoAssinatura;
 import br.esteticadesk.enums.RecursoPlano;
+import br.esteticadesk.exception.RecursoNaoEncontradoException;
+import br.esteticadesk.validation.DocumentoValidator;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import br.esteticadesk.finance.entity.FormaPagamento;
@@ -19,6 +21,7 @@ import br.esteticadesk.finance.repository.FormaPagamentoRepository;
 import br.esteticadesk.inventory.entity.CategoriaProduto;
 import br.esteticadesk.inventory.repository.CategoriaProdutoRepository;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -63,28 +66,37 @@ public class ConfiguracaoService {
     public Empresa salvarEmpresa(Empresa dados) {
         exigirAdmin();
         var atual = empresaAtual();
-        atual.setRazaoSocial(dados.getRazaoSocial());
-        atual.setNomeFantasia(dados.getNomeFantasia());
-        atual.setCnpj(dados.getCnpj());
-        atual.setTelefone(dados.getTelefone());
-        atual.setEmail(dados.getEmail());
+        var razaoSocial = textoObrigatorio(dados.getRazaoSocial(), "Razão social", 150);
+        var nomeFantasia = textoObrigatorio(dados.getNomeFantasia(), "Nome fantasia", 150);
+        var cnpj = validarCnpj(dados.getCnpj(), atual.getId());
+        var telefone = validarTelefone(dados.getTelefone());
+        var email = validarEmail(dados.getEmail(), "E-mail da empresa", false);
+        atual.setRazaoSocial(razaoSocial);
+        atual.setNomeFantasia(nomeFantasia);
+        atual.setCnpj(cnpj);
+        atual.setTelefone(telefone);
+        atual.setEmail(email);
         return empresas.save(atual);
     }
 
-    public List<Usuario> usuarios() {
+    public List<Usuario> usuarios(boolean mostrarTodos) {
         exigirAdmin();
-        return usuarios.findByEmpresaIdOrderByNome(sessao.empresaObrigatoria());
+        var empresaId = sessao.empresaObrigatoria();
+        return mostrarTodos ? usuarios.findByEmpresaIdOrderByNome(empresaId)
+                : usuarios.findByEmpresaIdAndAtivoTrueOrderByNome(empresaId);
     }
 
     public Usuario criarUsuario(String nome, String email, String senha, PapelUsuario papel) {
         exigirAdministradorEmpresa();
+        var nomeNormalizado = textoObrigatorio(nome, "Nome do usuário", 150);
+        var emailNormalizado = validarEmail(email, "E-mail do usuário", true);
         if (papel == PapelUsuario.SUPER_ADMIN) {
             throw new SecurityException("SUPER_ADMIN não pode ser criado na gestão da empresa.");
         }
         if (papel == null) {
             papel = PapelUsuario.FUNCIONARIO;
         }
-        if (usuarios.findByEmail(email.trim().toLowerCase()).isPresent()) {
+        if (usuarios.findByEmail(emailNormalizado).isPresent()) {
             throw new IllegalArgumentException("E-mail já cadastrado.");
         }
         if (senha == null || senha.length() < 6) {
@@ -99,41 +111,79 @@ public class ConfiguracaoService {
         }
         var u = new Usuario();
         u.setEmpresaId(sessao.empresaObrigatoria());
-        u.setNome(nome.trim());
-        u.setEmail(email.trim().toLowerCase());
+        u.setNome(nomeNormalizado);
+        u.setEmail(emailNormalizado);
         u.setSenhaHash(encoder.encode(senha));
         u.setPapel(papel);
         u.setAtivo(true);
         return usuarios.save(u);
     }
 
-    public List<FormaPagamento> formasPagamento() {
+    public void inativarUsuario(Long id) {
+        exigirAdministradorEmpresa();
+        var usuario = buscarUsuarioGerenciavel(id);
+        usuario.setAtivo(false);
+        usuarios.save(usuario);
+    }
+
+    public void reativarUsuario(Long id) {
+        exigirAdministradorEmpresa();
+        var usuario = buscarUsuarioGerenciavel(id);
+        if (Boolean.TRUE.equals(usuario.getAtivo())) {
+            return;
+        }
+        var empresa = assinaturas.empresaAtual();
+        var quantidadeAtiva = usuarios.countByEmpresaIdAndAtivoTrueAndPapelNot(empresa.getId(),
+                PapelUsuario.SUPER_ADMIN);
+        if (quantidadeAtiva >= empresa.getPlano().getLimiteUsuarios()) {
+            throw new IllegalStateException("Limite de " + empresa.getPlano().getLimiteUsuarios()
+                    + " usuários ativos atingido para o plano " + empresa.getPlano() + ".");
+        }
+        usuario.setAtivo(true);
+        usuarios.save(usuario);
+    }
+
+    public List<FormaPagamento> formasPagamento(boolean mostrarTodas) {
         assinaturas.exigirRecurso(RecursoPlano.FINANCEIRO);
-        return formas.findAll().stream().filter(f -> f.getEmpresaId().equals(sessao.empresaObrigatoria())).toList();
+        var empresaId = sessao.empresaObrigatoria();
+        return mostrarTodas ? formas.findByEmpresaIdOrderByAtivoDescNomeAsc(empresaId)
+                : formas.findByEmpresaIdAndAtivoTrueOrderByNome(empresaId);
     }
 
     public FormaPagamento criarFormaPagamento(String nome) {
         exigirAdmin();
         assinaturas.exigirRecurso(RecursoPlano.FINANCEIRO);
+        var nomeNormalizado = textoObrigatorio(nome, "Nome da forma de pagamento", 50);
         var f = new FormaPagamento();
         f.setEmpresaId(sessao.empresaObrigatoria());
-        f.setNome(nome.trim());
+        f.setNome(nomeNormalizado);
         f.setAtivo(true);
         return formas.save(f);
     }
 
-    public List<CategoriaProduto> categorias() {
+    public void inativarFormaPagamento(Long id) {
+        exigirAdmin();
+        assinaturas.exigirRecurso(RecursoPlano.FINANCEIRO);
+        buscarFormaPagamento(id).setAtivo(false);
+    }
+
+    public void reativarFormaPagamento(Long id) {
+        exigirAdmin();
+        assinaturas.exigirRecurso(RecursoPlano.FINANCEIRO);
+        buscarFormaPagamento(id).setAtivo(true);
+    }
+
+    public List<CategoriaProduto> categorias(boolean mostrarTodas) {
         assinaturas.exigirRecurso(RecursoPlano.ESTOQUE);
-        return categorias.findByEmpresaIdAndAtivoTrueOrderByNome(sessao.empresaObrigatoria());
+        var empresaId = sessao.empresaObrigatoria();
+        return mostrarTodas ? categorias.findByEmpresaIdOrderByAtivoDescNomeAsc(empresaId)
+                : categorias.findByEmpresaIdAndAtivoTrueOrderByNome(empresaId);
     }
 
     public CategoriaProduto criarCategoria(String nome) {
         exigirAdmin();
         assinaturas.exigirRecurso(RecursoPlano.ESTOQUE);
-        var nomeNormalizado = nome == null ? "" : nome.trim();
-        if (nomeNormalizado.isEmpty()) {
-            throw new IllegalArgumentException("Nome da categoria é obrigatório.");
-        }
+        var nomeNormalizado = textoObrigatorio(nome, "Nome da categoria", 100);
         var empresaId = sessao.empresaObrigatoria();
         if (categorias.existsByEmpresaIdAndNomeIgnoreCase(empresaId, nomeNormalizado)) {
             throw new IllegalArgumentException("Já existe uma categoria de produto com este nome.");
@@ -143,6 +193,18 @@ public class ConfiguracaoService {
         c.setNome(nomeNormalizado);
         c.setAtivo(true);
         return categorias.save(c);
+    }
+
+    public void inativarCategoria(Long id) {
+        exigirAdmin();
+        assinaturas.exigirRecurso(RecursoPlano.ESTOQUE);
+        buscarCategoria(id).setAtivo(false);
+    }
+
+    public void reativarCategoria(Long id) {
+        exigirAdmin();
+        assinaturas.exigirRecurso(RecursoPlano.ESTOQUE);
+        buscarCategoria(id).setAtivo(true);
     }
 
     public String temaCor() {
@@ -159,23 +221,28 @@ public class ConfiguracaoService {
         salvarParametroTexto(TEMA_COR, corNormalizada);
     }
 
-    public List<Empresa> listarEmpresas() {
+    public List<Empresa> listarEmpresas(boolean mostrarTodas) {
         exigirSuperAdmin();
-        return empresas.findAllByOrderByNomeFantasiaAsc();
+        return mostrarTodas ? empresas.findAllByOrderByNomeFantasiaAsc()
+                : empresas.findByAtivoTrueOrderByNomeFantasiaAsc();
     }
 
     public Empresa criarEmpresa(String razaoSocial, String nomeFantasia, String cnpj, String telefone, String email,
             String adminNome, String adminEmail, String adminSenha, PlanoAssinatura plano,
             BigDecimal valorMensalidade, LocalDate proximoVencimento) {
         exigirSuperAdmin();
-        if (plano == null || valorMensalidade == null || valorMensalidade.signum() < 0
-                || proximoVencimento == null) {
-            throw new IllegalArgumentException("Plano, valor não negativo e vencimento são obrigatórios.");
+        var razaoSocialNormalizada = textoObrigatorio(razaoSocial, "Razão social", 150);
+        var nomeFantasiaNormalizado = textoObrigatorio(nomeFantasia, "Nome fantasia", 150);
+        var cnpjNormalizado = validarCnpj(cnpj, null);
+        var telefoneNormalizado = validarTelefone(telefone);
+        var emailNormalizado = validarEmail(email, "E-mail da empresa", false);
+        var adminNomeNormalizado = textoObrigatorio(adminNome, "Nome do administrador", 150);
+        var adminEmailNormalizado = validarEmail(adminEmail, "E-mail do administrador", true);
+        if (plano == null || proximoVencimento == null
+                || (valorMensalidade != null && valorMensalidade.signum() < 0)) {
+            throw new IllegalArgumentException("Plano, vencimento e, quando informado, valor não negativo são obrigatórios.");
         }
-        if (empresas.findByCnpj(cnpj.trim()).isPresent()) {
-            throw new IllegalArgumentException("CNPJ já cadastrado.");
-        }
-        if (usuarios.findByEmail(adminEmail.trim().toLowerCase()).isPresent()) {
+        if (usuarios.findByEmail(adminEmailNormalizado).isPresent()) {
             throw new IllegalArgumentException("E-mail do administrador já cadastrado.");
         }
         if (adminSenha == null || adminSenha.length() < 6) {
@@ -183,21 +250,21 @@ public class ConfiguracaoService {
         }
 
         var empresa = new Empresa();
-        empresa.setRazaoSocial(razaoSocial.trim());
-        empresa.setNomeFantasia(nomeFantasia.trim());
-        empresa.setCnpj(cnpj.trim());
-        empresa.setTelefone(telefone == null ? null : telefone.trim());
-        empresa.setEmail(email == null ? null : email.trim().toLowerCase());
+        empresa.setRazaoSocial(razaoSocialNormalizada);
+        empresa.setNomeFantasia(nomeFantasiaNormalizado);
+        empresa.setCnpj(cnpjNormalizado);
+        empresa.setTelefone(telefoneNormalizado);
+        empresa.setEmail(emailNormalizado);
         empresa.setAtivo(true);
         empresa.setPlano(plano);
-        empresa.setValorMensalidade(valorMensalidade);
+        empresa.setValorMensalidade(valorMensalidade == null ? plano.getValorMensalPadrao() : valorMensalidade);
         empresa.setProximoVencimento(proximoVencimento);
         empresa = empresas.save(empresa);
 
         var admin = new Usuario();
         admin.setEmpresaId(empresa.getId());
-        admin.setNome(adminNome.trim());
-        admin.setEmail(adminEmail.trim().toLowerCase());
+        admin.setNome(adminNomeNormalizado);
+        admin.setEmail(adminEmailNormalizado);
         admin.setSenhaHash(encoder.encode(adminSenha));
         admin.setPapel(PapelUsuario.ADMINISTRADOR);
         admin.setAtivo(true);
@@ -233,6 +300,81 @@ public class ConfiguracaoService {
         c.setChave(chave);
         c.setValor(valor);
         configuracoes.save(c);
+    }
+
+    private Usuario buscarUsuarioGerenciavel(Long id) {
+        var usuario = usuarios.findByIdAndEmpresaId(id, sessao.empresaObrigatoria())
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Usuário não encontrado."));
+        if (usuario.getPapel() == PapelUsuario.SUPER_ADMIN) {
+            throw new SecurityException("SUPER_ADMIN não pode ser gerenciado pela empresa.");
+        }
+        return usuario;
+    }
+
+    private FormaPagamento buscarFormaPagamento(Long id) {
+        return formas.findByIdAndEmpresaId(id, sessao.empresaObrigatoria())
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Forma de pagamento não encontrada."));
+    }
+
+    private CategoriaProduto buscarCategoria(Long id) {
+        return categorias.findByIdAndEmpresaId(id, sessao.empresaObrigatoria())
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Categoria de produto não encontrada."));
+    }
+
+    private String validarCnpj(String valor, Long idAtual) {
+        if (!DocumentoValidator.cnpjValido(valor)) {
+            throw new IllegalArgumentException("CNPJ inválido.");
+        }
+        var cnpj = somenteDigitos(valor);
+        if (empresas.existeCnpjNormalizado(cnpj, idAtual)) {
+            throw new IllegalArgumentException("CNPJ já cadastrado.");
+        }
+        return cnpj;
+    }
+
+    private String validarTelefone(String valor) {
+        var telefone = somenteDigitosOpcional(valor);
+        if (telefone != null && telefone.length() != 10 && telefone.length() != 11) {
+            throw new IllegalArgumentException("Telefone deve conter 10 ou 11 dígitos.");
+        }
+        return telefone;
+    }
+
+    private String validarEmail(String valor, String campo, boolean obrigatorio) {
+        var email = valor == null || valor.isBlank() ? null : valor.trim().toLowerCase(Locale.ROOT);
+        if (email == null) {
+            if (obrigatorio) {
+                throw new IllegalArgumentException(campo + " é obrigatório.");
+            }
+            return null;
+        }
+        if (email.length() > 150) {
+            throw new IllegalArgumentException(campo + " deve ter no máximo 150 caracteres.");
+        }
+        if (!email.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
+            throw new IllegalArgumentException(campo + " inválido.");
+        }
+        return email;
+    }
+
+    private String textoObrigatorio(String valor, String campo, int limite) {
+        if (valor == null || valor.isBlank()) {
+            throw new IllegalArgumentException(campo + " é obrigatório.");
+        }
+        var texto = valor.trim();
+        if (texto.length() > limite) {
+            throw new IllegalArgumentException(campo + " deve ter no máximo " + limite + " caracteres.");
+        }
+        return texto;
+    }
+
+    private String somenteDigitos(String valor) {
+        return valor == null ? "" : valor.replaceAll("\\D", "");
+    }
+
+    private String somenteDigitosOpcional(String valor) {
+        var digitos = somenteDigitos(valor);
+        return digitos.isEmpty() ? null : digitos;
     }
 
     private void exigirAdmin() {

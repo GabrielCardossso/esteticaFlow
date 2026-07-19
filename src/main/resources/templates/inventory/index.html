@@ -10,6 +10,12 @@
         <div class="page-header">
             <h1 class="page-title">Estoque</h1>
             <div class="spacer"></div>
+            <form method="get" th:action="@{/estoque}" class="inline-form">
+                <select name="mostrarTodos" onchange="this.form.submit()">
+                    <option value="false" th:selected="${!mostrarTodos}">Ativos</option>
+                    <option value="true" th:selected="${mostrarTodos}">Todos</option>
+                </select>
+            </form>
             <a th:href="@{/estoque/produtos/novo}" class="btn btn-primary">+ Adicionar produto</a>
         </div>
 
@@ -48,6 +54,12 @@
                         <div th:replace="~{fragments/csrf :: csrf}"></div>
                         <button type="submit" class="btn btn-danger btn-sm"
                                 onclick="return confirm('Inativar este produto?')">Inativar</button>
+                    </form>
+                    <form th:unless="${item.produto.ativo}"
+                          th:action="@{/estoque/produtos/{id}/reativar(id=${item.produto.id})}"
+                          method="post" style="display:inline;">
+                        <div th:replace="~{fragments/csrf :: csrf}"></div>
+                        <button type="submit" class="btn btn-primary btn-sm">Reativar</button>
                     </form>
                     <button th:if="${item.produto.ativo}" type="button"
                             class="btn btn-primary btn-sm stock-action-button"

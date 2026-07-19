@@ -42,13 +42,14 @@ class AssinaturaServiceTest {
 
     @Test
     void respeitaMatrizDeRecursosELimites() {
+        assertEquals(2, PlanoAssinatura.values().length);
         assertEquals(2, PlanoAssinatura.BASICO.getLimiteUsuarios());
-        assertEquals(10, PlanoAssinatura.PRO.getLimiteUsuarios());
-        assertEquals(50, PlanoAssinatura.EXCLUSIVE.getLimiteUsuarios());
+        assertEquals(50, PlanoAssinatura.COMPLETO.getLimiteUsuarios());
+        assertEquals(new BigDecimal("59.90"), PlanoAssinatura.BASICO.getValorMensalPadrao());
+        assertEquals(new BigDecimal("119.90"), PlanoAssinatura.COMPLETO.getValorMensalPadrao());
         assertFalse(PlanoAssinatura.BASICO.permite(RecursoPlano.ESTOQUE));
-        assertTrue(PlanoAssinatura.PRO.permite(RecursoPlano.ESTOQUE));
-        assertFalse(PlanoAssinatura.PRO.permite(RecursoPlano.RELATORIO_DETALHADO));
-        assertTrue(PlanoAssinatura.EXCLUSIVE.permite(RecursoPlano.RELATORIO_DETALHADO));
+        assertTrue(PlanoAssinatura.COMPLETO.permite(RecursoPlano.ESTOQUE));
+        assertTrue(PlanoAssinatura.COMPLETO.permite(RecursoPlano.RELATORIO_DETALHADO));
     }
 
     @Test
@@ -70,21 +71,21 @@ class AssinaturaServiceTest {
         when(sessao.isSuperAdmin()).thenReturn(false);
 
         var exception = assertThrows(SecurityException.class,
-                () -> service.atualizarPlano(1L, PlanoAssinatura.PRO, BigDecimal.TEN,
+                () -> service.atualizarPlano(1L, PlanoAssinatura.COMPLETO, BigDecimal.TEN,
                         LocalDate.now().plusMonths(1)));
 
         assertEquals("Apenas o SUPER_ADMIN pode gerenciar planos e empresas.", exception.getMessage());
     }
 
     @Test
-    void gateNegaBasicoELiberaProESuperAdmin() {
+    void gateNegaBasicoELiberaCompletoESuperAdmin() {
         var basico = empresa(PlanoAssinatura.BASICO, LocalDate.now().plusMonths(1));
         when(sessao.empresaObrigatoria()).thenReturn(1L);
         when(empresas.findById(1L)).thenReturn(Optional.of(basico));
 
         assertThrows(SecurityException.class, () -> service.exigirRecurso(RecursoPlano.FINANCEIRO));
 
-        basico.setPlano(PlanoAssinatura.PRO);
+        basico.setPlano(PlanoAssinatura.COMPLETO);
         assertDoesNotThrow(() -> service.exigirRecurso(RecursoPlano.FINANCEIRO));
 
         basico.setPlano(PlanoAssinatura.BASICO);

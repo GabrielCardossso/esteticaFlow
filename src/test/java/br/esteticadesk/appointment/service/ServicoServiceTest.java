@@ -7,9 +7,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import br.esteticadesk.appointment.entity.CategoriaServico;
+import br.esteticadesk.appointment.entity.Servico;
 import br.esteticadesk.appointment.repository.CategoriaServicoRepository;
 import br.esteticadesk.appointment.repository.ServicoRepository;
 import br.esteticadesk.auth.SessaoUsuario;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -55,5 +57,18 @@ class ServicoServiceTest {
         assertThrows(IllegalArgumentException.class, () -> service.criarCategoria("Lavagem"));
 
         verify(categorias, never()).save(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void reativaServicoSomenteNaEmpresaDaSessao() {
+        var servico = new Servico();
+        servico.setAtivo(false);
+        when(sessao.empresaObrigatoria()).thenReturn(7L);
+        when(servicos.findByIdAndEmpresaId(3L, 7L)).thenReturn(Optional.of(servico));
+
+        service.reativar(3L);
+
+        assertEquals(true, servico.getAtivo());
+        verify(servicos).findByIdAndEmpresaId(3L, 7L);
     }
 }

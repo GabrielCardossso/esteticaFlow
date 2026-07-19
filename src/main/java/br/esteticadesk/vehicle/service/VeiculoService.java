@@ -8,7 +8,9 @@ public interface VeiculoService {
 
     Veiculo buscarPorId(Long id, Long clienteId);
 
-    List<Veiculo> listarPorCliente(Long clienteId);
+    List<Veiculo> listarPorCliente(Long clienteId, boolean mostrarTodos);
 
     Veiculo inativar(Long id, Long clienteId);
+
+    Veiculo reativar(Long id, Long clienteId);
 }

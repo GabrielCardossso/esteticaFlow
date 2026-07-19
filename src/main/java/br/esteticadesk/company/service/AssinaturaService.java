@@ -97,7 +97,7 @@ public class AssinaturaService {
     public void exigirRecurso(RecursoPlano recurso) {
         if (!permite(recurso)) {
             throw new SecurityException("O recurso " + nomeRecurso(recurso)
-                    + " exige o plano PRO ou EXCLUSIVE.");
+                    + " exige o plano Completo.");
         }
     }
 

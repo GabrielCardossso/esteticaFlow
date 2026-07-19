@@ -31,10 +31,16 @@ public interface ClienteRepository extends JpaRepository<Cliente, Long> {
                 :busca IS NULL OR :busca = '' OR
                 LOWER(c.nome) LIKE LOWER(CONCAT('%', :busca, '%')) OR
                 c.telefone LIKE CONCAT('%', :busca, '%') OR
-                c.cpfCnpj LIKE CONCAT('%', :busca, '%')
+                c.cpfCnpj LIKE CONCAT('%', :busca, '%') OR
+                (:buscaNumerica <> '' AND (
+                    REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(c.telefone, '(', ''), ')', ''), ' ', ''), '-', ''), '.', '')
+                        LIKE CONCAT('%', :buscaNumerica, '%') OR
+                    REPLACE(REPLACE(REPLACE(REPLACE(c.cpfCnpj, '.', ''), '-', ''), '/', ''), ' ', '')
+                        LIKE CONCAT('%', :buscaNumerica, '%')
+                ))
             )
             ORDER BY c.nome
             """)
     List<Cliente> buscar(@Param("empresaId") Long empresaId, @Param("busca") String busca,
-            @Param("ativo") Boolean ativo);
+            @Param("buscaNumerica") String buscaNumerica, @Param("ativo") Boolean ativo);
 }

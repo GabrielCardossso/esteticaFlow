@@ -48,16 +48,17 @@ public class ClienteWebController {
     }
 
     @GetMapping("/{id}/editar")
-    public String editar(@PathVariable Long id, Model model) {
+    public String editar(@PathVariable Long id,
+            @RequestParam(defaultValue = "false") boolean mostrarTodosVeiculos, Model model) {
         model.addAttribute("cliente", clienteService.buscarPorId(id));
-        prepararFicha(model, id, new Veiculo(), false);
+        prepararFicha(model, id, new Veiculo(), false, mostrarTodosVeiculos);
         return "customer/form";
     }
 
     @GetMapping("/{clienteId}/veiculos/{veiculoId}/editar")
     public String editarVeiculo(@PathVariable Long clienteId, @PathVariable Long veiculoId, Model model) {
         model.addAttribute("cliente", clienteService.buscarPorId(clienteId));
-        prepararFicha(model, clienteId, veiculoService.buscarPorId(veiculoId, clienteId), true);
+        prepararFicha(model, clienteId, veiculoService.buscarPorId(veiculoId, clienteId), true, false);
         return "customer/form";
     }
 
@@ -83,7 +84,7 @@ public class ClienteWebController {
     public String atualizar(@PathVariable Long id, @Valid @ModelAttribute("cliente") ClienteDTO cliente,
             BindingResult bindingResult, RedirectAttributes redirectAttributes, Model model) {
         if (bindingResult.hasErrors()) {
-            prepararFicha(model, id, new Veiculo(), false);
+            prepararFicha(model, id, new Veiculo(), false, false);
             return "customer/form";
         }
         try {
@@ -92,7 +93,7 @@ public class ClienteWebController {
             return "redirect:/clientes/" + id + "/editar";
         } catch (CpfJaCadastradoException | IllegalArgumentException exception) {
             model.addAttribute("erro", exception.getMessage());
-            prepararFicha(model, id, new Veiculo(), false);
+            prepararFicha(model, id, new Veiculo(), false, false);
             return "customer/form";
         }
     }
@@ -103,7 +104,7 @@ public class ClienteWebController {
             RedirectAttributes redirectAttributes, Model model) {
         if (bindingResult.hasErrors()) {
             model.addAttribute("cliente", clienteService.buscarPorId(clienteId));
-            prepararFicha(model, clienteId, veiculo, veiculo.getId() != null);
+            prepararFicha(model, clienteId, veiculo, veiculo.getId() != null, false);
             return "customer/form";
         }
         try {
@@ -115,7 +116,7 @@ public class ClienteWebController {
         } catch (PlacaJaCadastradaException | IllegalArgumentException exception) {
             model.addAttribute("cliente", clienteService.buscarPorId(clienteId));
             model.addAttribute("erro", exception.getMessage());
-            prepararFicha(model, clienteId, veiculo, veiculo.getId() != null);
+            prepararFicha(model, clienteId, veiculo, veiculo.getId() != null, false);
             return "customer/form";
         }
     }
@@ -125,7 +126,15 @@ public class ClienteWebController {
             RedirectAttributes redirectAttributes) {
         veiculoService.inativar(veiculoId, clienteId);
         redirectAttributes.addFlashAttribute("sucesso", "Veículo inativado com sucesso.");
-        return "redirect:/clientes/" + clienteId + "/editar";
+        return "redirect:/clientes/" + clienteId + "/editar?mostrarTodosVeiculos=true";
+    }
+
+    @PostMapping("/{clienteId}/veiculos/{veiculoId}/reativar")
+    public String reativarVeiculo(@PathVariable Long clienteId, @PathVariable Long veiculoId,
+            RedirectAttributes redirectAttributes) {
+        veiculoService.reativar(veiculoId, clienteId);
+        redirectAttributes.addFlashAttribute("sucesso", "Veículo reativado com sucesso.");
+        return "redirect:/clientes/" + clienteId + "/editar?mostrarTodosVeiculos=true";
     }
 
     @PostMapping("/{id}/inativar")
@@ -142,12 +151,14 @@ public class ClienteWebController {
         return "redirect:/clientes";
     }
 
-    private void prepararFicha(Model model, Long clienteId, Veiculo veiculo, boolean editandoVeiculo) {
+    private void prepararFicha(Model model, Long clienteId, Veiculo veiculo, boolean editandoVeiculo,
+            boolean mostrarTodosVeiculos) {
         if (!model.containsAttribute("cliente"))
             model.addAttribute("cliente", clienteService.buscarPorId(clienteId));
         if (!model.containsAttribute("veiculo"))
             model.addAttribute("veiculo", veiculo);
-        model.addAttribute("veiculos", veiculoService.listarPorCliente(clienteId));
+        model.addAttribute("veiculos", veiculoService.listarPorCliente(clienteId, mostrarTodosVeiculos));
+        model.addAttribute("mostrarTodosVeiculos", mostrarTodosVeiculos);
         model.addAttribute("editandoVeiculo", editandoVeiculo);
         model.addAttribute("menuAtivo", "clientes");
     }

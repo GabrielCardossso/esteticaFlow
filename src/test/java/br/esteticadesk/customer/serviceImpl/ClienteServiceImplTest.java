@@ -1,5 +1,6 @@
 package br.esteticadesk.customer.serviceImpl;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
@@ -10,11 +11,13 @@ import br.esteticadesk.customer.entity.Cliente;
 import br.esteticadesk.customer.mapper.ClienteMapper;
 import br.esteticadesk.customer.repository.ClienteRepository;
 import br.esteticadesk.exception.CpfJaCadastradoException;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
@@ -76,6 +79,59 @@ class ClienteServiceImplTest {
         assertTrue(cliente.getAtivo());
         verify(repository).save(cliente);
         verify(mapper).paraDto(cliente);
+    }
+
+    @Test
+    void normalizaTelefoneCepEEmailAoSalvar() {
+        var dto = clienteDto();
+        var cliente = clienteExistente();
+        cliente.setTelefone("(11) 99999-9999");
+        cliente.setCep("01001-000");
+        cliente.setEmail("  CLIENTE@EXEMPLO.COM ");
+        when(mapper.paraEntidade(dto)).thenReturn(cliente);
+        when(repository.save(cliente)).thenReturn(cliente);
+        when(mapper.paraDto(cliente)).thenReturn(dto);
+
+        service.salvar(dto);
+
+        var captor = ArgumentCaptor.forClass(Cliente.class);
+        verify(repository).save(captor.capture());
+        assertEquals("11999999999", captor.getValue().getTelefone());
+        assertEquals("01001000", captor.getValue().getCep());
+        assertEquals("cliente@exemplo.com", captor.getValue().getEmail());
+    }
+
+    @Test
+    void rejeitaTelefoneComQuantidadeInvalidaDeDigitos() {
+        var cliente = clienteExistente();
+        cliente.setTelefone("(11) 9999-999");
+        when(mapper.paraEntidade(clienteDto())).thenReturn(cliente);
+
+        var exception = assertThrows(IllegalArgumentException.class, () -> service.salvar(clienteDto()));
+
+        assertEquals("Telefone deve conter 10 ou 11 dígitos.", exception.getMessage());
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void rejeitaCepComQuantidadeInvalidaDeDigitos() {
+        var cliente = clienteExistente();
+        cliente.setCep("0100-100");
+        when(mapper.paraEntidade(clienteDto())).thenReturn(cliente);
+
+        var exception = assertThrows(IllegalArgumentException.class, () -> service.salvar(clienteDto()));
+
+        assertEquals("CEP deve conter 8 dígitos.", exception.getMessage());
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void buscaTelefoneMascaradoTambemPelosDigitos() {
+        when(repository.buscar(7L, "(11) 99999-9999", "11999999999", Boolean.TRUE)).thenReturn(List.of());
+
+        service.listar("(11) 99999-9999", true);
+
+        verify(repository).buscar(7L, "(11) 99999-9999", "11999999999", Boolean.TRUE);
     }
 
     private Cliente clienteExistente() {

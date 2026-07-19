@@ -59,7 +59,7 @@ public class RelatorioService {
 
         var empresaId = sessao.empresaObrigatoria();
         var empresa = assinaturas.empresaAtual();
-        var plano = sessao.isSuperAdmin() ? PlanoAssinatura.EXCLUSIVE : empresa.getPlano();
+        var plano = sessao.isSuperAdmin() ? PlanoAssinatura.COMPLETO : empresa.getPlano();
         var periodo = filtro.resolver(referencia);
         var receitasPeriodo = receitas.findByEmpresaIdAndDataRecebimentoBetween(
                 empresaId, periodo.inicio(), periodo.fim());
@@ -77,8 +77,7 @@ public class RelatorioService {
                 ? ZERO
                 : receitaTotal.divide(BigDecimal.valueOf(concluidos.size()), 2, RoundingMode.HALF_UP);
 
-        var possuiRankings = plano != PlanoAssinatura.BASICO;
-        var possuiDetalhes = plano == PlanoAssinatura.EXCLUSIVE;
+        var possuiRelatorioDetalhado = plano.permite(RecursoPlano.RELATORIO_DETALHADO);
         return new RelatorioDTO(
                 empresa.getNomeFantasia(),
                 plano,
@@ -89,11 +88,11 @@ public class RelatorioService {
                 receitaTotal.subtract(despesaTotal),
                 ticketMedio,
                 concluidos.size(),
-                possuiRankings ? rankingServicos(concluidos) : List.of(),
-                possuiRankings ? despesasPorCategoria(despesasPeriodo) : List.of(),
-                possuiDetalhes ? detalhesReceitas(receitasPeriodo) : List.of(),
-                possuiDetalhes ? detalhesDespesas(despesasPeriodo) : List.of(),
-                possuiDetalhes ? detalhesAgendamentos(agendamentosPeriodo) : List.of());
+                possuiRelatorioDetalhado ? rankingServicos(concluidos) : List.of(),
+                possuiRelatorioDetalhado ? despesasPorCategoria(despesasPeriodo) : List.of(),
+                possuiRelatorioDetalhado ? detalhesReceitas(receitasPeriodo) : List.of(),
+                possuiRelatorioDetalhado ? detalhesDespesas(despesasPeriodo) : List.of(),
+                possuiRelatorioDetalhado ? detalhesAgendamentos(agendamentosPeriodo) : List.of());
     }
 
     private BigDecimal somarReceitas(List<Receita> itens) {

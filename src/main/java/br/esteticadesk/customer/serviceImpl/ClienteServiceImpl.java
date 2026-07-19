@@ -71,8 +71,9 @@ public class ClienteServiceImpl implements ClienteService {
     public List<ClienteListagemDTO> listar(String busca, Boolean ativo) {
         var empresaId = sessao.empresaObrigatoria();
         var termo = busca == null ? "" : busca.trim();
+        var termoNumerico = somenteDigitos(termo);
         var filtroAtivo = ativo == null || ativo ? Boolean.TRUE : null;
-        return repository.buscar(empresaId, termo, filtroAtivo).stream()
+        return repository.buscar(empresaId, termo, termoNumerico == null ? "" : termoNumerico, filtroAtivo).stream()
                 .map(cliente -> new ClienteListagemDTO(
                         cliente.getId(),
                         cliente.getNome(),
@@ -99,9 +100,18 @@ public class ClienteServiceImpl implements ClienteService {
     private void normalizar(Cliente cliente) {
         cliente.setNome(textoObrigatorio(cliente.getNome(), "Nome é obrigatório."));
         cliente.setCpfCnpj(somenteDigitos(cliente.getCpfCnpj()));
-        cliente.setTelefone(textoObrigatorio(cliente.getTelefone(), "Telefone é obrigatório."));
-        cliente.setEmail(textoOpcional(cliente.getEmail()));
-        cliente.setCep(textoOpcional(cliente.getCep()));
+        var telefone = somenteDigitos(cliente.getTelefone());
+        if (telefone == null)
+            throw new IllegalArgumentException("Telefone é obrigatório.");
+        if (telefone.length() != 10 && telefone.length() != 11)
+            throw new IllegalArgumentException("Telefone deve conter 10 ou 11 dígitos.");
+        cliente.setTelefone(telefone);
+        var email = textoOpcional(cliente.getEmail());
+        cliente.setEmail(email == null ? null : email.toLowerCase(Locale.ROOT));
+        var cep = somenteDigitos(cliente.getCep());
+        if (cep != null && cep.length() != 8)
+            throw new IllegalArgumentException("CEP deve conter 8 dígitos.");
+        cliente.setCep(cep);
         cliente.setLogradouro(textoOpcional(cliente.getLogradouro()));
         cliente.setNumero(textoOpcional(cliente.getNumero()));
         cliente.setComplemento(textoOpcional(cliente.getComplemento()));
