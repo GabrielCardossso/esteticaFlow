@@ -1,0 +1,11 @@
+# Modelo local (NÃO versionar). Copie para:
+# src/main/resources/application-local.properties
+#
+# Ative com: --spring.profiles.active=local
+
+spring.datasource.url=jdbc:postgresql://localhost:5432/esteticadesk_db
+spring.datasource.username=postgres
+spring.datasource.password=sua-senha-local
+
+spring.jpa.show-sql=false
+spring.thymeleaf.cache=false

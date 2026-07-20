@@ -20,7 +20,8 @@
                 <label for="clienteId">Cliente *</label>
                 <select id="clienteId" name="clienteId" required>
                     <option value="">Selecione...</option>
-                    <option th:each="c : ${clientes}" th:value="${c.id}" th:text="${c.nome}"></option>
+                    <option th:each="c : ${clientes}" th:value="${c.id}" th:text="${c.nome}"
+                            th:selected="${clienteIdSelecionado != null and clienteIdSelecionado == c.id}"></option>
                 </select>
 
                 <label for="veiculoId">Veículo *</label>
@@ -112,8 +113,15 @@
             veiculoSelect.innerHTML = '<option value="">Cliente sem veículos ativos</option>';
         } else {
             veiculoSelect.disabled = false;
+            if (veiculos.length === 1) {
+                veiculoSelect.value = String(veiculos[0].id);
+            }
         }
     });
+
+    if (clienteSelect.value) {
+        clienteSelect.dispatchEvent(new Event('change'));
+    }
 </script>
 </body>
 </html>

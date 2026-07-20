@@ -281,6 +281,102 @@ a {
     color: #fff;
 }
 
+.btn-whatsapp {
+    background-color: #128c7e;
+    color: #fff;
+}
+
+.btn-whatsapp:hover {
+    background-color: #0e6f64;
+    color: #fff;
+}
+
+.page-subtitle {
+    margin: 4px 0 0;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+.filter-bar {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.filter-bar input {
+    flex: 1;
+    min-width: 180px;
+}
+
+.table-empty {
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.table-link {
+    color: var(--accent);
+    font-weight: 650;
+    text-decoration: none;
+}
+
+.table-link:hover {
+    text-decoration: underline;
+}
+
+.client-quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.client-kpi-grid {
+    margin-bottom: 20px;
+}
+
+.kpi-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: var(--shadow);
+}
+
+.kpi-card span {
+    display: block;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-bottom: 6px;
+}
+
+.kpi-card strong {
+    font-size: 1.2rem;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.detail-list {
+    margin: 0;
+    display: grid;
+    gap: 14px;
+}
+
+.detail-list dt {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    margin-bottom: 2px;
+}
+
+.detail-list dd {
+    margin: 0;
+    font-weight: 600;
+}
+
 .btn-sm {
     padding: 6px 10px;
     min-height: 34px;

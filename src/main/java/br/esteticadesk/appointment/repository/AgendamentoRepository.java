@@ -2,6 +2,7 @@ package br.esteticadesk.appointment.repository;
 
 import br.esteticadesk.appointment.entity.Agendamento;
 import br.esteticadesk.enums.StatusAgendamento;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -41,4 +42,53 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
             @Param("empresaId") Long empresaId,
             @Param("inicio") LocalDateTime inicio,
             @Param("fim") LocalDateTime fim);
+
+    @Query("""
+            SELECT a.cliente.id, MAX(a.dataHora)
+            FROM Agendamento a
+            WHERE a.empresaId = :empresaId
+              AND a.status = :status
+              AND a.cliente.id IN :clienteIds
+            GROUP BY a.cliente.id
+            """)
+    List<Object[]> findUltimosAtendimentosPorClientes(
+            @Param("empresaId") Long empresaId,
+            @Param("clienteIds") Collection<Long> clienteIds,
+            @Param("status") StatusAgendamento status);
+
+    @Query("""
+            SELECT MAX(a.dataHora)
+            FROM Agendamento a
+            WHERE a.empresaId = :empresaId
+              AND a.cliente.id = :clienteId
+              AND a.status = :status
+            """)
+    Optional<LocalDateTime> findUltimoAtendimento(
+            @Param("empresaId") Long empresaId,
+            @Param("clienteId") Long clienteId,
+            @Param("status") StatusAgendamento status);
+
+    @Query("""
+            SELECT COUNT(a)
+            FROM Agendamento a
+            WHERE a.empresaId = :empresaId
+              AND a.cliente.id = :clienteId
+              AND a.status = :status
+            """)
+    long countByClienteAndStatus(
+            @Param("empresaId") Long empresaId,
+            @Param("clienteId") Long clienteId,
+            @Param("status") StatusAgendamento status);
+
+    @Query("""
+            SELECT COALESCE(SUM(a.total), 0)
+            FROM Agendamento a
+            WHERE a.empresaId = :empresaId
+              AND a.cliente.id = :clienteId
+              AND a.status = :status
+            """)
+    BigDecimal sumTotalByClienteAndStatus(
+            @Param("empresaId") Long empresaId,
+            @Param("clienteId") Long clienteId,
+            @Param("status") StatusAgendamento status);
 }

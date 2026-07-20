@@ -5,10 +5,12 @@ services:
     image: postgres:16-alpine
     container_name: esteticaflow-postgres
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-esteticadesk_db}
       POSTGRES_USER: ${POSTGRES_USER:-esteticadesk}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-esteticadesk}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no arquivo .env}
     ports:
       # 5433 evita conflito com PostgreSQL instalado no Windows (porta 5432)
       - "${POSTGRES_PORT:-5433}:5432"
@@ -29,6 +31,8 @@ services:
       dockerfile: Dockerfile
     container_name: esteticaflow-app
     restart: unless-stopped
+    env_file:
+      - .env
     depends_on:
       postgres:
         condition: service_healthy
@@ -36,7 +40,7 @@ services:
       SPRING_PROFILES_ACTIVE: docker
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-esteticadesk_db}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-esteticadesk}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-esteticadesk}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD no arquivo .env}
       SERVER_PORT: 8080
     ports:
       - "${APP_PORT:-8080}:8080"

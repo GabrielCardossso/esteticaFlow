@@ -1,16 +1,25 @@
 package br.esteticadesk.customer.serviceImpl;
 
+import br.esteticadesk.appointment.repository.AgendamentoRepository;
 import br.esteticadesk.auth.SessaoUsuario;
 import br.esteticadesk.customer.dto.ClienteDTO;
+import br.esteticadesk.customer.dto.ClienteDetalheDTO;
 import br.esteticadesk.customer.dto.ClienteListagemDTO;
 import br.esteticadesk.customer.entity.Cliente;
 import br.esteticadesk.customer.mapper.ClienteMapper;
 import br.esteticadesk.customer.repository.ClienteRepository;
 import br.esteticadesk.customer.service.ClienteService;
-import br.esteticadesk.exception.*;
+import br.esteticadesk.enums.StatusAgendamento;
+import br.esteticadesk.exception.CpfJaCadastradoException;
+import br.esteticadesk.exception.RecursoNaoEncontradoException;
 import br.esteticadesk.validation.DocumentoValidator;
+import br.esteticadesk.vehicle.service.VeiculoService;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,11 +29,16 @@ public class ClienteServiceImpl implements ClienteService {
     private final ClienteRepository repository;
     private final ClienteMapper mapper;
     private final SessaoUsuario sessao;
+    private final AgendamentoRepository agendamentos;
+    private final VeiculoService veiculoService;
 
-    public ClienteServiceImpl(ClienteRepository repository, ClienteMapper mapper, SessaoUsuario sessao) {
+    public ClienteServiceImpl(ClienteRepository repository, ClienteMapper mapper, SessaoUsuario sessao,
+            AgendamentoRepository agendamentos, VeiculoService veiculoService) {
         this.repository = repository;
         this.mapper = mapper;
         this.sessao = sessao;
+        this.agendamentos = agendamentos;
+        this.veiculoService = veiculoService;
     }
 
     public ClienteDTO salvar(ClienteDTO dto) {
@@ -53,6 +67,19 @@ public class ClienteServiceImpl implements ClienteService {
         return mapper.paraDto(buscarEntidade(id, sessao.empresaObrigatoria()));
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public ClienteDetalheDTO buscarDetalhe(Long id) {
+        var empresaId = sessao.empresaObrigatoria();
+        var cliente = mapper.paraDto(buscarEntidade(id, empresaId));
+        var status = StatusAgendamento.CONCLUIDO;
+        var ultimo = agendamentos.findUltimoAtendimento(empresaId, id, status).orElse(null);
+        var total = agendamentos.countByClienteAndStatus(empresaId, id, status);
+        var gasto = agendamentos.sumTotalByClienteAndStatus(empresaId, id, status);
+        var veiculos = veiculoService.listarPorCliente(id, true);
+        return new ClienteDetalheDTO(cliente, ultimo, total, gasto == null ? BigDecimal.ZERO : gasto, veiculos);
+    }
+
     public ClienteDTO inativar(Long id) {
         var cliente = buscarEntidade(id, sessao.empresaObrigatoria());
         cliente.setAtivo(false);
@@ -73,15 +100,30 @@ public class ClienteServiceImpl implements ClienteService {
         var termo = busca == null ? "" : busca.trim();
         var termoNumerico = somenteDigitos(termo);
         var filtroAtivo = ativo == null || ativo ? Boolean.TRUE : null;
-        return repository.buscar(empresaId, termo, termoNumerico == null ? "" : termoNumerico, filtroAtivo).stream()
+        var clientes = repository.buscar(empresaId, termo, termoNumerico == null ? "" : termoNumerico, filtroAtivo);
+        var ultimos = carregarUltimosAtendimentos(empresaId, clientes.stream().map(Cliente::getId).toList());
+        return clientes.stream()
                 .map(cliente -> new ClienteListagemDTO(
                         cliente.getId(),
                         cliente.getNome(),
                         cliente.getTelefone(),
                         cliente.getCpfCnpj(),
                         cliente.getVeiculos().size(),
-                        Boolean.TRUE.equals(cliente.getAtivo())))
+                        Boolean.TRUE.equals(cliente.getAtivo()),
+                        ultimos.get(cliente.getId())))
                 .toList();
+    }
+
+    private Map<Long, LocalDateTime> carregarUltimosAtendimentos(Long empresaId, List<Long> clienteIds) {
+        Map<Long, LocalDateTime> mapa = new HashMap<>();
+        if (clienteIds.isEmpty()) {
+            return mapa;
+        }
+        for (Object[] linha : agendamentos.findUltimosAtendimentosPorClientes(empresaId, clienteIds,
+                StatusAgendamento.CONCLUIDO)) {
+            mapa.put((Long) linha[0], (LocalDateTime) linha[1]);
+        }
+        return mapa;
     }
 
     private Cliente buscarEntidade(Long id, Long empresaId) {

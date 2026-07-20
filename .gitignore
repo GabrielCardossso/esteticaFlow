@@ -12,6 +12,7 @@ target/
 *.iws
 *.iml
 *.ipr
+.idea/
 
 ### Eclipse ###
 .apt_generated
@@ -37,8 +38,27 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+### Logs e backups ###
 logs/
+*.log
 *.backup
+*.sql.gz
+*.dump
+
+### Segredos e configuração local ###
 .env
-.env.local
+.env.*
 !.env.example
+*.pem
+*.p12
+*.jks
+*.keystore
+credentials.json
+secrets/
+**/application-local.properties
+**/application-secret.properties
+**/application-*.local.properties
+
+### Docker / runtime local ###
+docker-compose.override.yml

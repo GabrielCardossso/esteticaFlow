@@ -1,14 +1,35 @@
+# Build
 target/
 .git/
 .idea/
 .vscode/
 *.iml
+
+# Logs e backups
 logs/
+*.log
 *.backup
+*.sql.gz
+*.dump
+
+# Segredos (nunca embutir no image)
 .env
-.env.local
-**/node_modules/
+.env.*
+!.env.example
+*.pem
+*.p12
+*.jks
+*.keystore
+credentials.json
+secrets/
+**/application-local.properties
+**/application-secret.properties
+**/application-*.local.properties
+
+# Docs/scripts auxiliares (não necessários no image)
 Dockerfile
 docker-compose*.yml
 scripts/
 README*
+COMO-RODAR.md
+prompt.md

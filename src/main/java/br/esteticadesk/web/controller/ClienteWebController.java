@@ -47,6 +47,13 @@ public class ClienteWebController {
         return "customer/form";
     }
 
+    @GetMapping("/{id}")
+    public String detalhe(@PathVariable Long id, Model model) {
+        model.addAttribute("detalhe", clienteService.buscarDetalhe(id));
+        model.addAttribute("menuAtivo", "clientes");
+        return "customer/detail";
+    }
+
     @GetMapping("/{id}/editar")
     public String editar(@PathVariable Long id,
             @RequestParam(defaultValue = "false") boolean mostrarTodosVeiculos, Model model) {
@@ -70,9 +77,9 @@ public class ClienteWebController {
             return "customer/form";
         }
         try {
-            clienteService.salvar(cliente);
+            var salvo = clienteService.salvar(cliente);
             redirectAttributes.addFlashAttribute("sucesso", "Cliente cadastrado com sucesso.");
-            return "redirect:/clientes";
+            return "redirect:/clientes/" + salvo.id();
         } catch (CpfJaCadastradoException | IllegalArgumentException exception) {
             model.addAttribute("erro", exception.getMessage());
             model.addAttribute("menuAtivo", "clientes");
@@ -90,7 +97,7 @@ public class ClienteWebController {
         try {
             clienteService.atualizar(id, cliente);
             redirectAttributes.addFlashAttribute("sucesso", "Cliente atualizado com sucesso.");
-            return "redirect:/clientes/" + id + "/editar";
+            return "redirect:/clientes/" + id;
         } catch (CpfJaCadastradoException | IllegalArgumentException exception) {
             model.addAttribute("erro", exception.getMessage());
             prepararFicha(model, id, new Veiculo(), false, false);

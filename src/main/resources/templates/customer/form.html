@@ -10,7 +10,9 @@
         <div class="page-header">
             <h1 class="page-title" th:text="${cliente.id() == null} ? 'Novo cliente' : 'Editar cliente'"></h1>
             <div class="spacer"></div>
-            <a th:href="@{/clientes}" class="btn btn-secondary">Voltar</a>
+            <a th:if="${cliente.id() != null}" th:href="@{/clientes/{id}(id=${cliente.id()})}"
+               class="btn btn-secondary">Voltar aos detalhes</a>
+            <a th:href="@{/clientes}" class="btn btn-secondary">Lista</a>
         </div>
 
         <div class="card" style="max-width:960px;">

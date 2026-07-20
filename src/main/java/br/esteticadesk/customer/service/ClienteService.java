@@ -1,6 +1,7 @@
 package br.esteticadesk.customer.service;
 
 import br.esteticadesk.customer.dto.ClienteDTO;
+import br.esteticadesk.customer.dto.ClienteDetalheDTO;
 import br.esteticadesk.customer.dto.ClienteListagemDTO;
 import java.util.List;
 
@@ -10,6 +11,8 @@ public interface ClienteService {
     ClienteDTO atualizar(Long id, ClienteDTO cliente);
 
     ClienteDTO buscarPorId(Long id);
+
+    ClienteDetalheDTO buscarDetalhe(Long id);
 
     ClienteDTO inativar(Long id);
 

@@ -1,7 +1,13 @@
 package br.esteticadesk.customer.dto;
 
-public record ClienteListagemDTO(Long id, String nome, String telefone, String cpfCnpj, int veiculos,
-        boolean ativo) {
+import br.esteticadesk.common.ContatoClienteLinks;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+public record ClienteListagemDTO(Long id, String nome, String telefone, String cpfCnpj, int veiculos, boolean ativo,
+        LocalDateTime ultimoAtendimento) {
+
+    private static final DateTimeFormatter DATA_HORA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     public String telefoneFormatado() {
         var digitos = somenteDigitos(telefone);
@@ -27,6 +33,14 @@ public record ClienteListagemDTO(Long id, String nome, String telefone, String c
                     digitos.substring(5, 8), digitos.substring(8, 12), digitos.substring(12));
         }
         return cpfCnpj;
+    }
+
+    public String ultimoAtendimentoFormatado() {
+        return ultimoAtendimento == null ? "—" : DATA_HORA.format(ultimoAtendimento);
+    }
+
+    public String linkWhatsApp() {
+        return ContatoClienteLinks.whatsapp(telefone);
     }
 
     private String somenteDigitos(String valor) {

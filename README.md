@@ -52,11 +52,13 @@ mvn test
 | --- | --- | --- |
 | `SPRING_DATASOURCE_URL` | URL JDBC do PostgreSQL | `jdbc:postgresql://localhost:5432/esteticadesk_db` |
 | `SPRING_DATASOURCE_USERNAME` | Usuário do banco | `postgres` |
-| `SPRING_DATASOURCE_PASSWORD` | Senha do banco | — |
-| `SPRING_PROFILES_ACTIVE` | Perfil (`docker`, `local-docker`, `prod`) | — |
+| `SPRING_DATASOURCE_PASSWORD` | Senha do banco | *(obrigatória — sem default versionado)* |
+| `SPRING_PROFILES_ACTIVE` | Perfil (`local`, `docker`, `local-docker`, `prod`) | — |
 | `SERVER_PORT` | Porta HTTP da aplicação | `8080` |
 
-Em produção, **nunca** use as senhas padrão do `docker-compose.yml` / `application.properties`; defina todas via variáveis de ambiente ou secrets do provedor.
+Em produção, **nunca** use senhas padrão. Defina tudo via `.env` (gitignored), `application-local.properties` (gitignored) ou secrets do provedor.
+
+Arquivos sensíveis já cobertos pelo `.gitignore` / `.dockerignore`: `.env`, `application-local.properties`, certificados, dumps e overrides do Compose.
 
 ## Hospedagem em produção
 

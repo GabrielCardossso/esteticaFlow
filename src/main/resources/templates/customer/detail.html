@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Detalhes do cliente')}"></head>
+<body>
+<div class="app-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="content" th:with="cliente=${detalhe.cliente()}">
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+        <div class="page-header">
+            <div>
+                <h1 class="page-title" th:text="${cliente.nome()}"></h1>
+                <p class="page-subtitle"
+                   th:text="${cliente.ativo()} ? 'Cliente ativo' : 'Cliente inativo'"></p>
+            </div>
+            <div class="spacer"></div>
+            <a th:href="@{/clientes}" class="btn btn-secondary">Voltar</a>
+        </div>
+
+        <div class="client-quick-actions">
+            <a th:href="@{/agenda/novo(clienteId=${cliente.id()})}" class="btn btn-primary">Novo Agendamento</a>
+            <a th:href="@{/clientes/{id}/editar(id=${cliente.id()})}" class="btn btn-secondary">Editar Cliente</a>
+            <a th:if="${detalhe.linkWhatsApp() != null}"
+               th:href="${detalhe.linkWhatsApp()}"
+               class="btn btn-whatsapp"
+               target="_blank" rel="noopener noreferrer">Abrir WhatsApp</a>
+            <a th:if="${detalhe.temEndereco()}"
+               th:href="${detalhe.linkGoogleMaps()}"
+               class="btn btn-secondary"
+               target="_blank" rel="noopener noreferrer">Abrir Rota (Google Maps)</a>
+            <a th:if="${detalhe.temEndereco()}"
+               th:href="${detalhe.linkAppleMaps()}"
+               class="btn btn-secondary"
+               target="_blank" rel="noopener noreferrer">Abrir Rota (Apple Maps)</a>
+        </div>
+
+        <div class="kpi-grid client-kpi-grid">
+            <article class="kpi-card">
+                <span>Último atendimento</span>
+                <strong th:text="${detalhe.ultimoAtendimentoFormatado()}"></strong>
+            </article>
+            <article class="kpi-card">
+                <span>Total de atendimentos</span>
+                <strong th:text="${detalhe.totalAtendimentos()}"></strong>
+            </article>
+            <article class="kpi-card">
+                <span>Valor total gasto</span>
+                <strong th:text="${detalhe.valorTotalFormatado()}"></strong>
+            </article>
+        </div>
+
+        <div class="detail-grid">
+            <section class="card">
+                <h2>Dados de contato</h2>
+                <dl class="detail-list">
+                    <div>
+                        <dt>Telefone</dt>
+                        <dd th:text="${detalhe.telefoneFormatado()}"></dd>
+                    </div>
+                    <div>
+                        <dt>E-mail</dt>
+                        <dd th:text="${cliente.email() != null and !cliente.email().isBlank()} ? ${cliente.email()} : '—'"></dd>
+                    </div>
+                    <div>
+                        <dt>CPF/CNPJ</dt>
+                        <dd th:text="${cliente.cpfCnpj() != null and !cliente.cpfCnpj().isBlank()} ? ${cliente.cpfCnpj()} : '—'"></dd>
+                    </div>
+                    <div>
+                        <dt>Endereço</dt>
+                        <dd th:text="${detalhe.enderecoResumo()}"></dd>
+                    </div>
+                </dl>
+            </section>
+
+            <section class="card">
+                <div class="page-header" style="margin-bottom:12px;">
+                    <h2 style="margin:0;">Veículos</h2>
+                    <div class="spacer"></div>
+                    <a th:href="@{/clientes/{id}/editar(id=${cliente.id()})}" class="btn btn-secondary btn-sm">Gerenciar</a>
+                </div>
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Placa</th>
+                        <th>Veículo</th>
+                        <th>Cor</th>
+                        <th>Ano</th>
+                        <th>Status</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:if="${detalhe.veiculos().isEmpty()}">
+                        <td colspan="5" class="table-empty">Nenhum veículo cadastrado.</td>
+                    </tr>
+                    <tr th:each="item : ${detalhe.veiculos()}">
+                        <td th:text="${item.placa}"></td>
+                        <td th:text="${item.marca + ' ' + item.modelo}"></td>
+                        <td th:text="${item.cor} ?: '—'"></td>
+                        <td th:text="${item.ano} ?: '—'"></td>
+                        <td th:text="${item.ativo} ? 'Ativo' : 'Inativo'"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </section>
+        </div>
+    </main>
+</div>
+</body>
+</html>

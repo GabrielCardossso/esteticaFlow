@@ -74,10 +74,12 @@ public class AgendaWebController {
     }
 
     @GetMapping("/novo")
-    public String novo(@RequestParam(required = false) LocalDate data, Model model) {
+    public String novo(@RequestParam(required = false) LocalDate data,
+            @RequestParam(required = false) Long clienteId, Model model) {
         var empresaId = sessao.empresaObrigatoria();
         var dia = data == null ? LocalDate.now() : data;
         model.addAttribute("data", dia);
+        model.addAttribute("clienteIdSelecionado", clienteId);
         model.addAttribute("clientes", clientes.findByEmpresaIdAndAtivoTrueOrderByNome(empresaId));
         model.addAttribute("servicos", servicos.findByEmpresaIdAndAtivoTrueOrderByNome(empresaId));
         model.addAttribute("funcionarios", funcionarios.findByEmpresaIdAndAtivoTrueOrderById(empresaId));

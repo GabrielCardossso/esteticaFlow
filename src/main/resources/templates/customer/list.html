@@ -13,8 +13,8 @@
             <a th:href="@{/clientes/novo}" class="btn btn-primary">+ Novo cliente</a>
         </div>
 
-        <form method="get" th:action="@{/clientes}" style="display:flex;gap:10px;margin-bottom:16px;">
-            <input type="text" name="busca" th:value="${busca}" placeholder="Buscar por nome, telefone ou CPF/CNPJ" style="flex:1;"/>
+        <form method="get" th:action="@{/clientes}" class="filter-bar">
+            <input type="text" name="busca" th:value="${busca}" placeholder="Buscar por nome, telefone ou CPF/CNPJ"/>
             <select name="ativos">
                 <option th:value="true" th:selected="${ativos}">Ativos</option>
                 <option th:value="false" th:selected="${!ativos}">Todos</option>
@@ -29,28 +29,46 @@
                 <th>Telefone</th>
                 <th>CPF/CNPJ</th>
                 <th>Veículos</th>
+                <th>Último atendimento</th>
                 <th>Status</th>
                 <th>Ações</th>
             </tr>
             </thead>
             <tbody>
             <tr th:if="${clientes.isEmpty()}">
-                <td colspan="6" style="text-align:center;color:#64748b;">Nenhum cliente encontrado.</td>
+                <td colspan="7" class="table-empty">Nenhum cliente encontrado.</td>
             </tr>
             <tr th:each="cliente : ${clientes}">
-                <td th:text="${cliente.nome()}"></td>
+                <td>
+                    <a class="table-link" th:href="@{/clientes/{id}(id=${cliente.id()})}"
+                       th:text="${cliente.nome()}"></a>
+                </td>
                 <td th:text="${cliente.telefoneFormatado()}"></td>
                 <td th:text="${cliente.documentoFormatado()} ?: '—'"></td>
                 <td th:text="${cliente.veiculos()}"></td>
+                <td th:text="${cliente.ultimoAtendimentoFormatado()}"></td>
                 <td th:text="${cliente.ativo()} ? 'Ativo' : 'Inativo'"></td>
-                <td>
+                <td class="actions">
+                    <a th:if="${cliente.linkWhatsApp() != null}"
+                       th:href="${cliente.linkWhatsApp()}"
+                       class="btn btn-whatsapp btn-sm"
+                       target="_blank" rel="noopener noreferrer"
+                       title="Abrir WhatsApp"
+                       aria-label="Abrir WhatsApp do cliente">
+                        WhatsApp
+                    </a>
+                    <a th:href="@{/clientes/{id}(id=${cliente.id()})}"
+                       class="btn btn-secondary btn-sm">Detalhes</a>
                     <a th:href="@{/clientes/{id}/editar(id=${cliente.id()})}"
                        class="btn btn-secondary btn-sm">Editar</a>
-                    <form th:if="${cliente.ativo()}" th:action="@{/clientes/{id}/inativar(id=${cliente.id()})}" method="post" style="display:inline;">
+                    <form th:if="${cliente.ativo()}" th:action="@{/clientes/{id}/inativar(id=${cliente.id()})}"
+                          method="post">
                         <div th:replace="~{fragments/csrf :: csrf}"></div>
-                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Inativar este cliente?')">Inativar</button>
+                        <button type="submit" class="btn btn-danger btn-sm"
+                                onclick="return confirm('Inativar este cliente?')">Inativar</button>
                     </form>
-                    <form th:unless="${cliente.ativo()}" th:action="@{/clientes/{id}/reativar(id=${cliente.id()})}" method="post" style="display:inline;">
+                    <form th:unless="${cliente.ativo()}" th:action="@{/clientes/{id}/reativar(id=${cliente.id()})}"
+                          method="post">
                         <div th:replace="~{fragments/csrf :: csrf}"></div>
                         <button type="submit" class="btn btn-primary btn-sm">Reativar</button>
                     </form>
