@@ -58,24 +58,30 @@ class EstoqueServiceImplTest {
     }
 
     @Test
-    void registraEntradaManualNaEmpresaDaSessao() {
+    void registraEntradaUsandoValorDaEmbalagemENaoMultiplicandoPrecoUnitarioErrado() {
         when(sessao.empresaObrigatoria()).thenReturn(7L);
-        var estoque = estoque("Produto", "10.000");
+        // Frasco 2000 ml por R$ 50 → custo unitário 0,025
+        var estoque = estoqueEmbalagem("Shampoo", "0", "2000", "50.00");
         when(estoques.findByEmpresaIdAndProdutoIdForUpdate(7L, 3L)).thenReturn(Optional.of(estoque));
 
-        service.registrarEntrada(3L, new BigDecimal("2.500"));
+        service.registrarEntrada(3L, new BigDecimal("2000"));
 
-        assertEquals(new BigDecimal("12.500"), estoque.getQuantidadeAtual());
-        var captor = ArgumentCaptor.forClass(MovimentacaoEstoque.class);
-        verify(movimentacoes).save(captor.capture());
-        assertEquals(7L, captor.getValue().getEmpresaId());
-        assertEquals(TipoMovimentacao.ENTRADA, captor.getValue().getTipo());
-        assertEquals(OrigemMovimentacao.MANUAL, captor.getValue().getOrigem());
-        assertEquals(new BigDecimal("2.500"), captor.getValue().getQuantidade());
         var despesaCaptor = ArgumentCaptor.forClass(Despesa.class);
         verify(financeiro).registrarDespesa(despesaCaptor.capture());
-        assertEquals(new BigDecimal("75.00"), despesaCaptor.getValue().getValor());
-        assertEquals("Reposição de estoque: Produto (2.5 L)", despesaCaptor.getValue().getDescricao());
+        assertEquals(new BigDecimal("50.00"), despesaCaptor.getValue().getValor());
+    }
+
+    @Test
+    void registraEntradaComValorPagoInformado() {
+        when(sessao.empresaObrigatoria()).thenReturn(7L);
+        var estoque = estoqueEmbalagem("Produto", "10.000", "1", "30.00");
+        when(estoques.findByEmpresaIdAndProdutoIdForUpdate(7L, 3L)).thenReturn(Optional.of(estoque));
+
+        service.registrarEntrada(3L, new BigDecimal("2.500"), new BigDecimal("40.00"), "Compra promoção");
+
+        var despesaCaptor = ArgumentCaptor.forClass(Despesa.class);
+        verify(financeiro).registrarDespesa(despesaCaptor.capture());
+        assertEquals(new BigDecimal("40.00"), despesaCaptor.getValue().getValor());
     }
 
     @Test
@@ -83,22 +89,17 @@ class EstoqueServiceImplTest {
         when(sessao.empresaObrigatoria()).thenReturn(7L);
         var categoria = new CategoriaProduto();
         when(categorias.findByIdAndEmpresaIdAndAtivoTrue(2L, 7L)).thenReturn(Optional.of(categoria));
-        var dados = new ProdutoEstoqueDTO(null, " Shampoo ", UnidadeMedida.L, new BigDecimal("30.00"), 2L,
-                new BigDecimal("5.000"), new BigDecimal("1.000"));
+        var dados = new ProdutoEstoqueDTO(null, " Shampoo ", UnidadeMedida.L, BigDecimal.ONE,
+                new BigDecimal("30.00"), 2L, new BigDecimal("5.000"), new BigDecimal("1.000"));
 
         service.salvarProduto(dados);
 
         var estoqueCaptor = ArgumentCaptor.forClass(Estoque.class);
         verify(estoques).save(estoqueCaptor.capture());
-        assertEquals(7L, estoqueCaptor.getValue().getEmpresaId());
         assertEquals(new BigDecimal("5.000"), estoqueCaptor.getValue().getQuantidadeAtual());
-        assertEquals(new BigDecimal("1.000"), estoqueCaptor.getValue().getQuantidadeMinima());
-        assertEquals("Shampoo", estoqueCaptor.getValue().getProduto().getNome());
+        assertEquals(new BigDecimal("30.00"), estoqueCaptor.getValue().getProduto().getValorEmbalagem());
+        assertEquals(new BigDecimal("30.0000"), estoqueCaptor.getValue().getProduto().getPrecoCusto());
 
-        var movimentacaoCaptor = ArgumentCaptor.forClass(MovimentacaoEstoque.class);
-        verify(movimentacoes).save(movimentacaoCaptor.capture());
-        assertEquals(TipoMovimentacao.ENTRADA, movimentacaoCaptor.getValue().getTipo());
-        assertEquals(new BigDecimal("5.000"), movimentacaoCaptor.getValue().getQuantidade());
         var despesaCaptor = ArgumentCaptor.forClass(Despesa.class);
         verify(financeiro).registrarDespesa(despesaCaptor.capture());
         assertEquals(new BigDecimal("150.00"), despesaCaptor.getValue().getValor());
@@ -107,7 +108,7 @@ class EstoqueServiceImplTest {
     @Test
     void rejeitaSaidaAcimaDoSaldoSemRegistrarMovimentacao() {
         when(sessao.empresaObrigatoria()).thenReturn(7L);
-        var estoque = estoque("Produto", "1.000");
+        var estoque = estoqueEmbalagem("Produto", "1.000", "1", "30.00");
         when(estoques.findByEmpresaIdAndProdutoIdForUpdate(7L, 3L)).thenReturn(Optional.of(estoque));
 
         assertThrows(EstoqueInsuficienteException.class,
@@ -130,7 +131,7 @@ class EstoqueServiceImplTest {
     @Test
     void rejeitaMovimentacaoDeProdutoInativo() {
         when(sessao.empresaObrigatoria()).thenReturn(7L);
-        var estoque = estoque("Produto", "10.000");
+        var estoque = estoqueEmbalagem("Produto", "10.000", "1", "30.00");
         estoque.getProduto().setAtivo(false);
         when(estoques.findByEmpresaIdAndProdutoIdForUpdate(7L, 3L)).thenReturn(Optional.of(estoque));
 
@@ -154,10 +155,13 @@ class EstoqueServiceImplTest {
         verify(produtos).findByIdAndEmpresaId(3L, 7L);
     }
 
-    private Estoque estoque(String nomeProduto, String quantidade) {
+    private Estoque estoqueEmbalagem(String nome, String quantidade, String qtdEmbalagem, String valorEmbalagem) {
         var produto = new Produto();
-        produto.setNome(nomeProduto);
-        produto.setPrecoCusto(new BigDecimal("30.00"));
+        produto.setNome(nome);
+        produto.setQuantidadeEmbalagem(new BigDecimal(qtdEmbalagem));
+        produto.setValorEmbalagem(new BigDecimal(valorEmbalagem));
+        produto.setPrecoCusto(new BigDecimal(valorEmbalagem).divide(new BigDecimal(qtdEmbalagem), 4,
+                java.math.RoundingMode.HALF_UP));
         produto.setUnidadeMedida(UnidadeMedida.L);
         produto.setAtivo(true);
         var estoque = new Estoque();

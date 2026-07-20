@@ -9,21 +9,38 @@
         <div class="page-header">
             <h1 class="page-title">Serviços</h1>
             <div class="spacer"></div>
-            <form method="get" th:action="@{/servicos}" class="inline-form">
-                <input type="hidden" name="mostrarTodasCategorias" th:value="${mostrarTodasCategorias}"/>
-                <select name="mostrarTodos" onchange="this.form.submit()">
-                    <option value="false" th:selected="${!mostrarTodos}">Ativos</option>
-                    <option value="true" th:selected="${mostrarTodos}">Todos</option>
-                </select>
-            </form>
             <a th:href="@{/servicos/novo}" class="btn btn-primary">+ Novo serviço</a>
         </div>
+
+        <form method="get" th:action="@{/servicos}" class="filter-bar">
+            <input type="text" name="busca" th:value="${busca}" placeholder="Buscar por nome"/>
+            <select name="categoriaId">
+                <option value="">Todas as categorias</option>
+                <option th:each="categoria : ${categoriasFiltro}" th:value="${categoria.id}"
+                        th:text="${categoria.nome}"
+                        th:selected="${categoriaId != null && categoriaId == categoria.id}"></option>
+            </select>
+            <select name="ordenacao">
+                <option value="nome" th:selected="${ordenacao == 'nome'}">Nome (A-Z)</option>
+                <option value="preco_asc" th:selected="${ordenacao == 'preco_asc'}">Preço (menor)</option>
+                <option value="preco_desc" th:selected="${ordenacao == 'preco_desc'}">Preço (maior)</option>
+            </select>
+            <select name="mostrarTodos">
+                <option value="false" th:selected="${!mostrarTodos}">Ativos</option>
+                <option value="true" th:selected="${mostrarTodos}">Todos</option>
+            </select>
+            <input type="hidden" name="mostrarTodasCategorias" th:value="${mostrarTodasCategorias}"/>
+            <button type="submit" class="btn btn-secondary">Filtrar</button>
+        </form>
 
         <div class="card category-manager">
             <div>
                 <h3>Categorias de serviços</h3>
                 <form method="get" th:action="@{/servicos}" class="inline-form">
                     <input type="hidden" name="mostrarTodos" th:value="${mostrarTodos}"/>
+                    <input type="hidden" name="busca" th:value="${busca}"/>
+                    <input type="hidden" name="categoriaId" th:if="${categoriaId != null}" th:value="${categoriaId}"/>
+                    <input type="hidden" name="ordenacao" th:value="${ordenacao}"/>
                     <select name="mostrarTodasCategorias" onchange="this.form.submit()">
                         <option value="false" th:selected="${!mostrarTodasCategorias}">Ativas</option>
                         <option value="true" th:selected="${mostrarTodasCategorias}">Todas</option>

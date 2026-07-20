@@ -31,6 +31,6 @@ public class LogSistema extends EntidadeEmpresaBase {
     @PrePersist
     void preencherData() {
         if (dataHora == null)
-            dataHora = LocalDateTime.now();
+            dataHora = br.esteticadesk.common.HorarioSistema.agora();
     }
 }

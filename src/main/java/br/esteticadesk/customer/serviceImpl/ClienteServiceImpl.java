@@ -12,10 +12,12 @@ import br.esteticadesk.customer.service.ClienteService;
 import br.esteticadesk.enums.StatusAgendamento;
 import br.esteticadesk.exception.CpfJaCadastradoException;
 import br.esteticadesk.exception.RecursoNaoEncontradoException;
+import br.esteticadesk.finance.repository.ReceitaRepository;
 import br.esteticadesk.validation.DocumentoValidator;
 import br.esteticadesk.vehicle.service.VeiculoService;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -31,14 +33,16 @@ public class ClienteServiceImpl implements ClienteService {
     private final SessaoUsuario sessao;
     private final AgendamentoRepository agendamentos;
     private final VeiculoService veiculoService;
+    private final ReceitaRepository receitas;
 
     public ClienteServiceImpl(ClienteRepository repository, ClienteMapper mapper, SessaoUsuario sessao,
-            AgendamentoRepository agendamentos, VeiculoService veiculoService) {
+            AgendamentoRepository agendamentos, VeiculoService veiculoService, ReceitaRepository receitas) {
         this.repository = repository;
         this.mapper = mapper;
         this.sessao = sessao;
         this.agendamentos = agendamentos;
         this.veiculoService = veiculoService;
+        this.receitas = receitas;
     }
 
     public ClienteDTO salvar(ClienteDTO dto) {
@@ -77,7 +81,9 @@ public class ClienteServiceImpl implements ClienteService {
         var total = agendamentos.countByClienteAndStatus(empresaId, id, status);
         var gasto = agendamentos.sumTotalByClienteAndStatus(empresaId, id, status);
         var veiculos = veiculoService.listarPorCliente(id, true);
-        return new ClienteDetalheDTO(cliente, ultimo, total, gasto == null ? BigDecimal.ZERO : gasto, veiculos);
+        var historicoFinanceiro = receitas.findByEmpresaIdAndAgendamentoClienteIdOrderByDataRecebimentoDesc(empresaId, id);
+        return new ClienteDetalheDTO(cliente, ultimo, total, gasto == null ? BigDecimal.ZERO : gasto, veiculos,
+                historicoFinanceiro);
     }
 
     public ClienteDTO inativar(Long id) {
@@ -95,14 +101,17 @@ public class ClienteServiceImpl implements ClienteService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ClienteListagemDTO> listar(String busca, Boolean ativo) {
+    public List<ClienteListagemDTO> listar(String busca, Boolean ativo, String ordenacao) {
         var empresaId = sessao.empresaObrigatoria();
         var termo = busca == null ? "" : busca.trim();
         var termoNumerico = somenteDigitos(termo);
         var filtroAtivo = ativo == null || ativo ? Boolean.TRUE : null;
         var clientes = repository.buscar(empresaId, termo, termoNumerico == null ? "" : termoNumerico, filtroAtivo);
-        var ultimos = carregarUltimosAtendimentos(empresaId, clientes.stream().map(Cliente::getId).toList());
-        return clientes.stream()
+        var ids = clientes.stream().map(Cliente::getId).toList();
+        var ultimos = carregarUltimosAtendimentos(empresaId, ids);
+        var totais = carregarTotaisAtendimentos(empresaId, ids);
+        var gastos = carregarGastos(empresaId, ids);
+        var lista = clientes.stream()
                 .map(cliente -> new ClienteListagemDTO(
                         cliente.getId(),
                         cliente.getNome(),
@@ -110,8 +119,25 @@ public class ClienteServiceImpl implements ClienteService {
                         cliente.getCpfCnpj(),
                         cliente.getVeiculos().size(),
                         Boolean.TRUE.equals(cliente.getAtivo()),
-                        ultimos.get(cliente.getId())))
+                        ultimos.get(cliente.getId()),
+                        totais.getOrDefault(cliente.getId(), 0L),
+                        gastos.getOrDefault(cliente.getId(), BigDecimal.ZERO)))
+                .sorted(comparadorOrdenacao(ordenacao))
                 .toList();
+        return lista;
+    }
+
+    private Comparator<ClienteListagemDTO> comparadorOrdenacao(String ordenacao) {
+        var criterio = ordenacao == null || ordenacao.isBlank() ? "nome" : ordenacao.trim().toLowerCase(Locale.ROOT);
+        return switch (criterio) {
+            case "ultimo_atendimento" -> Comparator.comparing(
+                    ClienteListagemDTO::ultimoAtendimento, Comparator.nullsLast(Comparator.reverseOrder()));
+            case "valor_gasto" -> Comparator.comparing(
+                    cliente -> cliente.valorTotalGasto() == null ? BigDecimal.ZERO : cliente.valorTotalGasto(),
+                    Comparator.reverseOrder());
+            case "relacionamento" -> Comparator.comparing(ClienteListagemDTO::relacionamento);
+            default -> Comparator.comparing(cliente -> cliente.nome().toLowerCase(Locale.ROOT));
+        };
     }
 
     private Map<Long, LocalDateTime> carregarUltimosAtendimentos(Long empresaId, List<Long> clienteIds) {
@@ -122,6 +148,30 @@ public class ClienteServiceImpl implements ClienteService {
         for (Object[] linha : agendamentos.findUltimosAtendimentosPorClientes(empresaId, clienteIds,
                 StatusAgendamento.CONCLUIDO)) {
             mapa.put((Long) linha[0], (LocalDateTime) linha[1]);
+        }
+        return mapa;
+    }
+
+    private Map<Long, Long> carregarTotaisAtendimentos(Long empresaId, List<Long> clienteIds) {
+        Map<Long, Long> mapa = new HashMap<>();
+        if (clienteIds.isEmpty()) {
+            return mapa;
+        }
+        for (Object[] linha : agendamentos.countAtendimentosPorClientes(empresaId, clienteIds,
+                StatusAgendamento.CONCLUIDO)) {
+            mapa.put((Long) linha[0], (Long) linha[1]);
+        }
+        return mapa;
+    }
+
+    private Map<Long, BigDecimal> carregarGastos(Long empresaId, List<Long> clienteIds) {
+        Map<Long, BigDecimal> mapa = new HashMap<>();
+        if (clienteIds.isEmpty()) {
+            return mapa;
+        }
+        for (Object[] linha : agendamentos.sumGastosPorClientes(empresaId, clienteIds,
+                StatusAgendamento.CONCLUIDO)) {
+            mapa.put((Long) linha[0], (BigDecimal) linha[1]);
         }
         return mapa;
     }

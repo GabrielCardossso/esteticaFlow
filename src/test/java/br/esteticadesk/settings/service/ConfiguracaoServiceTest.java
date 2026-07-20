@@ -110,7 +110,7 @@ class ConfiguracaoServiceTest {
         var exception = assertThrows(IllegalStateException.class,
                 () -> service.criarUsuario("Novo", "novo@empresa.com", "123456", PapelUsuario.FUNCIONARIO));
 
-        assertEquals("Limite de 2 usuários ativos atingido para o plano BASICO.", exception.getMessage());
+        assertEquals("Limite de 2 usuários ativos atingido para o plano BASICO. Faça upgrade do plano para adicionar mais usuários.", exception.getMessage());
         verify(usuarios, never()).save(org.mockito.ArgumentMatchers.any());
     }
 
@@ -138,7 +138,7 @@ class ConfiguracaoServiceTest {
 
         var exception = assertThrows(IllegalStateException.class, () -> service.reativarUsuario(12L));
 
-        assertEquals("Limite de 2 usuários ativos atingido para o plano BASICO.", exception.getMessage());
+        assertEquals("Limite de 2 usuários ativos atingido para o plano BASICO. Faça upgrade do plano para adicionar mais usuários.", exception.getMessage());
         verify(usuarios, never()).save(org.mockito.ArgumentMatchers.any());
     }
 
@@ -215,6 +215,8 @@ class ConfiguracaoServiceTest {
         dados.setEmail("  CONTATO@EMPRESA.COM ");
         dados.setPlano(PlanoAssinatura.BASICO);
         when(assinaturas.empresaAtual()).thenReturn(atual);
+        when(sessao.isSuperAdmin()).thenReturn(true);
+        when(sessao.isAdministrador()).thenReturn(true);
         when(empresas.existeCnpjNormalizado("11222333000181", 7L)).thenReturn(false);
         when(empresas.save(atual)).thenReturn(atual);
 

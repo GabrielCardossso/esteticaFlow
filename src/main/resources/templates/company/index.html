@@ -9,13 +9,22 @@
         <div class="page-header">
             <h1 class="page-title">Empresas e assinaturas</h1>
             <div class="spacer"></div>
-            <form method="get" th:action="@{/empresas}" class="inline-form">
-                <select name="mostrarTodas" onchange="this.form.submit()">
-                    <option value="false" th:selected="${!mostrarTodas}">Ativas</option>
-                    <option value="true" th:selected="${mostrarTodas}">Todas</option>
-                </select>
-            </form>
         </div>
+
+        <form method="get" th:action="@{/empresas}" class="filter-bar">
+            <input type="text" name="busca" th:value="${busca}"
+                   placeholder="Buscar por nome fantasia, razão social ou CNPJ"/>
+            <select name="plano">
+                <option value="">Todos os planos</option>
+                <option th:each="p : ${planos}" th:value="${p}" th:text="${p}"
+                        th:selected="${planoFiltro != null && planoFiltro == p}"></option>
+            </select>
+            <select name="mostrarTodas">
+                <option value="false" th:selected="${!mostrarTodas}">Ativas</option>
+                <option value="true" th:selected="${mostrarTodas}">Todas</option>
+            </select>
+            <button type="submit" class="btn btn-secondary">Filtrar</button>
+        </form>
 
         <div class="card" style="margin-bottom:20px;">
             <h3>Cadastrar empresa</h3>

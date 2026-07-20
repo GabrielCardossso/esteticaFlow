@@ -36,9 +36,31 @@ public class MovimentacaoEstoque extends EntidadeEmpresaBase {
     @JoinColumn(name = "agendamento_id")
     private Agendamento agendamento;
 
+    @Size(max = 500)
+    private String motivo;
+
+    @PositiveOrZero
+    @Column(name = "valor_financeiro", precision = 12, scale = 2)
+    private BigDecimal valorFinanceiro;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_id")
+    private br.esteticadesk.employee.entity.Usuario usuario;
+
+    @Size(max = 150)
+    @Column(name = "local_compra")
+    private String localCompra;
+
+    @Size(max = 60)
+    @Column(name = "numero_nota_fiscal")
+    private String numeroNotaFiscal;
+
+    @Column(name = "data_compra")
+    private java.time.LocalDate dataCompra;
+
     @PrePersist
     void preencherData() {
         if (dataMovimentacao == null)
-            dataMovimentacao = LocalDateTime.now();
+            dataMovimentacao = br.esteticadesk.common.HorarioSistema.agora();
     }
 }

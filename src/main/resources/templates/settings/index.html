@@ -48,26 +48,42 @@
 
         <div class="card" style="margin-bottom:20px;">
             <h3>Dados da empresa</h3>
+            <p th:if="${administrador and !superAdmin}" class="muted" style="margin-top:8px;">
+                Alterações cadastrais precisam de autorização da EsteticaFlow.
+                Preencha o formulário e envie a solicitação.
+            </p>
+            <div th:if="${solicitacaoPendente != null}" class="alert alert-info" style="margin-top:12px;">
+                Já existe uma solicitação pendente enviada em
+                <span th:text="${#temporals.format(solicitacaoPendente.dataCriacao, 'dd/MM/yyyy HH:mm')}"></span>.
+                Aguarde a análise da EsteticaFlow.
+            </div>
             <form th:action="@{/configuracoes/empresa}" th:object="${empresa}" method="post" class="form-grid" style="margin-top:16px;">
                 <div th:replace="~{fragments/csrf :: csrf}"></div>
                 <label>Razão social</label>
-                <input type="text" th:field="*{razaoSocial}" required maxlength="150" autocomplete="organization"/>
+                <input type="text" th:field="*{razaoSocial}" required maxlength="150" autocomplete="organization"
+                       th:readonly="${!superAdmin and (solicitacaoPendente != null or !administrador)}"/>
                 <label>Nome fantasia</label>
-                <input type="text" th:field="*{nomeFantasia}" required maxlength="150" autocomplete="organization"/>
+                <input type="text" th:field="*{nomeFantasia}" required maxlength="150" autocomplete="organization"
+                       th:readonly="${!superAdmin and (solicitacaoPendente != null or !administrador)}"/>
                 <label>CNPJ</label>
                 <input type="text" th:field="*{cnpj}" required data-mask="cnpj" maxlength="18"
-                       inputmode="numeric" autocomplete="off"/>
+                       inputmode="numeric" autocomplete="off"
+                       th:readonly="${!superAdmin and (solicitacaoPendente != null or !administrador)}"/>
                 <label>Telefone</label>
                 <input type="tel" th:field="*{telefone}" data-mask="telefone" maxlength="15"
-                       inputmode="tel" autocomplete="tel"/>
+                       inputmode="tel" autocomplete="tel"
+                       th:readonly="${!superAdmin and (solicitacaoPendente != null or !administrador)}"/>
                 <label>E-mail</label>
-                <input type="email" th:field="*{email}" maxlength="150" autocomplete="email"/>
+                <input type="email" th:field="*{email}" maxlength="150" autocomplete="email"
+                       th:readonly="${!superAdmin and (solicitacaoPendente != null or !administrador)}"/>
                 <label>Plano</label>
                 <input type="text" readonly th:value="${empresa.plano}"/>
                 <label>Próximo vencimento</label>
                 <input type="date" readonly th:value="${empresa.proximoVencimento}"/>
                 <div></div>
-                <button type="submit" class="btn btn-primary">Salvar empresa</button>
+                <button th:if="${superAdmin}" type="submit" class="btn btn-primary">Salvar empresa</button>
+                <button th:if="${administrador and !superAdmin and solicitacaoPendente == null}"
+                        type="submit" class="btn btn-primary">Solicitar alteração à EsteticaFlow</button>
             </form>
         </div>
 
@@ -83,18 +99,49 @@
                     </select>
                 </form>
                 <ul th:if="${!usuarios.isEmpty()}">
-                    <li th:each="u : ${usuarios}" class="actions">
-                        <span th:text="${u.nome} + ' (' + ${u.email} + ') — ' + ${u.papel} + ' — ' + (${u.ativo} ? 'Ativo' : 'Inativo')"></span>
-                        <form th:if="${administrador and u.ativo}"
-                              th:action="@{/configuracoes/usuarios/{id}/inativar(id=${u.id})}" method="post">
+                    <li th:each="u : ${usuarios}" class="settings-user-item">
+                        <p class="settings-user-meta"
+                           th:text="(${u.ativo} ? 'Ativo' : 'Inativo') + ' · ID ' + ${u.id}"></p>
+                        <form th:if="${administrador}"
+                              th:action="@{/configuracoes/usuarios/{id}(id=${u.id})}" method="post"
+                              class="form-grid" style="margin-bottom:8px;">
                             <div th:replace="~{fragments/csrf :: csrf}"></div>
-                            <button type="submit" class="btn btn-danger btn-sm">Inativar</button>
+                            <label th:for="${'user-nome-' + u.id}">Nome</label>
+                            <input th:id="${'user-nome-' + u.id}" type="text" name="nome" th:value="${u.nome}"
+                                   required maxlength="150" autocomplete="name"/>
+                            <label th:for="${'user-email-' + u.id}">E-mail</label>
+                            <input th:id="${'user-email-' + u.id}" type="email" name="email" th:value="${u.email}"
+                                   required maxlength="150" autocomplete="username"/>
+                            <label th:for="${'user-papel-' + u.id}">Papel</label>
+                            <select th:id="${'user-papel-' + u.id}" name="papel" required>
+                                <option th:each="p : ${papeis}" th:value="${p}" th:text="${p}"
+                                        th:selected="${p == u.papel}"></option>
+                            </select>
+                            <label th:for="${'user-senha-' + u.id}">Nova senha</label>
+                            <input th:id="${'user-senha-' + u.id}" type="password" name="novaSenha" minlength="6"
+                                   autocomplete="new-password" placeholder="Opcional"/>
+                            <div></div>
+                            <button type="submit" class="btn btn-primary btn-sm">Salvar</button>
                         </form>
-                        <form th:if="${administrador and !u.ativo}"
-                              th:action="@{/configuracoes/usuarios/{id}/reativar(id=${u.id})}" method="post">
-                            <div th:replace="~{fragments/csrf :: csrf}"></div>
-                            <button type="submit" class="btn btn-primary btn-sm">Reativar</button>
-                        </form>
+                        <span th:unless="${administrador}"
+                              th:text="${u.nome} + ' (' + ${u.email} + ') — ' + ${u.papel} + ' — ' + (${u.ativo} ? 'Ativo' : 'Inativo')"></span>
+                        <div th:if="${administrador}" class="actions" style="margin-top:8px;">
+                            <form th:action="@{/configuracoes/usuarios/{id}/excluir(id=${u.id})}" method="post"
+                                  data-confirm="Excluir este usuário? Ele será inativado.">
+                                <div th:replace="~{fragments/csrf :: csrf}"></div>
+                                <button type="submit" class="btn btn-danger btn-sm">Excluir</button>
+                            </form>
+                            <form th:if="${u.ativo}"
+                                  th:action="@{/configuracoes/usuarios/{id}/inativar(id=${u.id})}" method="post">
+                                <div th:replace="~{fragments/csrf :: csrf}"></div>
+                                <button type="submit" class="btn btn-danger btn-sm">Inativar</button>
+                            </form>
+                            <form th:unless="${u.ativo}"
+                                  th:action="@{/configuracoes/usuarios/{id}/reativar(id=${u.id})}" method="post">
+                                <div th:replace="~{fragments/csrf :: csrf}"></div>
+                                <button type="submit" class="btn btn-primary btn-sm">Reativar</button>
+                            </form>
+                        </div>
                     </li>
                 </ul>
                 <p th:if="${usuarios.isEmpty()}" style="color:var(--text-muted);">Nenhum usuário cadastrado.</p>
@@ -130,7 +177,16 @@
                     </form>
                     <ul th:if="${!formasPagamento.isEmpty()}">
                         <li th:each="f : ${formasPagamento}" class="actions">
-                            <span th:text="${f.nome} + ' — ' + (${f.ativo} ? 'Ativa' : 'Inativa')"></span>
+                            <form th:if="${administrador and f.ativo}"
+                                  th:action="@{/configuracoes/formas-pagamento/{id}(id=${f.id})}" method="post"
+                                  class="inline-form" style="flex:1;">
+                                <div th:replace="~{fragments/csrf :: csrf}"></div>
+                                <input type="text" name="nome" th:value="${f.nome}" required maxlength="50"
+                                       style="flex:1;"/>
+                                <button type="submit" class="btn btn-primary btn-sm">Salvar</button>
+                            </form>
+                            <span th:unless="${administrador and f.ativo}"
+                                  th:text="${f.nome} + ' — ' + (${f.ativo} ? 'Ativa' : 'Inativa')"></span>
                             <form th:if="${administrador and f.ativo}"
                                   th:action="@{/configuracoes/formas-pagamento/{id}/inativar(id=${f.id})}" method="post">
                                 <div th:replace="~{fragments/csrf :: csrf}"></div>
@@ -162,7 +218,16 @@
                     </form>
                     <ul th:if="${!categorias.isEmpty()}">
                         <li th:each="c : ${categorias}" class="actions">
-                            <span th:text="${c.nome} + ' — ' + (${c.ativo} ? 'Ativa' : 'Inativa')"></span>
+                            <form th:if="${administrador and c.ativo}"
+                                  th:action="@{/configuracoes/categorias/{id}(id=${c.id})}" method="post"
+                                  class="inline-form" style="flex:1;">
+                                <div th:replace="~{fragments/csrf :: csrf}"></div>
+                                <input type="text" name="nome" th:value="${c.nome}" required maxlength="100"
+                                       style="flex:1;"/>
+                                <button type="submit" class="btn btn-primary btn-sm">Salvar</button>
+                            </form>
+                            <span th:unless="${administrador and c.ativo}"
+                                  th:text="${c.nome} + ' — ' + (${c.ativo} ? 'Ativa' : 'Inativa')"></span>
                             <form th:if="${administrador and c.ativo}"
                                   th:action="@{/configuracoes/categorias/{id}/inativar(id=${c.id})}" method="post">
                                 <div th:replace="~{fragments/csrf :: csrf}"></div>

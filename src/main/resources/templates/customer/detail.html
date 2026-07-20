@@ -10,8 +10,11 @@
         <div class="page-header">
             <div>
                 <h1 class="page-title" th:text="${cliente.nome()}"></h1>
-                <p class="page-subtitle"
-                   th:text="${cliente.ativo()} ? 'Cliente ativo' : 'Cliente inativo'"></p>
+                <p class="page-subtitle">
+                    <span th:text="${cliente.ativo()} ? 'Cliente ativo' : 'Cliente inativo'"></span>
+                    ·
+                    <span th:text="${detalhe.relacionamento().rotulo()}"></span>
+                </p>
             </div>
             <div class="spacer"></div>
             <a th:href="@{/clientes}" class="btn btn-secondary">Voltar</a>
@@ -27,11 +30,7 @@
             <a th:if="${detalhe.temEndereco()}"
                th:href="${detalhe.linkGoogleMaps()}"
                class="btn btn-secondary"
-               target="_blank" rel="noopener noreferrer">Abrir Rota (Google Maps)</a>
-            <a th:if="${detalhe.temEndereco()}"
-               th:href="${detalhe.linkAppleMaps()}"
-               class="btn btn-secondary"
-               target="_blank" rel="noopener noreferrer">Abrir Rota (Apple Maps)</a>
+               target="_blank" rel="noopener noreferrer">Abrir Rota</a>
         </div>
 
         <div class="kpi-grid client-kpi-grid">
@@ -47,6 +46,10 @@
                 <span>Valor total gasto</span>
                 <strong th:text="${detalhe.valorTotalFormatado()}"></strong>
             </article>
+            <article class="kpi-card">
+                <span>Relacionamento</span>
+                <strong th:text="${detalhe.relacionamento().rotulo()}"></strong>
+            </article>
         </div>
 
         <div class="detail-grid">
@@ -54,7 +57,11 @@
                 <h2>Dados de contato</h2>
                 <dl class="detail-list">
                     <div>
-                        <dt>Telefone</dt>
+                        <dt>Nome completo</dt>
+                        <dd th:text="${cliente.nome()}"></dd>
+                    </div>
+                    <div>
+                        <dt>Telefone / WhatsApp</dt>
                         <dd th:text="${detalhe.telefoneFormatado()}"></dd>
                     </div>
                     <div>
@@ -103,6 +110,31 @@
                 </table>
             </section>
         </div>
+
+        <section class="card" style="margin-top:16px;">
+            <h2>Histórico financeiro</h2>
+            <table class="table" th:if="${!detalhe.historicoFinanceiro().isEmpty()}">
+                <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Descrição</th>
+                    <th>Forma</th>
+                    <th>Valor</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="rec : ${detalhe.historicoFinanceiro()}">
+                    <td th:text="${#temporals.format(rec.dataRecebimento, 'dd/MM/yyyy')}"></td>
+                    <td th:text="${rec.descricao}"></td>
+                    <td th:text="${rec.formaPagamento.nome}"></td>
+                    <td th:text="'R$ ' + ${#numbers.formatDecimal(rec.valor, 1, 'POINT', 2, 'COMMA')}"></td>
+                </tr>
+                </tbody>
+            </table>
+            <p th:if="${detalhe.historicoFinanceiro().isEmpty()}" class="table-empty">
+                Nenhuma receita registrada para este cliente.
+            </p>
+        </section>
     </main>
 </div>
 </body>

@@ -1,13 +1,20 @@
 package br.esteticadesk.customer.dto;
 
 import br.esteticadesk.common.ContatoClienteLinks;
+import br.esteticadesk.common.HorarioSistema;
+import br.esteticadesk.enums.RelacionamentoCliente;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 public record ClienteListagemDTO(Long id, String nome, String telefone, String cpfCnpj, int veiculos, boolean ativo,
-        LocalDateTime ultimoAtendimento) {
+        LocalDateTime ultimoAtendimento, long totalAtendimentos, BigDecimal valorTotalGasto) {
 
     private static final DateTimeFormatter DATA_HORA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private static final NumberFormat MOEDA = NumberFormat.getCurrencyInstance(Locale.of("pt", "BR"));
 
     public String telefoneFormatado() {
         var digitos = somenteDigitos(telefone);
@@ -39,8 +46,17 @@ public record ClienteListagemDTO(Long id, String nome, String telefone, String c
         return ultimoAtendimento == null ? "—" : DATA_HORA.format(ultimoAtendimento);
     }
 
+    public String valorTotalFormatado() {
+        var valor = valorTotalGasto == null ? BigDecimal.ZERO : valorTotalGasto;
+        return MOEDA.format(valor.setScale(2, RoundingMode.HALF_UP));
+    }
+
     public String linkWhatsApp() {
         return ContatoClienteLinks.whatsapp(telefone);
+    }
+
+    public RelacionamentoCliente relacionamento() {
+        return RelacionamentoCliente.de(ultimoAtendimento, HorarioSistema.agora());
     }
 
     private String somenteDigitos(String valor) {

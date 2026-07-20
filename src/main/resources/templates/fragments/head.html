@@ -6,10 +6,17 @@
     <title th:text="${titulo} + ' — EsteticaFlow'">EsteticaFlow</title>
     <link rel="stylesheet" th:href="@{/css/application.css}"/>
     <script th:inline="javascript">
-        document.documentElement.dataset.theme = 'claro';
-        document.documentElement.dataset.temaCor = /*[[${temaCor}]]*/ 'teal';
+        (function () {
+            var cor = /*[[${temaCor}]]*/ 'teal';
+            if (!cor) { cor = 'teal'; }
+            document.documentElement.dataset.theme = 'claro';
+            document.documentElement.dataset.temaCor = cor;
+            document.documentElement.dataset.accent = cor;
+        })();
     </script>
     <script th:src="@{/js/theme.js}"></script>
     <script th:src="@{/js/mobile-nav.js}" defer></script>
     <script th:src="@{/js/input-masks.js}" defer></script>
+    <script th:src="@{/js/ui-confirm.js}" defer></script>
+    <script th:src="@{/js/loading.js}" defer></script>
 </head>

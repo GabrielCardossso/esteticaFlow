@@ -30,4 +30,9 @@ public class LoginWebController {
         }
         return "auth/login";
     }
+
+    @GetMapping("/suporte")
+    public String suporte() {
+        return "support/index";
+    }
 }

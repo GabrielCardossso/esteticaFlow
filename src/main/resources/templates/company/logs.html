@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Histórico')}"></head>
+<body>
+<div class="app-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="content">
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+        <div class="page-header">
+            <h1 class="page-title">Histórico de alterações</h1>
+            <div class="spacer"></div>
+            <form method="get" th:action="@{/historico}" class="inline-form">
+                <select name="empresaId" onchange="this.form.submit()">
+                    <option value="" th:selected="${empresaIdFiltro == null}">Todas as empresas</option>
+                    <option th:each="e : ${empresas}" th:value="${e.id}"
+                            th:text="${e.nomeFantasia} + ' (#' + ${e.id} + ')'"
+                            th:selected="${empresaIdFiltro != null and empresaIdFiltro == e.id}"></option>
+                </select>
+            </form>
+        </div>
+
+        <div class="card">
+            <p class="muted" style="margin-top:0;">Últimas 200 ações registradas no sistema.</p>
+            <div class="table-wrap" th:if="${!logs.isEmpty()}">
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Data/hora</th>
+                        <th>Ação</th>
+                        <th>Detalhes</th>
+                        <th>Empresa</th>
+                        <th>Usuário</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="log : ${logs}">
+                        <td th:text="${#temporals.format(log.dataHora, 'dd/MM/yyyy HH:mm:ss')}"></td>
+                        <td th:text="${log.acao}"></td>
+                        <td th:text="${log.detalhes}"></td>
+                        <td th:text="${log.empresaId}"></td>
+                        <td th:text="${log.usuario != null ? log.usuario.email : '—'}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p th:if="${logs.isEmpty()}" class="muted">Nenhum registro encontrado.</p>
+        </div>
+    </main>
+</div>
+</body>
+</html>

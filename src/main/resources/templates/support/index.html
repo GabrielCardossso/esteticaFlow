@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+    <meta name="theme-color" content="#0f766e"/>
+    <title>Suporte — EsteticaFlow</title>
+    <link rel="stylesheet" th:href="@{/css/landing.css}"/>
+</head>
+<body>
+<main class="section" style="min-height:100vh;display:flex;align-items:center;">
+    <div class="container narrow">
+        <p class="eyebrow">Suporte</p>
+        <h1>Precisa de ajuda?</h1>
+        <p>Fale conosco pelo WhatsApp ou envie um e-mail. Respondemos em horário comercial.</p>
+        <div class="hero-actions" style="margin-top:24px;">
+            <a class="button"
+               href="https://wa.me/5548991746960?text=Ol%C3%A1!%20Preciso%20de%20suporte%20no%20EsteticaFlow."
+               target="_blank" rel="noopener noreferrer">WhatsApp (48) 99174-6960</a>
+            <a class="text-link" href="mailto:suporte@esteticaflow.com.br">suporte@esteticaflow.com.br</a>
+        </div>
+        <p style="margin-top:32px;">
+            <a th:href="@{/}">← Voltar para a página inicial</a>
+            ·
+            <a th:href="@{/login}">Entrar</a>
+        </p>
+    </div>
+</main>
+</body>
+</html>

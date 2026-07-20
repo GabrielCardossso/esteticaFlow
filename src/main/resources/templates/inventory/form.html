@@ -14,10 +14,15 @@
         </div>
 
         <div class="card" style="max-width:780px;">
-            <form th:action="@{/estoque/produtos}" th:object="${produto}" method="post">
+            <form th:action="@{/estoque/produtos}" th:object="${produto}" method="post" id="formProduto">
                 <div th:replace="~{fragments/csrf :: csrf}"></div>
                 <input type="hidden" th:field="*{id}"/>
                 <input th:if="*{id != null}" type="hidden" th:field="*{quantidadeInicial}"/>
+
+                <div class="alert alert-warning" style="margin-bottom:16px;">
+                    Informe o <strong>valor pago pela embalagem inteira</strong> (ex.: frasco de 2.000 ml por R$ 50,00).
+                    O sistema calcula automaticamente o custo por unidade (ml, L, UN…).
+                </div>
 
                 <div class="form-grid">
                     <label for="nome">Nome *</label>
@@ -33,28 +38,38 @@
                             <option th:each="categoria : ${categorias}" th:value="${categoria.id}"
                                     th:text="${categoria.nome}"></option>
                         </select>
-                        <div class="error-text" th:if="${#fields.hasErrors('categoriaProdutoId')}"
-                             th:errors="*{categoriaProdutoId}"></div>
                         <div class="muted" style="margin-top:6px;">
-                            Não encontrou a categoria?
                             <a th:href="@{/configuracoes#categorias-produto}" style="color:var(--accent);font-weight:600;">
-                                Criar ou gerenciar categorias em Configurações
+                                Gerenciar categorias
                             </a>
                         </div>
                     </div>
 
-                    <label for="unidadeMedida">Unidade *</label>
+                    <label for="unidadeMedida">Unidade de medida *</label>
                     <div>
                         <select id="unidadeMedida" th:field="*{unidadeMedida}" required>
                             <option th:each="unidade : ${unidades}" th:value="${unidade}" th:text="${unidade}"></option>
                         </select>
                     </div>
 
-                    <label for="precoCusto">Preço de custo *</label>
+                    <label for="quantidadeEmbalagem">Quantidade da embalagem *</label>
                     <div>
-                        <input id="precoCusto" type="number" th:field="*{precoCusto}" min="0" step="0.01" required/>
-                        <div class="error-text" th:if="${#fields.hasErrors('precoCusto')}"
-                             th:errors="*{precoCusto}"></div>
+                        <input id="quantidadeEmbalagem" type="number" th:field="*{quantidadeEmbalagem}"
+                               min="0.001" step="0.001" required/>
+                        <div class="muted">Ex.: 2000 se o frasco contém 2000 ml.</div>
+                    </div>
+
+                    <label for="valorEmbalagem">Valor pago pela embalagem *</label>
+                    <div>
+                        <input id="valorEmbalagem" type="number" th:field="*{valorEmbalagem}"
+                               min="0" step="0.01" required data-mask="money"/>
+                        <div class="muted">Preço do recipiente inteiro, não da unidade.</div>
+                    </div>
+
+                    <label>Custo unitário (calculado)</label>
+                    <div>
+                        <strong id="custoUnitarioPreview">R$ 0,0000</strong>
+                        <div class="muted">por unidade de medida</div>
                     </div>
 
                     <th:block th:if="*{id == null}">
@@ -62,17 +77,14 @@
                         <div>
                             <input id="quantidadeInicial" type="number" th:field="*{quantidadeInicial}"
                                    min="0" step="0.001" required/>
-                            <div class="error-text" th:if="${#fields.hasErrors('quantidadeInicial')}"
-                                 th:errors="*{quantidadeInicial}"></div>
+                            <div class="muted">Na unidade de medida (ex.: 2000 ml).</div>
                         </div>
                     </th:block>
 
-                    <label for="quantidadeMinima">Quantidade mínima *</label>
+                    <label for="quantidadeMinima">Estoque mínimo *</label>
                     <div>
                         <input id="quantidadeMinima" type="number" th:field="*{quantidadeMinima}"
                                min="0" step="0.001" required/>
-                        <div class="error-text" th:if="${#fields.hasErrors('quantidadeMinima')}"
-                             th:errors="*{quantidadeMinima}"></div>
                     </div>
                 </div>
 
@@ -83,5 +95,21 @@
         </div>
     </main>
 </div>
+<script>
+(function () {
+    var qtd = document.getElementById('quantidadeEmbalagem');
+    var valor = document.getElementById('valorEmbalagem');
+    var preview = document.getElementById('custoUnitarioPreview');
+    function atualizar() {
+        var q = Number(qtd.value || 0);
+        var v = Number(valor.value || 0);
+        var custo = q > 0 ? v / q : 0;
+        preview.textContent = custo.toLocaleString('pt-BR', {style: 'currency', currency: 'BRL', minimumFractionDigits: 4});
+    }
+    qtd.addEventListener('input', atualizar);
+    valor.addEventListener('input', atualizar);
+    atualizar();
+})();
+</script>
 </body>
 </html>

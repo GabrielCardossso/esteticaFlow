@@ -28,11 +28,18 @@ public class ServicoWebController {
 
     @GetMapping
     public String listar(@RequestParam(defaultValue = "false") boolean mostrarTodos,
-            @RequestParam(defaultValue = "false") boolean mostrarTodasCategorias, Model model) {
-        model.addAttribute("servicos", servicoService.listar(mostrarTodos));
+            @RequestParam(defaultValue = "false") boolean mostrarTodasCategorias,
+            @RequestParam(required = false) String busca,
+            @RequestParam(required = false) Long categoriaId,
+            @RequestParam(defaultValue = "nome") String ordenacao, Model model) {
+        model.addAttribute("servicos", servicoService.listar(mostrarTodos, busca, categoriaId, ordenacao));
         model.addAttribute("categorias", servicoService.listarCategorias(mostrarTodasCategorias));
+        model.addAttribute("categoriasFiltro", servicoService.listarCategorias(false));
         model.addAttribute("mostrarTodos", mostrarTodos);
         model.addAttribute("mostrarTodasCategorias", mostrarTodasCategorias);
+        model.addAttribute("busca", busca);
+        model.addAttribute("categoriaId", categoriaId);
+        model.addAttribute("ordenacao", ordenacao);
         model.addAttribute("menuAtivo", "servicos");
         return "service/list";
     }

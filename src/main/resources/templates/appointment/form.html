@@ -13,9 +13,13 @@
             <a th:href="@{/agenda(data=${data})}" class="btn btn-secondary">Voltar</a>
         </div>
 
+        <div th:if="${aviso}" class="alert alert-warning" role="alert" th:text="${aviso}"></div>
+
         <div class="card" style="max-width:780px;">
             <form th:action="@{/agenda}" method="post" class="form-grid" id="formAgendamento">
                 <div th:replace="~{fragments/csrf :: csrf}"></div>
+                <input type="hidden" name="confirmarConflito" id="confirmarConflito"
+                       th:value="${exigirConfirmacaoConflito} ? 'true' : 'false'"/>
 
                 <label for="clienteId">Cliente *</label>
                 <select id="clienteId" name="clienteId" required>
@@ -25,20 +29,23 @@
                 </select>
 
                 <label for="veiculoId">Veículo *</label>
-                <select id="veiculoId" name="veiculoId" required disabled>
+                <select id="veiculoId" name="veiculoId" required
+                        th:attr="data-selected=${veiculoIdSelecionado}">
                     <option value="">Selecione o cliente primeiro</option>
                 </select>
 
                 <label>Serviços *</label>
                 <div class="service-picker">
                     <label th:each="s : ${servicos}" class="check-option">
-                        <input type="checkbox" name="servicoIds" th:value="${s.id}" th:attr="data-preco=${s.preco}"/>
+                        <input type="checkbox" name="servicoIds" th:value="${s.id}" th:attr="data-preco=${s.preco}"
+                               th:checked="${servicoIdsSelecionados != null and #lists.contains(servicoIdsSelecionados, s.id)}"/>
                         <span th:text="${s.nome} + ' — R$ ' + ${#numbers.formatDecimal(s.preco, 1, 'POINT', 2, 'COMMA')}"></span>
                     </label>
                 </div>
 
                 <label for="desconto">Desconto</label>
-                <input id="desconto" type="number" name="desconto" min="0" step="0.01" value="0"/>
+                <input id="desconto" type="number" name="desconto" min="0" step="0.01"
+                       th:value="${descontoInformado != null} ? ${descontoInformado} : 0"/>
 
                 <label>Totais</label>
                 <div class="totals-preview">
@@ -49,18 +56,26 @@
                 <label for="funcionarioId">Funcionário</label>
                 <select id="funcionarioId" name="funcionarioId">
                     <option value="">Opcional</option>
-                    <option th:each="f : ${funcionarios}" th:value="${f.id}" th:text="${f.usuario.nome}"></option>
+                    <option th:each="f : ${funcionarios}" th:value="${f.id}" th:text="${f.usuario.nome}"
+                            th:selected="${funcionarioIdSelecionado != null and funcionarioIdSelecionado == f.id}"></option>
                 </select>
 
                 <label for="dataHora">Data e hora *</label>
                 <input id="dataHora" type="datetime-local" name="dataHora" required
-                       th:value="${data != null ? data.toString() + 'T09:00' : ''}"/>
+                       th:value="${dataHoraValor != null ? dataHoraValor : (data != null ? data.toString() + 'T09:00' : '')}"/>
 
                 <label for="observacoes">Observações</label>
-                <textarea id="observacoes" name="observacoes" rows="3" maxlength="500"></textarea>
+                <textarea id="observacoes" name="observacoes" rows="3" maxlength="500"
+                          th:text="${observacoesInformadas}"></textarea>
 
-                <div></div>
-                <button type="submit" class="btn btn-primary">Salvar agendamento</button>
+                <div th:if="${exigirConfirmacaoConflito}" class="conflict-confirm" style="grid-column:1/-1;">
+                    <p>Já existe outro atendimento neste horário. Deseja criar mesmo assim?</p>
+                    <button type="submit" class="btn btn-primary" id="btnConfirmarConflito">Sim, criar mesmo assim</button>
+                    <a th:href="@{/agenda/novo(data=${data})}" class="btn btn-secondary">Não, escolher outro horário</a>
+                </div>
+
+                <div th:unless="${exigirConfirmacaoConflito}"></div>
+                <button th:unless="${exigirConfirmacaoConflito}" type="submit" class="btn btn-primary">Salvar agendamento</button>
             </form>
         </div>
     </main>
@@ -70,8 +85,10 @@
     const veiculoSelect = document.getElementById('veiculoId');
     const clienteSelect = document.getElementById('clienteId');
     const veiculosUrl = /*[[@{/agenda/veiculos}]]*/ '/agenda/veiculos';
+    const veiculoPreselecionado = veiculoSelect.dataset.selected || '';
     const servicos = Array.from(document.querySelectorAll('input[name="servicoIds"]'));
     const desconto = document.getElementById('desconto');
+    const confirmarConflito = document.getElementById('confirmarConflito');
 
     function atualizarTotais() {
         const subtotal = servicos.filter(s => s.checked)
@@ -85,10 +102,19 @@
 
     servicos.forEach(s => s.addEventListener('change', atualizarTotais));
     desconto.addEventListener('input', atualizarTotais);
+    atualizarTotais();
+
     document.getElementById('formAgendamento').addEventListener('submit', function (event) {
         if (!servicos.some(s => s.checked)) {
             event.preventDefault();
-            alert('Selecione ao menos um serviço.');
+            window.EsteticaUI
+                ? EsteticaUI.toast('Selecione ao menos um serviço.', 'aviso')
+                : alert('Selecione ao menos um serviço.');
+            return;
+        }
+        const btn = document.getElementById('btnConfirmarConflito');
+        if (btn && event.submitter === btn) {
+            confirmarConflito.value = 'true';
         }
     });
 
@@ -107,13 +133,14 @@
             const opt = document.createElement('option');
             opt.value = v.id;
             opt.textContent = v.label;
+            if (String(v.id) === String(veiculoPreselecionado)) opt.selected = true;
             veiculoSelect.appendChild(opt);
         });
         if (veiculos.length === 0) {
             veiculoSelect.innerHTML = '<option value="">Cliente sem veículos ativos</option>';
         } else {
             veiculoSelect.disabled = false;
-            if (veiculos.length === 1) {
+            if (!veiculoSelect.value && veiculos.length === 1) {
                 veiculoSelect.value = String(veiculos[0].id);
             }
         }

@@ -12,6 +12,11 @@
         <div class="brand desktop-brand">EsteticaFlow</div>
         <hr class="desktop-brand-divider"/>
         <a th:href="@{/dashboard}" class="menu-button" th:classappend="${menuAtivo == 'dashboard'} ? ' active'">Dashboard</a>
+        <a th:href="@{/notificacoes}" class="menu-button" th:classappend="${menuAtivo == 'notificacoes'} ? ' active'">
+            Notificações
+            <span th:if="${notificacoesNaoLidas != null and notificacoesNaoLidas > 0}"
+                  class="menu-badge" th:text="${notificacoesNaoLidas}"></span>
+        </a>
         <a th:href="@{/clientes}" class="menu-button" th:classappend="${menuAtivo == 'clientes'} ? ' active'">Clientes</a>
         <a th:href="@{/servicos}" class="menu-button" th:classappend="${menuAtivo == 'servicos'} ? ' active'">Serviços</a>
         <a th:href="@{/agenda}" class="menu-button" th:classappend="${menuAtivo == 'agenda'} ? ' active'">Agenda</a>
@@ -19,6 +24,7 @@
         <a th:if="${podeFinanceiro}" th:href="@{/financeiro}" class="menu-button" th:classappend="${menuAtivo == 'financeiro'} ? ' active'">Financeiro</a>
         <a th:if="${podeRelatorios}" th:href="@{/relatorios}" class="menu-button" th:classappend="${menuAtivo == 'relatorios'} ? ' active'">Relatórios</a>
         <a th:href="@{/configuracoes}" class="menu-button" th:classappend="${menuAtivo == 'configuracoes'} ? ' active'">Configurações</a>
+        <a th:if="${superAdmin}" th:href="@{/historico}" class="menu-button" th:classappend="${menuAtivo == 'historico'} ? ' active'">Histórico</a>
         <a th:if="${superAdmin}" th:href="@{/empresas}" class="menu-button" th:classappend="${menuAtivo == 'empresas'} ? ' active'">Empresas</a>
         <form th:action="@{/logout}" method="post" class="logout-form">
             <input type="hidden" th:if="${_csrf}" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>

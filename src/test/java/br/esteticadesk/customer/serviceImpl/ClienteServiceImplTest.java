@@ -13,6 +13,7 @@ import br.esteticadesk.customer.mapper.ClienteMapper;
 import br.esteticadesk.customer.repository.ClienteRepository;
 import br.esteticadesk.enums.StatusAgendamento;
 import br.esteticadesk.exception.CpfJaCadastradoException;
+import br.esteticadesk.finance.repository.ReceitaRepository;
 import br.esteticadesk.vehicle.service.VeiculoService;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -37,12 +38,14 @@ class ClienteServiceImplTest {
     private AgendamentoRepository agendamentos;
     @Mock
     private VeiculoService veiculoService;
+    @Mock
+    private ReceitaRepository receitas;
 
     private ClienteServiceImpl service;
 
     @BeforeEach
     void configurar() {
-        service = new ClienteServiceImpl(repository, mapper, sessao, agendamentos, veiculoService);
+        service = new ClienteServiceImpl(repository, mapper, sessao, agendamentos, veiculoService, receitas);
         when(sessao.empresaObrigatoria()).thenReturn(7L);
     }
 
@@ -138,7 +141,7 @@ class ClienteServiceImplTest {
     void buscaTelefoneMascaradoTambemPelosDigitos() {
         when(repository.buscar(7L, "(11) 99999-9999", "11999999999", Boolean.TRUE)).thenReturn(List.of());
 
-        service.listar("(11) 99999-9999", true);
+        service.listar("(11) 99999-9999", true, "nome");
 
         verify(repository).buscar(7L, "(11) 99999-9999", "11999999999", Boolean.TRUE);
         verify(agendamentos, never()).findUltimosAtendimentosPorClientes(any(), any(), any());
@@ -152,11 +155,16 @@ class ClienteServiceImplTest {
         when(repository.buscar(7L, "", "", Boolean.TRUE)).thenReturn(List.of(cliente));
         when(agendamentos.findUltimosAtendimentosPorClientes(7L, List.of(10L), StatusAgendamento.CONCLUIDO))
                 .thenReturn(List.<Object[]>of(new Object[] {10L, ultimo}));
+        when(agendamentos.countAtendimentosPorClientes(7L, List.of(10L), StatusAgendamento.CONCLUIDO))
+                .thenReturn(List.<Object[]>of(new Object[] {10L, 2L}));
+        when(agendamentos.sumGastosPorClientes(7L, List.of(10L), StatusAgendamento.CONCLUIDO))
+                .thenReturn(List.<Object[]>of(new Object[] {10L, new BigDecimal("300.00")}));
 
-        var lista = service.listar("", true);
+        var lista = service.listar("", true, "nome");
 
         assertEquals(1, lista.size());
         assertEquals(ultimo, lista.getFirst().ultimoAtendimento());
+        assertEquals(2L, lista.getFirst().totalAtendimentos());
         assertEquals("https://wa.me/5511999999999?text=Ol%C3%A1", lista.getFirst().linkWhatsApp());
     }
 
@@ -172,6 +180,8 @@ class ClienteServiceImplTest {
         when(agendamentos.sumTotalByClienteAndStatus(7L, 10L, StatusAgendamento.CONCLUIDO))
                 .thenReturn(new BigDecimal("450.00"));
         when(veiculoService.listarPorCliente(10L, true)).thenReturn(List.of());
+        when(receitas.findByEmpresaIdAndAgendamentoClienteIdOrderByDataRecebimentoDesc(7L, 10L))
+                .thenReturn(List.of());
 
         var detalhe = service.buscarDetalhe(10L);
 

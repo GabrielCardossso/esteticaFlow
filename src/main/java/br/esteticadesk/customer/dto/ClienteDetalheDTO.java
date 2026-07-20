@@ -1,6 +1,9 @@
 package br.esteticadesk.customer.dto;
 
 import br.esteticadesk.common.ContatoClienteLinks;
+import br.esteticadesk.common.HorarioSistema;
+import br.esteticadesk.enums.RelacionamentoCliente;
+import br.esteticadesk.finance.entity.Receita;
 import br.esteticadesk.vehicle.entity.Veiculo;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -11,7 +14,7 @@ import java.util.List;
 import java.util.Locale;
 
 public record ClienteDetalheDTO(ClienteDTO cliente, LocalDateTime ultimoAtendimento, long totalAtendimentos,
-        BigDecimal valorTotalGasto, List<Veiculo> veiculos) {
+        BigDecimal valorTotalGasto, List<Veiculo> veiculos, List<Receita> historicoFinanceiro) {
 
     private static final DateTimeFormatter DATA_HORA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
     private static final NumberFormat MOEDA = NumberFormat.getCurrencyInstance(Locale.of("pt", "BR"));
@@ -52,6 +55,15 @@ public record ClienteDetalheDTO(ClienteDTO cliente, LocalDateTime ultimoAtendime
 
     public boolean temEndereco() {
         return linkGoogleMaps() != null;
+    }
+
+    public RelacionamentoCliente relacionamento() {
+        return RelacionamentoCliente.de(ultimoAtendimento, HorarioSistema.agora());
+    }
+
+    public String dataCadastroFormatada() {
+        // ClienteDTO não expõe dataCriacao; a view usa atributo separado quando necessário.
+        return "—";
     }
 
     public String enderecoResumo() {

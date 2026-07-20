@@ -25,6 +25,15 @@
                     <label for="referencia">Data de referência</label>
                     <input id="referencia" name="referencia" type="date"
                            th:value="${#temporals.format(dataReferencia, 'yyyy-MM-dd')}"/>
+
+                    <label th:if="${superAdmin}" for="empresaId">Empresa</label>
+                    <select th:if="${superAdmin}" id="empresaId" name="empresaId">
+                        <option value="">Empresa da sessão</option>
+                        <option th:each="e : ${empresas}"
+                                th:value="${e.id}"
+                                th:text="${e.nomeFantasia}"
+                                th:selected="${empresaIdSelecionada != null and empresaIdSelecionada == e.id}"></option>
+                    </select>
                 </div>
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">Gerar relatório</button>
@@ -35,7 +44,7 @@
         <div th:if="${relatorio != null}">
             <div class="page-header">
                 <div>
-                    <h2 style="margin:0;">Resultado</h2>
+                    <h2 style="margin:0;" th:text="'Resultado — ' + ${relatorio.empresa()}"></h2>
                     <span class="muted"
                           th:text="${#temporals.format(relatorio.periodo().inicio(), 'dd/MM/yyyy')} + ' a '
                             + ${#temporals.format(relatorio.periodo().fim(), 'dd/MM/yyyy')}"></span>
@@ -43,11 +52,11 @@
                 <div class="spacer"></div>
                 <div class="actions">
                     <a class="btn btn-secondary"
-                       th:href="@{/relatorios/pdf(filtro=${filtroSelecionado},referencia=${dataReferencia})}">
+                       th:href="@{/relatorios/pdf(filtro=${filtroSelecionado},referencia=${dataReferencia},empresaId=${empresaIdSelecionada})}">
                         Baixar PDF
                     </a>
                     <a th:if="${podeExcel}" class="btn btn-secondary"
-                       th:href="@{/relatorios/excel(filtro=${filtroSelecionado},referencia=${dataReferencia})}">
+                       th:href="@{/relatorios/excel(filtro=${filtroSelecionado},referencia=${dataReferencia},empresaId=${empresaIdSelecionada})}">
                         Baixar Excel
                     </a>
                 </div>

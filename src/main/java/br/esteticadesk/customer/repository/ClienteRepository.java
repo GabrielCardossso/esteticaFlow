@@ -24,14 +24,16 @@ public interface ClienteRepository extends JpaRepository<Cliente, Long> {
     List<Cliente> findByEmpresaIdOrderByNome(Long empresaId);
 
     @Query("""
-            SELECT DISTINCT c FROM Cliente c LEFT JOIN FETCH c.veiculos
+            SELECT DISTINCT c FROM Cliente c LEFT JOIN FETCH c.veiculos v
             WHERE c.empresaId = :empresaId
             AND (:ativo IS NULL OR c.ativo = :ativo)
             AND (
                 :busca IS NULL OR :busca = '' OR
                 LOWER(c.nome) LIKE LOWER(CONCAT('%', :busca, '%')) OR
+                LOWER(COALESCE(c.email, '')) LIKE LOWER(CONCAT('%', :busca, '%')) OR
                 c.telefone LIKE CONCAT('%', :busca, '%') OR
                 c.cpfCnpj LIKE CONCAT('%', :busca, '%') OR
+                LOWER(COALESCE(v.placa, '')) LIKE LOWER(CONCAT('%', :busca, '%')) OR
                 (:buscaNumerica <> '' AND (
                     REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(c.telefone, '(', ''), ')', ''), ' ', ''), '-', ''), '.', '')
                         LIKE CONCAT('%', :buscaNumerica, '%') OR

@@ -130,3 +130,18 @@ Indicada se você não quer administrar servidor, aceitando custo um pouco maior
 - [ ] Backup diário do banco testado (restaurar ao menos uma vez)
 - [ ] `SPRING_PROFILES_ACTIVE=prod` (cache do Thymeleaf ligado, logs em nível INFO)
 - [ ] Monitorar espaço em disco da VPS (logs + volume do banco)
+- [ ] Em produção limpa: a migration `V13__seed_dados_teste.sql` popula dados de demonstração — remova/ignore antes do primeiro deploy ou limpe após (não altere o arquivo se já foi aplicado; use `flyway repair` só se necessário)
+
+## Migrar de Render + Supabase para VPS
+
+Passos resumidos para sair de um deploy PaaS (Render) com banco Supabase e hospedar na VPS com Docker Compose:
+
+1. **Dump do banco:** no Supabase (ou via `pg_dump` com a connection string), exporte o schema e os dados:
+   ```bash
+   pg_dump "postgresql://USER:PASS@HOST:5432/DB?sslmode=require" -Fc -f esteticaflow.dump
+   ```
+2. **Secrets na VPS:** crie `.env` com `POSTGRES_PASSWORD`, `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD` e `SPRING_PROFILES_ACTIVE=prod`. Use JDBC com `sslmode=require` se o Postgres exigir TLS.
+3. **Subir stack:** `docker compose up -d --build` na VPS (app + Postgres local ou apontando para banco gerenciado).
+4. **Restaurar dados:** se usar Postgres no compose, restaure com `pg_restore` no container/volume antes de abrir tráfego.
+5. **DNS:** aponte o domínio (registro A) para o IP da VPS e configure HTTPS no proxy reverso (Caddy/Nginx).
+6. **Validar:** login, agenda, financeiro e backup; desligue o serviço antigo no Render após confirmação.

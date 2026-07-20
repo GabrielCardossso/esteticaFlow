@@ -15,4 +15,5 @@ COPY --from=build /workspace/target/*.jar /app/app.jar
 USER app
 EXPOSE 8080
 ENV SPRING_PROFILES_ACTIVE=docker
+ENV TZ=America/Sao_Paulo
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

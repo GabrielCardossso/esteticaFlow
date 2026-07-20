@@ -11,6 +11,9 @@
     const entradaForm = document.getElementById("stock-entry-form");
     const saidaForm = document.getElementById("stock-exit-form");
     const minimoForm = document.getElementById("stock-minimum-form");
+    const entradaQuantidade = document.getElementById("stock-entry-quantity");
+    const entradaValor = document.getElementById("stock-entry-valor");
+    const entradaMotivo = document.getElementById("stock-entry-motivo");
 
     document.querySelectorAll(".stock-action-button").forEach(function (button) {
         button.addEventListener("click", function () {
@@ -21,8 +24,15 @@
             entradaForm.action = button.dataset.entradaUrl;
             saidaForm.action = button.dataset.saidaUrl;
             minimoForm.action = button.dataset.minimoUrl;
+            entradaQuantidade.value = "";
+            if (entradaValor) {
+                entradaValor.value = "";
+            }
+            if (entradaMotivo) {
+                entradaMotivo.value = "";
+            }
             dialog.showModal();
-            document.getElementById("stock-entry-quantity").focus();
+            entradaQuantidade.focus();
         });
     });
 

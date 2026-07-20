@@ -28,18 +28,24 @@ public class EstoqueWebController {
     }
 
     @GetMapping
-    public String index(@RequestParam(defaultValue = "false") boolean mostrarTodos, Model model) {
-        model.addAttribute("estoques", estoqueService.listarEstoques(mostrarTodos));
+    public String index(@RequestParam(defaultValue = "false") boolean mostrarTodos,
+            @RequestParam(required = false) String busca,
+            @RequestParam(defaultValue = "false") boolean somenteBaixo,
+            @RequestParam(defaultValue = "nome") String ordenacao, Model model) {
+        model.addAttribute("estoques", estoqueService.listarEstoques(mostrarTodos, busca, somenteBaixo, ordenacao));
         model.addAttribute("movimentacoes", estoqueService.listarMovimentacoesRecentes());
         model.addAttribute("mostrarTodos", mostrarTodos);
+        model.addAttribute("busca", busca);
+        model.addAttribute("somenteBaixo", somenteBaixo);
+        model.addAttribute("ordenacao", ordenacao);
         model.addAttribute("menuAtivo", "estoque");
         return "inventory/index";
     }
 
     @GetMapping("/produtos/novo")
     public String novoProduto(Model model) {
-        model.addAttribute("produto", new ProdutoEstoqueDTO(null, "", UnidadeMedida.UN, BigDecimal.ZERO, null,
-                BigDecimal.ZERO, BigDecimal.ZERO));
+        model.addAttribute("produto", new ProdutoEstoqueDTO(null, "", UnidadeMedida.UN, BigDecimal.ONE,
+                BigDecimal.ZERO, null, BigDecimal.ZERO, BigDecimal.ZERO));
         prepararFormulario(model, null);
         return "inventory/form";
     }
@@ -87,8 +93,10 @@ public class EstoqueWebController {
 
     @PostMapping("/produtos/{id}/entrada")
     public String registrarEntrada(@PathVariable Long id, @RequestParam BigDecimal quantidade,
+            @RequestParam(required = false) BigDecimal valorPago,
+            @RequestParam(required = false) String motivo,
             RedirectAttributes redirectAttributes) {
-        return executarMovimentacao(() -> estoqueService.registrarEntrada(id, quantidade),
+        return executarMovimentacao(() -> estoqueService.registrarEntrada(id, quantidade, valorPago, motivo),
                 "Entrada registrada com sucesso.", redirectAttributes);
     }
 

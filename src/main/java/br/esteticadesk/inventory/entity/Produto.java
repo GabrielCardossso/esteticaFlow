@@ -22,8 +22,21 @@ public class Produto extends EntidadeEmpresaBase {
     private UnidadeMedida unidadeMedida;
     @NotNull
     @PositiveOrZero
-    @Column(name = "preco_custo", nullable = false, precision = 10, scale = 2)
+    @Column(name = "preco_custo", nullable = false, precision = 12, scale = 4)
     private BigDecimal precoCusto;
+
+    /** Quantidade contida em uma embalagem (ex.: 2000 ml). */
+    @NotNull
+    @Positive
+    @Column(name = "quantidade_embalagem", nullable = false, precision = 12, scale = 3)
+    private BigDecimal quantidadeEmbalagem = BigDecimal.ONE;
+
+    /** Valor pago pela embalagem inteira (não pela unidade). */
+    @NotNull
+    @PositiveOrZero
+    @Column(name = "valor_embalagem", nullable = false, precision = 12, scale = 2)
+    private BigDecimal valorEmbalagem = BigDecimal.ZERO;
+
     @NotNull
     @Column(nullable = false)
     private Boolean ativo = true;

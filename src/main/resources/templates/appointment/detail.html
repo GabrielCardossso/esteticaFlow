@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: head('Detalhe do atendimento')}"></head>
+<body>
+<div class="app-shell">
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    <main class="content">
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Atendimento</h1>
+                <p class="page-subtitle"
+                   th:text="'#' + ${agendamento.id} + ' · ' + ${#temporals.format(agendamento.dataHora, 'dd/MM/yyyy HH:mm')}"></p>
+            </div>
+            <div class="spacer"></div>
+            <a th:href="@{/agenda(data=${agendamento.dataHora.toLocalDate()})}" class="btn btn-secondary">Voltar à agenda</a>
+        </div>
+
+        <div class="kpi-grid client-kpi-grid">
+            <article class="kpi-card">
+                <span>Status do atendimento</span>
+                <strong th:text="${agendamento.status.rotulo()}"></strong>
+            </article>
+            <article class="kpi-card">
+                <span>Status do pagamento</span>
+                <strong th:text="${agendamento.pago} ? 'Pago' : 'Pendente'"></strong>
+            </article>
+            <article class="kpi-card">
+                <span>Valor</span>
+                <strong th:text="'R$ ' + ${#numbers.formatDecimal(agendamento.total, 1, 'POINT', 2, 'COMMA')}"></strong>
+            </article>
+        </div>
+
+        <div class="detail-grid">
+            <section class="card">
+                <h2>Dados do atendimento</h2>
+                <dl class="detail-list">
+                    <div>
+                        <dt>Cliente</dt>
+                        <dd>
+                            <a class="table-link" th:href="@{/clientes/{id}(id=${agendamento.cliente.id})}"
+                               th:text="${agendamento.cliente.nome}"></a>
+                        </dd>
+                    </div>
+                    <div>
+                        <dt>Veículo</dt>
+                        <dd th:text="${agendamento.veiculo.marca + ' ' + agendamento.veiculo.modelo + ' — ' + agendamento.veiculo.placa}"></dd>
+                    </div>
+                    <div>
+                        <dt>Funcionário</dt>
+                        <dd th:text="${agendamento.funcionario != null} ? ${agendamento.funcionario.usuario.nome} : 'Não atribuído'"></dd>
+                    </div>
+                    <div>
+                        <dt>Data</dt>
+                        <dd th:text="${#temporals.format(agendamento.dataHora, 'dd/MM/yyyy')}"></dd>
+                    </div>
+                    <div>
+                        <dt>Horário</dt>
+                        <dd th:text="${#temporals.format(agendamento.dataHora, 'HH:mm')}"></dd>
+                    </div>
+                    <div>
+                        <dt>Criado em</dt>
+                        <dd th:text="${agendamento.dataCriacao != null} ? ${#temporals.format(agendamento.dataCriacao, 'dd/MM/yyyy HH:mm')} : '—'"></dd>
+                    </div>
+                    <div>
+                        <dt>Observações</dt>
+                        <dd th:text="${agendamento.observacoes != null and !agendamento.observacoes.isBlank()} ? ${agendamento.observacoes} : 'Nenhuma observação'"></dd>
+                    </div>
+                </dl>
+            </section>
+
+            <section class="card">
+                <h2>Serviços e valores</h2>
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th>Serviço</th>
+                        <th>Categoria</th>
+                        <th>Preço</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="linha : ${agendamento.servicos}">
+                        <td th:text="${linha.servico.nome}"></td>
+                        <td th:text="${linha.servico.categoriaServico != null} ? ${linha.servico.categoriaServico.nome} : '—'"></td>
+                        <td th:text="'R$ ' + ${#numbers.formatDecimal(linha.precoUnitario, 1, 'POINT', 2, 'COMMA')}"></td>
+                    </tr>
+                    </tbody>
+                </table>
+                <dl class="detail-list" style="margin-top:16px;">
+                    <div>
+                        <dt>Subtotal</dt>
+                        <dd th:text="'R$ ' + ${#numbers.formatDecimal(agendamento.subtotal, 1, 'POINT', 2, 'COMMA')}"></dd>
+                    </div>
+                    <div>
+                        <dt>Desconto</dt>
+                        <dd th:text="'R$ ' + ${#numbers.formatDecimal(agendamento.desconto, 1, 'POINT', 2, 'COMMA')}"></dd>
+                    </div>
+                    <div>
+                        <dt>Total</dt>
+                        <dd th:text="'R$ ' + ${#numbers.formatDecimal(agendamento.total, 1, 'POINT', 2, 'COMMA')}"></dd>
+                    </div>
+                    <div>
+                        <dt>Forma de pagamento</dt>
+                        <dd th:text="${receita != null} ? ${receita.formaPagamento.nome} : '—'"></dd>
+                    </div>
+                </dl>
+            </section>
+        </div>
+
+        <section class="card" style="margin-top:16px;">
+            <h2>Histórico do atendimento</h2>
+            <table class="table" th:if="${!historico.isEmpty()}">
+                <thead>
+                <tr>
+                    <th>Data/Hora</th>
+                    <th>Ação</th>
+                    <th>Detalhes</th>
+                    <th>Usuário</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="item : ${historico}">
+                    <td th:text="${#temporals.format(item.dataHora, 'dd/MM/yyyy HH:mm')}"></td>
+                    <td th:text="${item.acao}"></td>
+                    <td th:text="${item.detalhes}"></td>
+                    <td th:text="${item.usuario != null} ? ${item.usuario.nome} : 'Sistema'"></td>
+                </tr>
+                </tbody>
+            </table>
+            <p th:if="${historico.isEmpty()}" class="table-empty">Nenhum histórico registrado ainda.</p>
+        </section>
+
+        <div class="client-quick-actions" style="margin-top:20px;"
+             th:if="${agendamento.status.name() == 'AGENDADO' or agendamento.status.name() == 'EM_ANDAMENTO' or (agendamento.status.name() == 'CONCLUIDO' and !agendamento.pago)}">
+            <form th:if="${agendamento.status.name() == 'AGENDADO'}"
+                  th:action="@{/agenda/{id}/iniciar(id=${agendamento.id})}" method="post">
+                <div th:replace="~{fragments/csrf :: csrf}"></div>
+                <input type="hidden" name="data" th:value="${agendamento.dataHora.toLocalDate()}"/>
+                <button class="btn btn-primary" type="submit">Iniciar atendimento</button>
+            </form>
+            <form th:if="${agendamento.status.name() == 'EM_ANDAMENTO' and !agendamento.pago}" class="payment-form"
+                  th:action="@{/agenda/{id}/marcar-pago(id=${agendamento.id})}" method="post">
+                <div th:replace="~{fragments/csrf :: csrf}"></div>
+                <input type="hidden" name="data" th:value="${agendamento.dataHora.toLocalDate()}"/>
+                <select name="formaPagamentoId" required>
+                    <option value="">Forma de pagamento</option>
+                    <option th:each="forma : ${formasPagamento}" th:value="${forma.id}" th:text="${forma.nome}"></option>
+                </select>
+                <button class="btn btn-secondary" type="submit">Marcar como pago</button>
+            </form>
+            <form th:if="${agendamento.status.name() == 'EM_ANDAMENTO'}"
+                  th:action="@{/agenda/{id}/concluir(id=${agendamento.id})}" method="post"
+                  data-confirm="Concluir este atendimento?">
+                <div th:replace="~{fragments/csrf :: csrf}"></div>
+                <input type="hidden" name="data" th:value="${agendamento.dataHora.toLocalDate()}"/>
+                <button class="btn btn-primary" type="submit">Concluir atendimento</button>
+            </form>
+            <form th:if="${agendamento.status.name() == 'CONCLUIDO' and !agendamento.pago}" class="payment-form"
+                  th:action="@{/agenda/{id}/pagamento(id=${agendamento.id})}" method="post">
+                <div th:replace="~{fragments/csrf :: csrf}"></div>
+                <input type="hidden" name="data" th:value="${agendamento.dataHora.toLocalDate()}"/>
+                <select name="formaPagamentoId" required>
+                    <option value="">Forma de pagamento</option>
+                    <option th:each="forma : ${formasPagamento}" th:value="${forma.id}" th:text="${forma.nome}"></option>
+                </select>
+                <button class="btn btn-primary" type="submit">Registrar pagamento</button>
+            </form>
+        </div>
+    </main>
+</div>
+<script th:src="@{/js/ui-confirm.js}" defer></script>
+</body>
+</html>

@@ -32,6 +32,19 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
             SELECT DISTINCT a FROM Agendamento a
             JOIN FETCH a.cliente
             JOIN FETCH a.veiculo
+            LEFT JOIN FETCH a.funcionario f
+            LEFT JOIN FETCH f.usuario
+            LEFT JOIN FETCH a.servicos linhas
+            LEFT JOIN FETCH linhas.servico serv
+            LEFT JOIN FETCH serv.categoriaServico
+            WHERE a.id = :id AND a.empresaId = :empresaId
+            """)
+    Optional<Agendamento> findDetalheByIdAndEmpresaId(@Param("id") Long id, @Param("empresaId") Long empresaId);
+
+    @Query("""
+            SELECT DISTINCT a FROM Agendamento a
+            JOIN FETCH a.cliente
+            JOIN FETCH a.veiculo
             LEFT JOIN FETCH a.servicos linhas
             LEFT JOIN FETCH linhas.servico
             WHERE a.empresaId = :empresaId
@@ -40,6 +53,20 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
             """)
     List<Agendamento> findByEmpresaIdAndDataHoraBetweenOrderByDataHoraAsc(
             @Param("empresaId") Long empresaId,
+            @Param("inicio") LocalDateTime inicio,
+            @Param("fim") LocalDateTime fim);
+
+    @Query("""
+            SELECT DISTINCT a FROM Agendamento a
+            LEFT JOIN FETCH a.servicos linhas
+            LEFT JOIN FETCH linhas.servico
+            WHERE a.empresaId = :empresaId
+              AND a.status IN :status
+              AND a.dataHora BETWEEN :inicio AND :fim
+            """)
+    List<Agendamento> findAtivosNoPeriodo(
+            @Param("empresaId") Long empresaId,
+            @Param("status") Collection<StatusAgendamento> status,
             @Param("inicio") LocalDateTime inicio,
             @Param("fim") LocalDateTime fim);
 
@@ -91,4 +118,41 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
             @Param("empresaId") Long empresaId,
             @Param("clienteId") Long clienteId,
             @Param("status") StatusAgendamento status);
+
+    @Query("""
+            SELECT a.cliente.id, COUNT(a)
+            FROM Agendamento a
+            WHERE a.empresaId = :empresaId
+              AND a.status = :status
+              AND a.cliente.id IN :clienteIds
+            GROUP BY a.cliente.id
+            """)
+    List<Object[]> countAtendimentosPorClientes(
+            @Param("empresaId") Long empresaId,
+            @Param("clienteIds") Collection<Long> clienteIds,
+            @Param("status") StatusAgendamento status);
+
+    @Query("""
+            SELECT a.cliente.id, COALESCE(SUM(a.total), 0)
+            FROM Agendamento a
+            WHERE a.empresaId = :empresaId
+              AND a.status = :status
+              AND a.cliente.id IN :clienteIds
+            GROUP BY a.cliente.id
+            """)
+    List<Object[]> sumGastosPorClientes(
+            @Param("empresaId") Long empresaId,
+            @Param("clienteIds") Collection<Long> clienteIds,
+            @Param("status") StatusAgendamento status);
+
+    @Query("""
+            SELECT COALESCE(SUM(a.total), 0)
+            FROM Agendamento a
+            WHERE a.empresaId = :empresaId
+              AND a.pago = FALSE
+              AND a.status IN :status
+            """)
+    BigDecimal sumPendentesByEmpresa(
+            @Param("empresaId") Long empresaId,
+            @Param("status") Collection<StatusAgendamento> status);
 }

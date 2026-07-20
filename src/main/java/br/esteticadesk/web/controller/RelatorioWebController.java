@@ -1,14 +1,17 @@
 package br.esteticadesk.web.controller;
 
+import br.esteticadesk.auth.SessaoUsuario;
 import br.esteticadesk.company.service.AssinaturaService;
 import br.esteticadesk.enums.RecursoPlano;
 import br.esteticadesk.report.dto.FiltroPeriodoRelatorio;
 import br.esteticadesk.report.export.RelatorioExcelExporter;
 import br.esteticadesk.report.export.RelatorioPdfExporter;
 import br.esteticadesk.report.service.RelatorioService;
+import br.esteticadesk.settings.service.ConfiguracaoService;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
@@ -32,27 +35,35 @@ public class RelatorioWebController {
     private final RelatorioPdfExporter pdfExporter;
     private final RelatorioExcelExporter excelExporter;
     private final AssinaturaService assinaturas;
+    private final SessaoUsuario sessao;
+    private final ConfiguracaoService configuracoes;
 
     public RelatorioWebController(RelatorioService relatorios, RelatorioPdfExporter pdfExporter,
-            RelatorioExcelExporter excelExporter, AssinaturaService assinaturas) {
+            RelatorioExcelExporter excelExporter, AssinaturaService assinaturas, SessaoUsuario sessao,
+            ConfiguracaoService configuracoes) {
         this.relatorios = relatorios;
         this.pdfExporter = pdfExporter;
         this.excelExporter = excelExporter;
         this.assinaturas = assinaturas;
+        this.sessao = sessao;
+        this.configuracoes = configuracoes;
     }
 
     @GetMapping
     public String index(
             @RequestParam(required = false) FiltroPeriodoRelatorio filtro,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate referencia,
+            @RequestParam(required = false) Long empresaId,
             Model model) {
         assinaturas.exigirRecurso(RecursoPlano.RELATORIO_SIMPLES);
         model.addAttribute("menuAtivo", "relatorios");
         model.addAttribute("filtros", FiltroPeriodoRelatorio.values());
         model.addAttribute("filtroSelecionado", filtro);
         model.addAttribute("dataReferencia", referencia == null ? LocalDate.now() : referencia);
+        model.addAttribute("empresaIdSelecionada", empresaId);
+        model.addAttribute("empresas", sessao.isSuperAdmin() ? configuracoes.listarEmpresas(true) : List.of());
         if (filtro != null) {
-            model.addAttribute("relatorio", relatorios.consultar(filtro, referencia));
+            model.addAttribute("relatorio", relatorios.consultar(filtro, referencia, empresaId));
         }
         return "report/index";
     }
@@ -60,9 +71,10 @@ public class RelatorioWebController {
     @GetMapping("/pdf")
     public ResponseEntity<byte[]> pdf(
             @RequestParam FiltroPeriodoRelatorio filtro,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate referencia) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate referencia,
+            @RequestParam(required = false) Long empresaId) {
         assinaturas.exigirRecurso(RecursoPlano.PDF);
-        var relatorio = relatorios.consultar(filtro, referencia);
+        var relatorio = relatorios.consultar(filtro, referencia, empresaId);
         try {
             return download(pdfExporter.exportar(relatorio), MediaType.APPLICATION_PDF,
                     nomeArquivo(relatorio.periodo().inicio(), relatorio.periodo().fim(), "pdf"));
@@ -74,9 +86,10 @@ public class RelatorioWebController {
     @GetMapping("/excel")
     public ResponseEntity<byte[]> excel(
             @RequestParam FiltroPeriodoRelatorio filtro,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate referencia) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate referencia,
+            @RequestParam(required = false) Long empresaId) {
         assinaturas.exigirRecurso(RecursoPlano.EXCEL);
-        var relatorio = relatorios.consultar(filtro, referencia);
+        var relatorio = relatorios.consultar(filtro, referencia, empresaId);
         try {
             return download(excelExporter.exportar(relatorio), XLSX,
                     nomeArquivo(relatorio.periodo().inicio(), relatorio.periodo().fim(), "xlsx"));

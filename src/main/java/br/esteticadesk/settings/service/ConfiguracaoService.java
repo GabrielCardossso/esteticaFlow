@@ -20,6 +20,7 @@ import br.esteticadesk.finance.entity.FormaPagamento;
 import br.esteticadesk.finance.repository.FormaPagamentoRepository;
 import br.esteticadesk.inventory.entity.CategoriaProduto;
 import br.esteticadesk.inventory.repository.CategoriaProdutoRepository;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -64,6 +65,11 @@ public class ConfiguracaoService {
     }
 
     public Empresa salvarEmpresa(Empresa dados) {
+        if (!sessao.isSuperAdmin()) {
+            throw new SecurityException(
+                    "Alterações nos dados da empresa precisam de autorização da EsteticaFlow. "
+                            + "Use a solicitação em Configurações.");
+        }
         exigirAdmin();
         var atual = empresaAtual();
         var razaoSocial = textoObrigatorio(dados.getRazaoSocial(), "Razão social", 150);
@@ -107,7 +113,8 @@ public class ConfiguracaoService {
                 PapelUsuario.SUPER_ADMIN);
         if (quantidadeAtiva >= empresa.getPlano().getLimiteUsuarios()) {
             throw new IllegalStateException("Limite de " + empresa.getPlano().getLimiteUsuarios()
-                    + " usuários ativos atingido para o plano " + empresa.getPlano() + ".");
+                    + " usuários ativos atingido para o plano " + empresa.getPlano().name()
+                    + ". Faça upgrade do plano para adicionar mais usuários.");
         }
         var u = new Usuario();
         u.setEmpresaId(sessao.empresaObrigatoria());
@@ -137,10 +144,57 @@ public class ConfiguracaoService {
                 PapelUsuario.SUPER_ADMIN);
         if (quantidadeAtiva >= empresa.getPlano().getLimiteUsuarios()) {
             throw new IllegalStateException("Limite de " + empresa.getPlano().getLimiteUsuarios()
-                    + " usuários ativos atingido para o plano " + empresa.getPlano() + ".");
+                    + " usuários ativos atingido para o plano " + empresa.getPlano().name()
+                    + ". Faça upgrade do plano para adicionar mais usuários.");
         }
         usuario.setAtivo(true);
         usuarios.save(usuario);
+        logs.registrar(empresa.getId(), sessao.getUsuarioLogado(), "USUARIO_REATIVADO",
+                "Usuário " + usuario.getId() + " — " + usuario.getEmail());
+    }
+
+    public Usuario atualizarUsuario(Long id, String nome, String email, PapelUsuario papel, String novaSenha) {
+        exigirAdministradorEmpresa();
+        var usuario = buscarUsuarioGerenciavel(id);
+        var nomeNormalizado = textoObrigatorio(nome, "Nome do usuário", 150);
+        var emailNormalizado = validarEmail(email, "E-mail do usuário", true);
+        if (papel == PapelUsuario.SUPER_ADMIN) {
+            throw new SecurityException("SUPER_ADMIN não pode ser criado na gestão da empresa.");
+        }
+        if (papel == null) {
+            papel = usuario.getPapel();
+        }
+        usuarios.findByEmail(emailNormalizado).ifPresent(outro -> {
+            if (!outro.getId().equals(id)) {
+                throw new IllegalArgumentException("E-mail já cadastrado.");
+            }
+        });
+        usuario.setNome(nomeNormalizado);
+        usuario.setEmail(emailNormalizado);
+        usuario.setPapel(papel);
+        if (novaSenha != null && !novaSenha.isBlank()) {
+            if (novaSenha.length() < 6) {
+                throw new IllegalArgumentException("A senha deve ter pelo menos 6 caracteres.");
+            }
+            usuario.setSenhaHash(encoder.encode(novaSenha));
+        }
+        var salvo = usuarios.save(usuario);
+        logs.registrar(sessao.empresaObrigatoria(), sessao.getUsuarioLogado(), "USUARIO_ATUALIZADO",
+                "Usuário " + salvo.getId() + " — " + salvo.getEmail());
+        return salvo;
+    }
+
+    /** Exclusão lógica: inativa e registra a ação. */
+    public void excluirUsuario(Long id) {
+        exigirAdministradorEmpresa();
+        var usuario = buscarUsuarioGerenciavel(id);
+        if (usuario.getId().equals(sessao.getUsuarioId())) {
+            throw new IllegalArgumentException("Você não pode excluir o próprio usuário.");
+        }
+        usuario.setAtivo(false);
+        usuarios.save(usuario);
+        logs.registrar(sessao.empresaObrigatoria(), sessao.getUsuarioLogado(), "USUARIO_EXCLUIDO",
+                "Usuário " + usuario.getId() + " — " + usuario.getEmail());
     }
 
     public List<FormaPagamento> formasPagamento(boolean mostrarTodas) {
@@ -148,6 +202,27 @@ public class ConfiguracaoService {
         var empresaId = sessao.empresaObrigatoria();
         return mostrarTodas ? formas.findByEmpresaIdOrderByAtivoDescNomeAsc(empresaId)
                 : formas.findByEmpresaIdAndAtivoTrueOrderByNome(empresaId);
+    }
+
+    public FormaPagamento atualizarFormaPagamento(Long id, String nome) {
+        exigirAdmin();
+        assinaturas.exigirRecurso(RecursoPlano.FINANCEIRO);
+        var forma = buscarFormaPagamento(id);
+        forma.setNome(textoObrigatorio(nome, "Nome da forma de pagamento", 50));
+        return formas.save(forma);
+    }
+
+    public CategoriaProduto atualizarCategoria(Long id, String nome) {
+        exigirAdmin();
+        assinaturas.exigirRecurso(RecursoPlano.ESTOQUE);
+        var categoria = buscarCategoria(id);
+        var nomeNormalizado = textoObrigatorio(nome, "Nome da categoria", 100);
+        if (categorias.existsByEmpresaIdAndNomeIgnoreCase(sessao.empresaObrigatoria(), nomeNormalizado)
+                && !categoria.getNome().equalsIgnoreCase(nomeNormalizado)) {
+            throw new IllegalArgumentException("Já existe uma categoria de produto com este nome.");
+        }
+        categoria.setNome(nomeNormalizado);
+        return categorias.save(categoria);
     }
 
     public FormaPagamento criarFormaPagamento(String nome) {
@@ -208,13 +283,19 @@ public class ConfiguracaoService {
     }
 
     public String temaCor() {
-        return parametroTexto(TEMA_COR, "teal");
+        // Plano Básico (e qualquer plano sem personalização) usa sempre o teal principal.
+        if (!assinaturas.permite(RecursoPlano.PERSONALIZACAO_TEMA)) {
+            return "teal";
+        }
+        var cor = parametroTexto(TEMA_COR, "teal");
+        var normalizada = cor == null ? "teal" : cor.trim().toLowerCase(Locale.ROOT);
+        return CORES.contains(normalizada) ? normalizada : "teal";
     }
 
     public void salvarTema(String cor) {
         exigirAdmin();
         assinaturas.exigirRecurso(RecursoPlano.PERSONALIZACAO_TEMA);
-        var corNormalizada = cor == null ? "teal" : cor.trim().toLowerCase();
+        var corNormalizada = cor == null ? "teal" : cor.trim().toLowerCase(Locale.ROOT);
         if (!CORES.contains(corNormalizada)) {
             throw new IllegalArgumentException("Cor de tema inválida.");
         }
@@ -222,9 +303,23 @@ public class ConfiguracaoService {
     }
 
     public List<Empresa> listarEmpresas(boolean mostrarTodas) {
+        return listarEmpresas(mostrarTodas, null, null);
+    }
+
+    public List<Empresa> listarEmpresas(boolean mostrarTodas, String busca, PlanoAssinatura plano) {
         exigirSuperAdmin();
-        return mostrarTodas ? empresas.findAllByOrderByNomeFantasiaAsc()
-                : empresas.findByAtivoTrueOrderByNomeFantasiaAsc();
+        var lista = new ArrayList<>(mostrarTodas ? empresas.findAllByOrderByNomeFantasiaAsc()
+                : empresas.findByAtivoTrueOrderByNomeFantasiaAsc());
+        var termo = busca == null ? "" : busca.trim();
+        if (!termo.isEmpty()) {
+            var termoLower = termo.toLowerCase(Locale.ROOT);
+            var termoDigitos = somenteDigitos(termo);
+            lista.removeIf(empresa -> !correspondeBuscaEmpresa(empresa, termoLower, termoDigitos));
+        }
+        if (plano != null) {
+            lista.removeIf(empresa -> !plano.equals(empresa.getPlano()));
+        }
+        return lista;
     }
 
     public Empresa criarEmpresa(String razaoSocial, String nomeFantasia, String cnpj, String telefone, String email,
@@ -370,6 +465,22 @@ public class ConfiguracaoService {
 
     private String somenteDigitos(String valor) {
         return valor == null ? "" : valor.replaceAll("\\D", "");
+    }
+
+    private boolean correspondeBuscaEmpresa(Empresa empresa, String termoLower, String termoDigitos) {
+        if (contemIgnoreCase(empresa.getNomeFantasia(), termoLower)
+                || contemIgnoreCase(empresa.getRazaoSocial(), termoLower)) {
+            return true;
+        }
+        if (empresa.getCnpj() == null) {
+            return false;
+        }
+        return empresa.getCnpj().toLowerCase(Locale.ROOT).contains(termoLower)
+                || (!termoDigitos.isEmpty() && empresa.getCnpj().contains(termoDigitos));
+    }
+
+    private boolean contemIgnoreCase(String valor, String termoLower) {
+        return valor != null && valor.toLowerCase(Locale.ROOT).contains(termoLower);
     }
 
     private String somenteDigitosOpcional(String valor) {

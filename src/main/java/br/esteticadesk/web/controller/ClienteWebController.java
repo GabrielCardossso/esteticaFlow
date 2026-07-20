@@ -32,10 +32,13 @@ public class ClienteWebController {
 
     @GetMapping
     public String listar(@RequestParam(required = false) String busca,
-            @RequestParam(required = false, defaultValue = "true") boolean ativos, Model model) {
-        model.addAttribute("clientes", clienteService.listar(busca, ativos));
+            @RequestParam(required = false, defaultValue = "true") boolean ativos,
+            @RequestParam(required = false, defaultValue = "nome") String ordenacao,
+            Model model) {
+        model.addAttribute("clientes", clienteService.listar(busca, ativos, ordenacao));
         model.addAttribute("busca", busca == null ? "" : busca);
         model.addAttribute("ativos", ativos);
+        model.addAttribute("ordenacao", ordenacao);
         model.addAttribute("menuAtivo", "clientes");
         return "customer/list";
     }

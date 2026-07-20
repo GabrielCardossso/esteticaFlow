@@ -2,9 +2,10 @@ package br.esteticadesk.web.controller;
 
 import br.esteticadesk.auth.SessaoUsuario;
 import br.esteticadesk.company.entity.Empresa;
+import br.esteticadesk.company.service.AssinaturaService;
+import br.esteticadesk.company.service.SolicitacaoAlteracaoEmpresaService;
 import br.esteticadesk.enums.PapelUsuario;
 import br.esteticadesk.enums.RecursoPlano;
-import br.esteticadesk.company.service.AssinaturaService;
 import br.esteticadesk.settings.service.ConfiguracaoService;
 import java.util.Arrays;
 import java.util.List;
@@ -24,12 +25,14 @@ public class ConfiguracaoWebController {
     private final ConfiguracaoService configuracaoService;
     private final SessaoUsuario sessao;
     private final AssinaturaService assinaturas;
+    private final SolicitacaoAlteracaoEmpresaService solicitacoes;
 
     public ConfiguracaoWebController(ConfiguracaoService configuracaoService, SessaoUsuario sessao,
-            AssinaturaService assinaturas) {
+            AssinaturaService assinaturas, SolicitacaoAlteracaoEmpresaService solicitacoes) {
         this.configuracaoService = configuracaoService;
         this.sessao = sessao;
         this.assinaturas = assinaturas;
+        this.solicitacoes = solicitacoes;
     }
 
     @GetMapping
@@ -52,6 +55,7 @@ public class ConfiguracaoWebController {
         model.addAttribute("papeis", Arrays.stream(PapelUsuario.values())
                 .filter(p -> p != PapelUsuario.SUPER_ADMIN)
                 .toList());
+        model.addAttribute("solicitacaoPendente", solicitacoes.pendenteDaEmpresaAtual());
         model.addAttribute("menuAtivo", "configuracoes");
         return "settings/index";
     }
@@ -62,14 +66,23 @@ public class ConfiguracaoWebController {
             @RequestParam(required = false) String email,
             RedirectAttributes redirectAttributes) {
         try {
-            var empresa = new Empresa();
-            empresa.setRazaoSocial(razaoSocial);
-            empresa.setNomeFantasia(nomeFantasia);
-            empresa.setCnpj(cnpj);
-            empresa.setTelefone(telefone);
-            empresa.setEmail(email);
-            configuracaoService.salvarEmpresa(empresa);
-            redirectAttributes.addFlashAttribute("sucesso", "Dados da empresa atualizados.");
+            if (sessao.isSuperAdmin()) {
+                var empresa = new Empresa();
+                empresa.setRazaoSocial(razaoSocial);
+                empresa.setNomeFantasia(nomeFantasia);
+                empresa.setCnpj(cnpj);
+                empresa.setTelefone(telefone);
+                empresa.setEmail(email);
+                configuracaoService.salvarEmpresa(empresa);
+                redirectAttributes.addFlashAttribute("sucesso", "Dados da empresa atualizados.");
+            } else if (sessao.isAdministradorEmpresa()) {
+                solicitacoes.solicitar(razaoSocial, nomeFantasia, cnpj, telefone, email);
+                redirectAttributes.addFlashAttribute("sucesso",
+                        "Solicitação enviada à EsteticaFlow. Aguarde a aprovação.");
+            } else {
+                redirectAttributes.addFlashAttribute("erro",
+                        "Você não tem permissão para alterar os dados da empresa.");
+            }
         } catch (RuntimeException exception) {
             redirectAttributes.addFlashAttribute("erro", exception.getMessage());
         }
@@ -102,6 +115,20 @@ public class ConfiguracaoWebController {
         return "redirect:/configuracoes";
     }
 
+    @PostMapping("/usuarios/{id}")
+    public String atualizarUsuario(@PathVariable Long id, @RequestParam String nome, @RequestParam String email,
+            @RequestParam PapelUsuario papel, @RequestParam(required = false) String novaSenha,
+            RedirectAttributes redirectAttributes) {
+        return executar(() -> configuracaoService.atualizarUsuario(id, nome, email, papel, novaSenha),
+                "Usuário atualizado.", "redirect:/configuracoes?mostrarTodosUsuarios=true", redirectAttributes);
+    }
+
+    @PostMapping("/usuarios/{id}/excluir")
+    public String excluirUsuario(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        return executar(() -> configuracaoService.excluirUsuario(id), "Usuário excluído.",
+                "redirect:/configuracoes?mostrarTodosUsuarios=true", redirectAttributes);
+    }
+
     @PostMapping("/usuarios/{id}/inativar")
     public String inativarUsuario(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         return executar(() -> configuracaoService.inativarUsuario(id), "Usuário inativado.",
@@ -125,6 +152,13 @@ public class ConfiguracaoWebController {
         return "redirect:/configuracoes";
     }
 
+    @PostMapping("/formas-pagamento/{id}")
+    public String atualizarFormaPagamento(@PathVariable Long id, @RequestParam String nome,
+            RedirectAttributes redirectAttributes) {
+        return executar(() -> configuracaoService.atualizarFormaPagamento(id, nome),
+                "Forma de pagamento atualizada.", "redirect:/configuracoes", redirectAttributes);
+    }
+
     @PostMapping("/formas-pagamento/{id}/inativar")
     public String inativarFormaPagamento(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         return executar(() -> configuracaoService.inativarFormaPagamento(id), "Forma de pagamento inativada.",
@@ -146,6 +180,13 @@ public class ConfiguracaoWebController {
             redirectAttributes.addFlashAttribute("erro", exception.getMessage());
         }
         return "redirect:/configuracoes";
+    }
+
+    @PostMapping("/categorias/{id}")
+    public String atualizarCategoria(@PathVariable Long id, @RequestParam String nome,
+            RedirectAttributes redirectAttributes) {
+        return executar(() -> configuracaoService.atualizarCategoria(id, nome),
+                "Categoria atualizada.", "redirect:/configuracoes", redirectAttributes);
     }
 
     @PostMapping("/categorias/{id}/inativar")

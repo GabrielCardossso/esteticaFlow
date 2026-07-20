@@ -12,6 +12,7 @@ import br.esteticadesk.appointment.entity.ServicoAgendamento;
 import br.esteticadesk.appointment.repository.AgendamentoRepository;
 import br.esteticadesk.auth.SessaoUsuario;
 import br.esteticadesk.company.entity.Empresa;
+import br.esteticadesk.company.repository.EmpresaRepository;
 import br.esteticadesk.company.service.AssinaturaService;
 import br.esteticadesk.customer.entity.Cliente;
 import br.esteticadesk.enums.CategoriaDespesa;
@@ -37,6 +38,7 @@ class RelatorioServiceTest {
     private ReceitaRepository receitas;
     private DespesaRepository despesas;
     private AgendamentoRepository agendamentos;
+    private EmpresaRepository empresas;
     private SessaoUsuario sessao;
     private AssinaturaService assinaturas;
     private RelatorioService service;
@@ -47,14 +49,16 @@ class RelatorioServiceTest {
         receitas = mock(ReceitaRepository.class);
         despesas = mock(DespesaRepository.class);
         agendamentos = mock(AgendamentoRepository.class);
+        empresas = mock(EmpresaRepository.class);
         sessao = mock(SessaoUsuario.class);
         assinaturas = mock(AssinaturaService.class);
         empresa = new Empresa();
+        empresa.setId(7L);
         empresa.setNomeFantasia("Empresa teste");
         empresa.setPlano(PlanoAssinatura.COMPLETO);
         when(sessao.empresaObrigatoria()).thenReturn(7L);
         when(assinaturas.empresaAtual()).thenReturn(empresa);
-        service = new RelatorioService(receitas, despesas, agendamentos, sessao, assinaturas);
+        service = new RelatorioService(receitas, despesas, agendamentos, empresas, sessao, assinaturas);
     }
 
     @Test

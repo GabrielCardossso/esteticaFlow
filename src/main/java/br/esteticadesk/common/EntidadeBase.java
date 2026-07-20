@@ -23,13 +23,13 @@ public abstract class EntidadeBase {
 
     @PrePersist
     protected void aoPersistir() {
-        var agora = LocalDateTime.now();
+        var agora = HorarioSistema.agora();
         dataCriacao = agora;
         dataAtualizacao = agora;
     }
 
     @PreUpdate
     protected void aoAtualizar() {
-        dataAtualizacao = LocalDateTime.now();
+        dataAtualizacao = HorarioSistema.agora();
     }
 }

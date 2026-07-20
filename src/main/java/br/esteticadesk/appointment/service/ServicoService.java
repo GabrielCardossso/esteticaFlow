@@ -8,7 +8,9 @@ import br.esteticadesk.appointment.repository.ServicoRepository;
 import br.esteticadesk.auth.SessaoUsuario;
 import br.esteticadesk.exception.RecursoNaoEncontradoException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,10 +28,28 @@ public class ServicoService {
     }
 
     @Transactional(readOnly = true)
-    public List<Servico> listar(boolean mostrarTodos) {
+    public List<Servico> listar(boolean mostrarTodos, String busca, Long categoriaId, String ordenacao) {
         var empresaId = sessao.empresaObrigatoria();
-        return mostrarTodos ? servicos.findByEmpresaIdOrderByAtivoDescNomeAsc(empresaId)
-                : servicos.findByEmpresaIdAndAtivoTrueOrderByNome(empresaId);
+        var lista = new ArrayList<>(mostrarTodos ? servicos.findByEmpresaIdOrderByAtivoDescNomeAsc(empresaId)
+                : servicos.findByEmpresaIdAndAtivoTrueOrderByNome(empresaId));
+        var termo = busca == null ? "" : busca.trim();
+        if (!termo.isEmpty()) {
+            var termoLower = termo.toLowerCase(Locale.ROOT);
+            lista.removeIf(s -> s.getNome() == null || !s.getNome().toLowerCase(Locale.ROOT).contains(termoLower));
+        }
+        if (categoriaId != null) {
+            lista.removeIf(s -> s.getCategoriaServico() == null
+                    || !categoriaId.equals(s.getCategoriaServico().getId()));
+        }
+        var ordem = ordenacao == null || ordenacao.isBlank() ? "nome" : ordenacao;
+        Comparator<Servico> comparator = switch (ordem) {
+            case "preco_asc" -> Comparator.comparing(Servico::getPreco, Comparator.nullsLast(Comparator.naturalOrder()));
+            case "preco_desc" ->
+                Comparator.comparing(Servico::getPreco, Comparator.nullsLast(Comparator.reverseOrder()));
+            default -> Comparator.comparing(s -> s.getNome() == null ? "" : s.getNome(), String.CASE_INSENSITIVE_ORDER);
+        };
+        lista.sort(comparator);
+        return lista;
     }
 
     @Transactional(readOnly = true)

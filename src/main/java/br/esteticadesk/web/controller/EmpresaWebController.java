@@ -27,12 +27,16 @@ public class EmpresaWebController {
     }
 
     @GetMapping
-    public String index(@RequestParam(defaultValue = "false") boolean mostrarTodas, Model model) {
-        var empresas = configuracoes.listarEmpresas(mostrarTodas);
+    public String index(@RequestParam(defaultValue = "false") boolean mostrarTodas,
+            @RequestParam(required = false) String busca,
+            @RequestParam(required = false) PlanoAssinatura plano, Model model) {
+        var empresas = configuracoes.listarEmpresas(mostrarTodas, busca, plano);
         empresas.forEach(empresa -> assinaturas.recalcularSituacao(empresa, LocalDate.now()));
         model.addAttribute("empresas", empresas);
         model.addAttribute("planos", PlanoAssinatura.values());
         model.addAttribute("mostrarTodas", mostrarTodas);
+        model.addAttribute("busca", busca);
+        model.addAttribute("planoFiltro", plano);
         model.addAttribute("menuAtivo", "empresas");
         return "company/index";
     }

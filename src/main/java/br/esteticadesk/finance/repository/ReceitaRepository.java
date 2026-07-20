@@ -11,4 +11,10 @@ public interface ReceitaRepository extends JpaRepository<Receita, Long> {
     List<Receita> findByEmpresaIdAndDataRecebimentoBetween(Long empresaId, LocalDate inicio, LocalDate fim);
 
     List<Receita> findByEmpresaIdOrderByDataRecebimentoDesc(Long empresaId);
+
+    @EntityGraph(attributePaths = "formaPagamento")
+    Optional<Receita> findByAgendamentoIdAndEmpresaId(Long agendamentoId, Long empresaId);
+
+    @EntityGraph(attributePaths = "formaPagamento")
+    List<Receita> findByEmpresaIdAndAgendamentoClienteIdOrderByDataRecebimentoDesc(Long empresaId, Long clienteId);
 }

@@ -56,13 +56,49 @@ class AgendamentoServiceImplTest {
                     .thenReturn(Optional.of(linha.getServico()));
         }
         when(agendamentos.save(agendamento)).thenReturn(agendamento);
+        when(agendamentos.findAtivosNoPeriodo(org.mockito.ArgumentMatchers.eq(1L),
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any())).thenReturn(java.util.List.of());
 
-        service.criar(agendamento);
+        service.criar(agendamento, false);
 
         assertEquals(new BigDecimal("150.00"), agendamento.getSubtotal());
         assertEquals(new BigDecimal("15.00"), agendamento.getDesconto());
         assertEquals(new BigDecimal("135.00"), agendamento.getTotal());
         assertEquals(Boolean.FALSE, agendamento.getPago());
+    }
+
+    @Test
+    void marcarPagoMantemStatusEmAndamento() {
+        var agendamento = new Agendamento();
+        agendamento.setId(10L);
+        agendamento.setEmpresaId(1L);
+        agendamento.setStatus(StatusAgendamento.EM_ANDAMENTO);
+        agendamento.setPago(false);
+        agendamento.setTotal(new BigDecimal("120.00"));
+        agendamento.getServicos().add(linha("120.00"));
+        var forma = new FormaPagamento();
+        forma.setId(3L);
+        when(agendamentos.findByIdAndEmpresaIdForUpdate(10L, 1L)).thenReturn(Optional.of(agendamento));
+        when(formas.findByIdAndEmpresaIdAndAtivoTrue(3L, 1L)).thenReturn(Optional.of(forma));
+
+        service.marcarPago(10L, 3L);
+
+        assertEquals(StatusAgendamento.EM_ANDAMENTO, agendamento.getStatus());
+        assertEquals(Boolean.TRUE, agendamento.getPago());
+        verify(receitas).save(org.mockito.ArgumentMatchers.any());
+    }
+
+    @Test
+    void rejeitaAgendamentoNoPassadoNoFusoDeSaoPaulo() {
+        var agendamento = new Agendamento();
+        agendamento.setDataHora(br.esteticadesk.common.HorarioSistema.agoraNoMinuto().minusMinutes(1));
+        agendamento.getServicos().add(linha("80.00"));
+
+        var exception = org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class,
+                () -> service.criar(agendamento, false));
+
+        org.junit.jupiter.api.Assertions.assertEquals("Não é possível agendar no passado.", exception.getMessage());
     }
 
     @Test

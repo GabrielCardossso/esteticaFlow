@@ -18,5 +18,5 @@ public interface ClienteService {
 
     ClienteDTO reativar(Long id);
 
-    List<ClienteListagemDTO> listar(String busca, Boolean ativo);
+    List<ClienteListagemDTO> listar(String busca, Boolean ativo, String ordenacao);
 }

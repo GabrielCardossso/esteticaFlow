@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public interface EstoqueService {
-    List<Estoque> listarEstoques(boolean mostrarTodos);
+    List<Estoque> listarEstoques(boolean mostrarTodos, String busca, boolean somenteBaixo, String ordenacao);
 
     List<MovimentacaoEstoque> listarMovimentacoesRecentes();
 
@@ -23,6 +23,8 @@ public interface EstoqueService {
     void reativarProduto(Long produtoId);
 
     void registrarEntrada(Long produtoId, BigDecimal quantidade);
+
+    void registrarEntrada(Long produtoId, BigDecimal quantidade, BigDecimal valorPagoCompra, String motivo);
 
     void registrarSaida(Long produtoId, BigDecimal quantidade);
 

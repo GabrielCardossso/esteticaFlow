@@ -1,10 +1,11 @@
 package br.esteticadesk.web.advice;
 
 import br.esteticadesk.auth.SessaoUsuario;
-import br.esteticadesk.settings.service.ConfiguracaoService;
 import br.esteticadesk.company.service.AssinaturaService;
 import br.esteticadesk.enums.RecursoPlano;
 import br.esteticadesk.enums.StatusAssinatura;
+import br.esteticadesk.notification.service.NotificacaoService;
+import br.esteticadesk.settings.service.ConfiguracaoService;
 import java.time.LocalDate;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -16,12 +17,14 @@ public class TemaModelAdvice {
     private final SessaoUsuario sessao;
     private final ConfiguracaoService configuracaoService;
     private final AssinaturaService assinaturas;
+    private final NotificacaoService notificacoes;
 
     public TemaModelAdvice(SessaoUsuario sessao, ConfiguracaoService configuracaoService,
-            AssinaturaService assinaturas) {
+            AssinaturaService assinaturas, NotificacaoService notificacoes) {
         this.sessao = sessao;
         this.configuracaoService = configuracaoService;
         this.assinaturas = assinaturas;
+        this.notificacoes = notificacoes;
     }
 
     @ModelAttribute("temaCor")
@@ -35,6 +38,18 @@ public class TemaModelAdvice {
     @ModelAttribute("marca")
     public String marca() {
         return "EsteticaFlow";
+    }
+
+    @ModelAttribute("notificacoesNaoLidas")
+    public long notificacoesNaoLidas() {
+        if (sessao.getEmpresaId() == null) {
+            return 0;
+        }
+        try {
+            return notificacoes.contarNaoLidas();
+        } catch (RuntimeException ignored) {
+            return 0;
+        }
     }
 
     @ModelAttribute
