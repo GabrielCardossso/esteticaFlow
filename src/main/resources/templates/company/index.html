@@ -81,7 +81,9 @@
                     <button class="btn btn-secondary" type="submit">Registrar pagamento</button>
                 </form>
                 <form th:if="${empresa.statusAssinatura.name() != 'BLOQUEADA'}"
-                      th:action="@{/empresas/{id}/bloquear(id=${empresa.id})}" method="post" class="payment-form">
+                      th:action="@{/empresas/{id}/bloquear(id=${empresa.id})}" method="post" class="payment-form"
+                      data-confirm="Bloquear o acesso desta empresa?"
+                      data-confirm-title="Confirmar bloqueio">
                     <div th:replace="~{fragments/csrf :: csrf}"></div>
                     <input name="motivo" required maxlength="500" placeholder="Motivo do bloqueio"/>
                     <label><input type="checkbox" name="manual" value="true"/> Manual</label>
@@ -92,7 +94,9 @@
                     <div th:replace="~{fragments/csrf :: csrf}"></div>
                     <button class="btn btn-secondary" type="submit">Desbloquear</button>
                 </form>
-                <form th:if="${empresa.ativo}" th:action="@{/empresas/{id}/inativar(id=${empresa.id})}" method="post">
+                <form th:if="${empresa.ativo}" th:action="@{/empresas/{id}/inativar(id=${empresa.id})}" method="post"
+                      data-confirm="Inativar esta empresa? O acesso dos usuários será afetado."
+                      data-confirm-title="Confirmar inativação">
                     <div th:replace="~{fragments/csrf :: csrf}"></div>
                     <input type="hidden" name="mostrarTodas" th:value="${mostrarTodas}"/>
                     <button class="btn btn-secondary" type="submit">Inativar</button>

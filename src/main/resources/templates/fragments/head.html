@@ -3,20 +3,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
     <meta name="theme-color" content="#123943"/>
     <meta name="mobile-web-app-capable" content="yes"/>
+    <meta th:if="${_csrf}" name="_csrf" th:content="${_csrf.token}"/>
+    <meta th:if="${_csrf}" name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <meta th:if="${_csrf}" name="_csrf_parameter" th:content="${_csrf.parameterName}"/>
     <title th:text="${titulo} + ' — EsteticaFlow'">EsteticaFlow</title>
     <link rel="stylesheet" th:href="@{/css/application.css}"/>
     <script th:inline="javascript">
         (function () {
             var cor = /*[[${temaCor}]]*/ 'teal';
+            var hex = /*[[${temaCorHex}]]*/ '#157f8f';
             if (!cor) { cor = 'teal'; }
+            if (!hex) { hex = '#157f8f'; }
             document.documentElement.dataset.theme = 'claro';
             document.documentElement.dataset.temaCor = cor;
-            document.documentElement.dataset.accent = cor;
+            document.documentElement.dataset.temaHex = hex;
+            document.documentElement.dataset.accent = cor === 'custom' ? 'custom' : cor;
         })();
+        window.EsteticaFlowSession = {
+            enabled: /*[[${sessaoInatividadeAtiva}]]*/ false,
+            minutes: /*[[${sessaoInatividadeMinutos}]]*/ 30,
+            csrfToken: /*[[${_csrf != null ? _csrf.token : ''}]]*/ '',
+            csrfParam: /*[[${_csrf != null ? _csrf.parameterName : '_csrf'}]]*/ '_csrf'
+        };
     </script>
     <script th:src="@{/js/theme.js}"></script>
     <script th:src="@{/js/mobile-nav.js}" defer></script>
     <script th:src="@{/js/input-masks.js}" defer></script>
     <script th:src="@{/js/ui-confirm.js}" defer></script>
     <script th:src="@{/js/loading.js}" defer></script>
+    <script th:src="@{/js/global-search.js}" defer></script>
+    <script th:src="@{/js/session-idle.js}" defer></script>
 </head>

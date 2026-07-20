@@ -1,6 +1,7 @@
 package br.esteticadesk.web.controller;
 
 import br.esteticadesk.auth.SessaoUsuario;
+import br.esteticadesk.company.entity.Empresa;
 import br.esteticadesk.company.repository.EmpresaRepository;
 import br.esteticadesk.company.service.SolicitacaoAlteracaoEmpresaService;
 import br.esteticadesk.notification.service.NotificacaoService;
@@ -38,12 +39,19 @@ public class NotificacaoWebController {
         if (sessao.isSuperAdmin()) {
             var pendentes = solicitacoes.listarPendentes();
             var nomes = new LinkedHashMap<Long, String>();
+            var empresasAtuais = new LinkedHashMap<Long, Empresa>();
+            var detalhes = new LinkedHashMap<Long, String>();
             for (var sol : pendentes) {
-                empresas.findById(sol.getEmpresaId())
-                        .ifPresent(e -> nomes.put(sol.getId(), e.getNomeFantasia()));
+                empresas.findById(sol.getEmpresaId()).ifPresent(e -> {
+                    nomes.put(sol.getId(), e.getNomeFantasia());
+                    empresasAtuais.put(sol.getId(), e);
+                    detalhes.put(sol.getId(), solicitacoes.descreverPedido(e, sol));
+                });
             }
             model.addAttribute("solicitacoesPendentes", pendentes);
             model.addAttribute("nomesEmpresasSolicitacao", nomes);
+            model.addAttribute("empresasAtuaisSolicitacao", empresasAtuais);
+            model.addAttribute("detalhesSolicitacao", detalhes);
         }
         return "notification/index";
     }

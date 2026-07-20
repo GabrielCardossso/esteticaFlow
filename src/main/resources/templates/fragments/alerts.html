@@ -1,5 +1,20 @@
 <div th:fragment="alerts">
-    <div th:if="${sucesso}" class="alert alert-success" th:text="${sucesso}"></div>
-    <div th:if="${erro}" class="alert alert-error" th:text="${erro}"></div>
-    <div th:if="${info}" class="alert alert-info" th:text="${info}"></div>
+    <div th:if="${sucesso}" class="sr-only"
+         th:attr="data-toast-message=${sucesso},
+                  data-toast-type='sucesso',
+                  data-undo-url=${undoUrl},
+                  data-csrf-token=${_csrf != null ? _csrf.token : null},
+                  data-csrf-param=${_csrf != null ? _csrf.parameterName : '_csrf'}"></div>
+    <div th:if="${erro}" class="alert alert-error" role="alert">
+        <span class="alert-icon" aria-hidden="true">!</span>
+        <span th:text="${erro}"></span>
+    </div>
+    <div th:if="${info}" class="alert alert-info" role="status">
+        <span class="alert-icon" aria-hidden="true">i</span>
+        <span th:text="${info}"></span>
+    </div>
+    <div th:if="${aviso}" class="alert alert-warning" role="status">
+        <span class="alert-icon" aria-hidden="true">!</span>
+        <span th:text="${aviso}"></span>
+    </div>
 </div>

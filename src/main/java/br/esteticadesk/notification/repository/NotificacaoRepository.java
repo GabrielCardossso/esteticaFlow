@@ -23,6 +23,9 @@ public interface NotificacaoRepository extends JpaRepository<Notificacao, Long> 
     boolean existsByEmpresaIdIsNullAndTipoAndReferenciaTipoAndReferenciaIdAndLidaFalse(
             TipoNotificacao tipo, String referenciaTipo, Long referenciaId);
 
+    List<Notificacao> findByEmpresaIdAndTipoAndReferenciaTipoAndReferenciaIdAndLidaFalse(
+            Long empresaId, TipoNotificacao tipo, String referenciaTipo, Long referenciaId);
+
     @Query("""
             SELECT n FROM Notificacao n
             WHERE n.id = :id

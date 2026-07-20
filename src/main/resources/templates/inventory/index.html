@@ -62,10 +62,11 @@
                        class="btn btn-secondary btn-sm">Editar</a>
                     <form th:if="${item.produto.ativo}"
                           th:action="@{/estoque/produtos/{id}/inativar(id=${item.produto.id})}"
-                          method="post" style="display:inline;">
+                          method="post" style="display:inline;"
+                          data-confirm="Inativar este produto? Ele sairá das movimentações ativas."
+                          data-confirm-title="Confirmar inativação">
                         <div th:replace="~{fragments/csrf :: csrf}"></div>
-                        <button type="submit" class="btn btn-danger btn-sm"
-                                onclick="return confirm('Inativar este produto?')">Inativar</button>
+                        <button type="submit" class="btn btn-danger btn-sm">Inativar</button>
                     </form>
                     <form th:unless="${item.produto.ativo}"
                           th:action="@{/estoque/produtos/{id}/reativar(id=${item.produto.id})}"

@@ -1,6 +1,7 @@
 package br.esteticadesk.web.controller;
 
 import br.esteticadesk.auth.SessaoUsuario;
+import br.esteticadesk.auth.service.HistoricoAcessoService;
 import br.esteticadesk.company.entity.Empresa;
 import br.esteticadesk.company.service.AssinaturaService;
 import br.esteticadesk.company.service.SolicitacaoAlteracaoEmpresaService;
@@ -26,13 +27,16 @@ public class ConfiguracaoWebController {
     private final SessaoUsuario sessao;
     private final AssinaturaService assinaturas;
     private final SolicitacaoAlteracaoEmpresaService solicitacoes;
+    private final HistoricoAcessoService historicoAcesso;
 
     public ConfiguracaoWebController(ConfiguracaoService configuracaoService, SessaoUsuario sessao,
-            AssinaturaService assinaturas, SolicitacaoAlteracaoEmpresaService solicitacoes) {
+            AssinaturaService assinaturas, SolicitacaoAlteracaoEmpresaService solicitacoes,
+            HistoricoAcessoService historicoAcesso) {
         this.configuracaoService = configuracaoService;
         this.sessao = sessao;
         this.assinaturas = assinaturas;
         this.solicitacoes = solicitacoes;
+        this.historicoAcesso = historicoAcesso;
     }
 
     @GetMapping
@@ -52,6 +56,10 @@ public class ConfiguracaoWebController {
         model.addAttribute("mostrarTodasFormas", mostrarTodasFormas);
         model.addAttribute("mostrarTodasCategorias", mostrarTodasCategorias);
         model.addAttribute("temaCor", configuracaoService.temaCor());
+        model.addAttribute("temaCorHex", configuracaoService.temaCorHex());
+        model.addAttribute("sessaoInatividadeAtiva", configuracaoService.sessaoInatividadeAtiva());
+        model.addAttribute("sessaoInatividadeMinutos", configuracaoService.sessaoInatividadeMinutos());
+        model.addAttribute("ultimoAcesso", historicoAcesso.ultimoAcessoDoUsuarioAtual().orElse(null));
         model.addAttribute("papeis", Arrays.stream(PapelUsuario.values())
                 .filter(p -> p != PapelUsuario.SUPER_ADMIN)
                 .toList());
@@ -91,11 +99,36 @@ public class ConfiguracaoWebController {
 
     @PostMapping("/tema")
     public String salvarTema(@RequestParam String cor,
+            @RequestParam(required = false) String hex,
             RedirectAttributes redirectAttributes) {
         try {
-            configuracaoService.salvarTema(cor);
+            configuracaoService.salvarTema(cor, hex);
             redirectAttributes.addFlashAttribute("sucesso", "Cor de destaque atualizada.");
             redirectAttributes.addFlashAttribute("temaCorFlash", cor);
+        } catch (RuntimeException exception) {
+            redirectAttributes.addFlashAttribute("erro", exception.getMessage());
+        }
+        return "redirect:/configuracoes";
+    }
+
+    @PostMapping("/tema/restaurar")
+    public String restaurarTema(RedirectAttributes redirectAttributes) {
+        try {
+            configuracaoService.restaurarTemaPadrao();
+            redirectAttributes.addFlashAttribute("sucesso", "Tema padrão Teal restaurado.");
+        } catch (RuntimeException exception) {
+            redirectAttributes.addFlashAttribute("erro", exception.getMessage());
+        }
+        return "redirect:/configuracoes";
+    }
+
+    @PostMapping("/sessao")
+    public String salvarSessao(@RequestParam(defaultValue = "false") boolean inatividadeAtiva,
+            @RequestParam(defaultValue = "30") Integer minutos,
+            RedirectAttributes redirectAttributes) {
+        try {
+            configuracaoService.salvarSessaoInatividade(inatividadeAtiva, minutos);
+            redirectAttributes.addFlashAttribute("sucesso", "Preferências de segurança da sessão salvas.");
         } catch (RuntimeException exception) {
             redirectAttributes.addFlashAttribute("erro", exception.getMessage());
         }

@@ -95,7 +95,8 @@
                 <td class="actions">
                     <a th:href="@{/servicos/{id}/editar(id=${servico.id})}" class="btn btn-secondary btn-sm">Editar</a>
                     <form th:if="${servico.ativo}" th:action="@{/servicos/{id}/inativar(id=${servico.id})}"
-                          method="post">
+                          method="post" data-confirm="Inativar este serviço? Ele deixará de aparecer na agenda."
+                          data-confirm-title="Confirmar inativação">
                         <div th:replace="~{fragments/csrf :: csrf}"></div>
                         <button type="submit" class="btn btn-danger btn-sm"
                                 onclick="return confirm('Inativar este serviço?')">Inativar</button>

@@ -81,7 +81,10 @@
                         </div>
                     </th:block>
 
-                    <label for="quantidadeMinima">Estoque mínimo *</label>
+                    <label for="quantidadeMinima">Estoque mínimo *
+                        <span class="tooltip-trigger" tabindex="0"
+                              data-tooltip="Quando a quantidade ficar abaixo desse valor, o sistema emitirá um alerta.">?</span>
+                    </label>
                     <div>
                         <input id="quantidadeMinima" type="number" th:field="*{quantidadeMinima}"
                                min="0" step="0.001" required/>

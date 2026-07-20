@@ -44,7 +44,12 @@
             </thead>
             <tbody>
             <tr th:if="${clientes.isEmpty()}">
-                <td colspan="8" class="table-empty">Nenhum cliente encontrado.</td>
+                <td colspan="8" class="table-empty">
+                    <div class="empty-state">
+                        <strong>Ainda não existem clientes cadastrados.</strong>
+                        Clique em “Novo cliente” para começar.
+                    </div>
+                </td>
             </tr>
             <tr th:each="cliente : ${clientes}">
                 <td>

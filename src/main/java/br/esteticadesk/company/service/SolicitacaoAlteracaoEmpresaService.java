@@ -12,8 +12,10 @@ import br.esteticadesk.enums.TipoNotificacao;
 import br.esteticadesk.exception.RecursoNaoEncontradoException;
 import br.esteticadesk.notification.service.NotificacaoService;
 import br.esteticadesk.validation.DocumentoValidator;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,6 +55,7 @@ public class SolicitacaoAlteracaoEmpresaService {
         var tel = validarTelefone(telefone);
         var mail = validarEmail(email);
 
+        var empresa = empresas.findById(empresaId).orElseThrow();
         var sol = new SolicitacaoAlteracaoEmpresa();
         sol.setEmpresaId(empresaId);
         sol.setRazaoSocial(razao);
@@ -64,15 +67,15 @@ public class SolicitacaoAlteracaoEmpresaService {
         sol.setSolicitadoPor(sessao.getUsuarioId());
         sol = solicitacoes.save(sol);
 
-        var empresa = empresas.findById(empresaId).orElseThrow();
+        var detalhes = descreverPedido(empresa, sol);
         notificacoes.notificarSuperAdmin(TipoNotificacao.SOLICITACAO_EMPRESA,
                 "Solicitação de alteração: " + empresa.getNomeFantasia(),
-                "A empresa pediu alteração de razão social, fantasia, CNPJ, telefone ou e-mail.",
+                "A empresa pediu alteração dos dados cadastrais.\n\n" + detalhes,
                 "SOLICITACAO", sol.getId(), "/notificacoes");
         notificacoes.notificarEmpresa(empresaId, TipoNotificacao.SOLICITACAO_DECISAO,
                 "Solicitação enviada à EsteticaFlow",
-                "Sua solicitação de alteração dos dados da empresa está aguardando aprovação.",
-                "SOLICITACAO", sol.getId(), "/configuracoes");
+                "Sua solicitação de alteração dos dados da empresa está aguardando aprovação.\n\n" + detalhes,
+                "SOLICITACAO_ENVIO", sol.getId(), "/configuracoes");
 
         logs.registrar(empresaId, sessao.getUsuarioLogado(), "SOLICITACAO_EMPRESA_CRIADA",
                 "Solicitação " + sol.getId());
@@ -89,6 +92,8 @@ public class SolicitacaoAlteracaoEmpresaService {
             throw new IllegalArgumentException("CNPJ já cadastrado em outra empresa.");
         }
 
+        var detalhes = descreverPedido(empresa, sol);
+
         empresa.setRazaoSocial(sol.getRazaoSocial());
         empresa.setNomeFantasia(sol.getNomeFantasia());
         empresa.setCnpj(sol.getCnpj());
@@ -101,10 +106,13 @@ public class SolicitacaoAlteracaoEmpresaService {
         sol.setDataDecisao(HorarioSistema.agora());
         solicitacoes.save(sol);
 
-        notificacoes.notificarEmpresa(empresa.getId(), TipoNotificacao.SOLICITACAO_DECISAO,
+        notificacoes.marcarLidasPorReferencia(empresa.getId(), TipoNotificacao.SOLICITACAO_DECISAO,
+                "SOLICITACAO_ENVIO", sol.getId());
+        notificacoes.notificarEmpresaNova(empresa.getId(), TipoNotificacao.SOLICITACAO_DECISAO,
                 "Alteração de empresa aprovada",
-                "A EsteticaFlow aprovou a alteração dos dados cadastrais da empresa.",
-                "SOLICITACAO", sol.getId(), "/configuracoes");
+                "A EsteticaFlow aprovou a alteração dos dados cadastrais da empresa.\n\n"
+                        + "Dados aplicados:\n" + detalhes,
+                "SOLICITACAO_DECISAO", sol.getId(), "/notificacoes");
         logs.registrar(empresa.getId(), sessao.getUsuarioLogado(), "SOLICITACAO_EMPRESA_APROVADA",
                 "Solicitação " + sol.getId());
     }
@@ -112,6 +120,7 @@ public class SolicitacaoAlteracaoEmpresaService {
     public void rejeitar(Long id, String motivo) {
         exigirSuperAdmin();
         var sol = buscarPendente(id);
+        var empresa = empresas.findById(sol.getEmpresaId()).orElse(null);
         var motivoNormalizado = motivo == null || motivo.isBlank()
                 ? "Solicitação rejeitada pela EsteticaFlow."
                 : motivo.trim();
@@ -124,10 +133,18 @@ public class SolicitacaoAlteracaoEmpresaService {
         sol.setDataDecisao(HorarioSistema.agora());
         solicitacoes.save(sol);
 
-        notificacoes.notificarEmpresa(sol.getEmpresaId(), TipoNotificacao.SOLICITACAO_DECISAO,
+        var detalhes = empresa == null
+                ? descreverDadosSolicitados(sol)
+                : descreverPedido(empresa, sol);
+
+        notificacoes.marcarLidasPorReferencia(sol.getEmpresaId(), TipoNotificacao.SOLICITACAO_DECISAO,
+                "SOLICITACAO_ENVIO", sol.getId());
+        notificacoes.notificarEmpresaNova(sol.getEmpresaId(), TipoNotificacao.SOLICITACAO_DECISAO,
                 "Alteração de empresa rejeitada",
-                motivoNormalizado,
-                "SOLICITACAO", sol.getId(), "/configuracoes");
+                "A EsteticaFlow rejeitou a alteração dos dados cadastrais da empresa.\n\n"
+                        + "Motivo: " + motivoNormalizado + "\n\n"
+                        + "Dados que haviam sido solicitados:\n" + detalhes,
+                "SOLICITACAO_DECISAO", sol.getId(), "/notificacoes");
         logs.registrar(sol.getEmpresaId(), sessao.getUsuarioLogado(), "SOLICITACAO_EMPRESA_REJEITADA",
                 "Solicitação " + sol.getId());
     }
@@ -145,6 +162,63 @@ public class SolicitacaoAlteracaoEmpresaService {
         }
         return solicitacoes.findByEmpresaIdAndStatus(sessao.empresaObrigatoria(), StatusSolicitacao.PENDENTE)
                 .orElse(null);
+    }
+
+    public String descreverPedido(Empresa atual, SolicitacaoAlteracaoEmpresa sol) {
+        var linhas = new ArrayList<String>();
+        linhas.add(linhaAlteracao("Razão social", atual.getRazaoSocial(), sol.getRazaoSocial()));
+        linhas.add(linhaAlteracao("Nome fantasia", atual.getNomeFantasia(), sol.getNomeFantasia()));
+        linhas.add(linhaAlteracao("CNPJ", formatarCnpj(atual.getCnpj()), formatarCnpj(sol.getCnpj())));
+        linhas.add(linhaAlteracao("Telefone", formatarTelefone(atual.getTelefone()),
+                formatarTelefone(sol.getTelefone())));
+        linhas.add(linhaAlteracao("E-mail", textoOuVazio(atual.getEmail()), textoOuVazio(sol.getEmail())));
+        return String.join("\n", linhas);
+    }
+
+    public String descreverDadosSolicitados(SolicitacaoAlteracaoEmpresa sol) {
+        return String.join("\n",
+                "• Razão social: " + sol.getRazaoSocial(),
+                "• Nome fantasia: " + sol.getNomeFantasia(),
+                "• CNPJ: " + formatarCnpj(sol.getCnpj()),
+                "• Telefone: " + formatarTelefone(sol.getTelefone()),
+                "• E-mail: " + textoOuVazio(sol.getEmail()));
+    }
+
+    private String linhaAlteracao(String campo, String atual, String proposto) {
+        var de = textoOuVazio(atual);
+        var para = textoOuVazio(proposto);
+        if (Objects.equals(normalizarComparacao(de), normalizarComparacao(para))) {
+            return "• " + campo + ": " + para + " (sem alteração)";
+        }
+        return "• " + campo + ": " + de + " → " + para;
+    }
+
+    private String normalizarComparacao(String valor) {
+        return valor == null ? "" : valor.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private String textoOuVazio(String valor) {
+        return valor == null || valor.isBlank() ? "(vazio)" : valor.trim();
+    }
+
+    private String formatarCnpj(String cnpj) {
+        var digitos = somenteDigitos(cnpj);
+        if (digitos.length() != 14) {
+            return textoOuVazio(cnpj);
+        }
+        return digitos.substring(0, 2) + "." + digitos.substring(2, 5) + "." + digitos.substring(5, 8)
+                + "/" + digitos.substring(8, 12) + "-" + digitos.substring(12);
+    }
+
+    private String formatarTelefone(String telefone) {
+        var digitos = somenteDigitos(telefone);
+        if (digitos.length() == 11) {
+            return "(" + digitos.substring(0, 2) + ") " + digitos.substring(2, 7) + "-" + digitos.substring(7);
+        }
+        if (digitos.length() == 10) {
+            return "(" + digitos.substring(0, 2) + ") " + digitos.substring(2, 6) + "-" + digitos.substring(6);
+        }
+        return textoOuVazio(telefone);
     }
 
     private SolicitacaoAlteracaoEmpresa buscarPendente(Long id) {

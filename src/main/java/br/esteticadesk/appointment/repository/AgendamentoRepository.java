@@ -57,6 +57,19 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, Long> 
             @Param("fim") LocalDateTime fim);
 
     @Query("""
+            SELECT a FROM Agendamento a
+            JOIN FETCH a.cliente
+            JOIN FETCH a.veiculo
+            WHERE a.empresaId = :empresaId
+              AND a.dataHora BETWEEN :inicio AND :fim
+            ORDER BY a.dataHora ASC
+            """)
+    List<Agendamento> buscarResumoPorPeriodo(
+            @Param("empresaId") Long empresaId,
+            @Param("inicio") LocalDateTime inicio,
+            @Param("fim") LocalDateTime fim);
+
+    @Query("""
             SELECT DISTINCT a FROM Agendamento a
             LEFT JOIN FETCH a.servicos linhas
             LEFT JOIN FETCH linhas.servico

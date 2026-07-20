@@ -20,16 +20,36 @@
             <h3>Solicitações de alteração de empresa</h3>
             <p class="muted">Empresas pedindo autorização da EsteticaFlow para mudar dados cadastrais.</p>
             <div th:each="sol : ${solicitacoesPendentes}" class="notification-item notification-pending">
-                <div>
+                <div class="solicitacao-detalhe">
                     <strong th:text="${nomesEmpresasSolicitacao[sol.id]} ?: ('Empresa #' + sol.empresaId)"></strong>
-                    <p class="muted" style="margin:6px 0;">
-                        <span th:text="${sol.razaoSocial}"></span> ·
-                        <span th:text="${sol.nomeFantasia}"></span> ·
-                        CNPJ <span th:text="${sol.cnpj}"></span>
-                        <span th:if="${sol.telefone != null}"> · <span th:text="${sol.telefone}"></span></span>
-                        <span th:if="${sol.email != null}"> · <span th:text="${sol.email}"></span></span>
+                    <p class="muted" style="margin:6px 0 10px;">
+                        Pedido em
+                        <span th:text="${#temporals.format(sol.dataCriacao, 'dd/MM/yyyy HH:mm')}"></span>
                     </p>
-                    <small class="muted" th:text="${#temporals.format(sol.dataCriacao, 'dd/MM/yyyy HH:mm')}"></small>
+                    <div class="solicitacao-diff" th:if="${empresasAtuaisSolicitacao[sol.id] != null}">
+                        <div>
+                            <h4>Dados atuais</h4>
+                            <ul>
+                                <li>Razão social: <span th:text="${empresasAtuaisSolicitacao[sol.id].razaoSocial}"></span></li>
+                                <li>Nome fantasia: <span th:text="${empresasAtuaisSolicitacao[sol.id].nomeFantasia}"></span></li>
+                                <li>CNPJ: <span th:text="${empresasAtuaisSolicitacao[sol.id].cnpj}"></span></li>
+                                <li>Telefone: <span th:text="${empresasAtuaisSolicitacao[sol.id].telefone} ?: '(vazio)'"></span></li>
+                                <li>E-mail: <span th:text="${empresasAtuaisSolicitacao[sol.id].email} ?: '(vazio)'"></span></li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4>Dados solicitados</h4>
+                            <ul>
+                                <li>Razão social: <span th:text="${sol.razaoSocial}"></span></li>
+                                <li>Nome fantasia: <span th:text="${sol.nomeFantasia}"></span></li>
+                                <li>CNPJ: <span th:text="${sol.cnpj}"></span></li>
+                                <li>Telefone: <span th:text="${sol.telefone} ?: '(vazio)'"></span></li>
+                                <li>E-mail: <span th:text="${sol.email} ?: '(vazio)'"></span></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <pre class="solicitacao-resumo muted" th:if="${detalhesSolicitacao[sol.id] != null}"
+                         th:text="${detalhesSolicitacao[sol.id]}"></pre>
                 </div>
                 <div class="actions" style="flex-wrap:wrap;gap:8px;">
                     <form th:action="@{/notificacoes/solicitacoes/{id}/aprovar(id=${sol.id})}" method="post">
@@ -38,7 +58,7 @@
                                 data-confirm="Aprovar e aplicar os novos dados desta empresa?">Aprovar</button>
                     </form>
                     <form th:action="@{/notificacoes/solicitacoes/{id}/rejeitar(id=${sol.id})}" method="post"
-                          style="display:flex;gap:6px;align-items:center;">
+                          style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
                         <div th:replace="~{fragments/csrf :: csrf}"></div>
                         <input type="text" name="motivo" placeholder="Motivo (opcional)" maxlength="500"
                                style="min-width:180px;"/>
@@ -56,7 +76,7 @@
                  th:classappend="${n.lida} ? ' notification-read' : ' notification-unread'">
                 <div>
                     <strong th:text="${n.titulo}"></strong>
-                    <p style="margin:6px 0;" th:text="${n.mensagem}"></p>
+                    <pre class="notification-message" th:text="${n.mensagem}"></pre>
                     <small class="muted" th:text="${#temporals.format(n.dataCriacao, 'dd/MM/yyyy HH:mm')}"></small>
                     <span class="status-badge" style="margin-left:8px;" th:text="${n.tipo}"></span>
                 </div>

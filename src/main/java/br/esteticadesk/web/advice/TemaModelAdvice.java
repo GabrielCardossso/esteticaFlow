@@ -11,7 +11,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
-@ControllerAdvice
+@ControllerAdvice(basePackages = "br.esteticadesk.web.controller")
 public class TemaModelAdvice {
 
     private final SessaoUsuario sessao;
@@ -33,6 +33,38 @@ public class TemaModelAdvice {
             return "teal";
         }
         return configuracaoService.temaCor();
+    }
+
+    @ModelAttribute("temaCorHex")
+    public String temaCorHex() {
+        if (sessao.getEmpresaId() == null) {
+            return "#157f8f";
+        }
+        return configuracaoService.temaCorHex();
+    }
+
+    @ModelAttribute("sessaoInatividadeAtiva")
+    public boolean sessaoInatividadeAtiva() {
+        if (sessao.getEmpresaId() == null) {
+            return false;
+        }
+        try {
+            return configuracaoService.sessaoInatividadeAtiva();
+        } catch (RuntimeException ignored) {
+            return false;
+        }
+    }
+
+    @ModelAttribute("sessaoInatividadeMinutos")
+    public int sessaoInatividadeMinutos() {
+        if (sessao.getEmpresaId() == null) {
+            return 30;
+        }
+        try {
+            return configuracaoService.sessaoInatividadeMinutos();
+        } catch (RuntimeException ignored) {
+            return 30;
+        }
     }
 
     @ModelAttribute("marca")

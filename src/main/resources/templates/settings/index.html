@@ -12,38 +12,88 @@
         </div>
 
         <div class="card" style="margin-bottom:20px;" th:if="${podePersonalizarTema}">
-            <h3>Aparência</h3>
-            <form th:action="@{/configuracoes/tema}" method="post" id="formTema" style="margin-top:16px;"
-                  oninput="window.EsteticaFlowTheme && EsteticaFlowTheme.syncFromForm(this)">
+            <h3>Aparência <span class="tooltip-trigger" tabindex="0" data-tooltip="Disponível no plano Completo. Altera sidebar, botões e destaques.">?</span></h3>
+            <form th:action="@{/configuracoes/tema}" method="post" id="formTema" style="margin-top:16px;">
                 <div th:replace="~{fragments/csrf :: csrf}"></div>
-
-                <p style="color:var(--text-muted);margin-bottom:10px;">Cor de destaque</p>
-                <div class="theme-swatches" style="margin-bottom:16px;">
-                    <input class="theme-swatch" type="radio" name="cor" value="teal" title="Teal"
+                <p class="muted">Galeria de cores</p>
+                <div class="theme-swatches" style="margin-bottom:16px;" role="radiogroup" aria-label="Cor de destaque">
+                    <input class="theme-swatch" type="radio" name="cor" value="teal" title="Teal" aria-label="Teal"
                            th:checked="${temaCor == 'teal' || temaCor == null}"/>
-                    <input class="theme-swatch" type="radio" name="cor" value="verde" title="Verde"
-                           th:checked="${temaCor == 'verde'}"/>
-                    <input class="theme-swatch" type="radio" name="cor" value="azul" title="Azul"
+                    <input class="theme-swatch" type="radio" name="cor" value="azul" title="Azul" aria-label="Azul"
                            th:checked="${temaCor == 'azul'}"/>
-                    <input class="theme-swatch" type="radio" name="cor" value="roxo" title="Roxo"
+                    <input class="theme-swatch" type="radio" name="cor" value="azul-escuro" title="Azul escuro" aria-label="Azul escuro"
+                           th:checked="${temaCor == 'azul-escuro'}"/>
+                    <input class="theme-swatch" type="radio" name="cor" value="verde" title="Verde" aria-label="Verde"
+                           th:checked="${temaCor == 'verde'}"/>
+                    <input class="theme-swatch" type="radio" name="cor" value="verde-escuro" title="Verde escuro" aria-label="Verde escuro"
+                           th:checked="${temaCor == 'verde-escuro'}"/>
+                    <input class="theme-swatch" type="radio" name="cor" value="roxo" title="Roxo" aria-label="Roxo"
                            th:checked="${temaCor == 'roxo'}"/>
-                    <input class="theme-swatch" type="radio" name="cor" value="laranja" title="Laranja"
-                           th:checked="${temaCor == 'laranja'}"/>
-                    <input class="theme-swatch" type="radio" name="cor" value="vermelho" title="Vermelho"
+                    <input class="theme-swatch" type="radio" name="cor" value="indigo" title="Índigo" aria-label="Índigo"
+                           th:checked="${temaCor == 'indigo'}"/>
+                    <input class="theme-swatch" type="radio" name="cor" value="vermelho" title="Vermelho" aria-label="Vermelho"
                            th:checked="${temaCor == 'vermelho'}"/>
-                    <input class="theme-swatch" type="radio" name="cor" value="rosa" title="Rosa"
+                    <input class="theme-swatch" type="radio" name="cor" value="laranja" title="Laranja" aria-label="Laranja"
+                           th:checked="${temaCor == 'laranja'}"/>
+                    <input class="theme-swatch" type="radio" name="cor" value="ambar" title="Âmbar" aria-label="Âmbar"
+                           th:checked="${temaCor == 'ambar'}"/>
+                    <input class="theme-swatch" type="radio" name="cor" value="rosa" title="Rosa" aria-label="Rosa"
                            th:checked="${temaCor == 'rosa'}"/>
-                    <input class="theme-swatch" type="radio" name="cor" value="dourado" title="Dourado"
-                           th:checked="${temaCor == 'dourado'}"/>
-                    <input class="theme-swatch" type="radio" name="cor" value="grafite" title="Grafite"
-                           th:checked="${temaCor == 'grafite'}"/>
+                    <input class="theme-swatch" type="radio" name="cor" value="ciano" title="Ciano" aria-label="Ciano"
+                           th:checked="${temaCor == 'ciano'}"/>
+                    <input class="theme-swatch" type="radio" name="cor" value="custom" title="Personalizada" aria-label="Cor personalizada"
+                           th:checked="${temaCor == 'custom'}" id="cor-custom"/>
                 </div>
-                <button type="submit" class="btn btn-primary">Salvar aparência</button>
+                <label for="hex">Cor personalizada</label>
+                <div class="color-picker-row">
+                    <input id="hex" type="color" name="hex" th:value="${temaCorHex}" aria-label="Escolher cor personalizada"/>
+                    <span class="muted" data-tema-hex-label th:text="${temaCorHex}">#157f8f</span>
+                </div>
+                <div class="form-actions" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+                    <button type="submit" class="btn btn-primary">Salvar aparência</button>
+                </div>
+            </form>
+            <form th:action="@{/configuracoes/tema/restaurar}" method="post" style="margin-top:8px;">
+                <div th:replace="~{fragments/csrf :: csrf}"></div>
+                <button type="submit" class="btn btn-secondary"
+                        data-confirm="Restaurar o tema oficial Teal?">Restaurar tema padrão</button>
             </form>
         </div>
         <div class="card" style="margin-bottom:20px;" th:unless="${podePersonalizarTema}">
             <h3>Aparência</h3>
             <p class="muted">A personalização de tema está disponível no plano Completo.</p>
+        </div>
+
+        <div class="card" style="margin-bottom:20px;" th:if="${administrador or superAdmin}">
+            <h3>Segurança da sessão</h3>
+            <form th:action="@{/configuracoes/sessao}" method="post" class="form-grid" style="margin-top:16px;">
+                <div th:replace="~{fragments/csrf :: csrf}"></div>
+                <label class="switch-field">
+                    <input type="checkbox" name="inatividadeAtiva" value="true"
+                           th:checked="${sessaoInatividadeAtiva}"/>
+                    Encerrar sessão automaticamente por inatividade
+                </label>
+                <label for="minutos">Tempo de inatividade</label>
+                <select id="minutos" name="minutos">
+                    <option value="15" th:selected="${sessaoInatividadeMinutos == 15}">15 minutos</option>
+                    <option value="30" th:selected="${sessaoInatividadeMinutos == 30}">30 minutos</option>
+                    <option value="60" th:selected="${sessaoInatividadeMinutos == 60}">1 hora</option>
+                    <option value="120" th:selected="${sessaoInatividadeMinutos == 120}">2 horas</option>
+                    <option value="240" th:selected="${sessaoInatividadeMinutos == 240}">4 horas</option>
+                </select>
+                <div></div>
+                <button type="submit" class="btn btn-primary">Salvar segurança</button>
+            </form>
+            <div th:if="${ultimoAcesso != null}" style="margin-top:16px;">
+                <h4>Último acesso</h4>
+                <p class="muted" style="margin:0;">
+                    <span th:text="${#temporals.format(ultimoAcesso.dataHora, 'dd/MM/yyyy HH:mm')}"></span>
+                    · IP <span th:text="${ultimoAcesso.ip} ?: '—'"></span>
+                    · <span th:text="${ultimoAcesso.navegador} ?: '—'"></span>
+                    · <span th:text="${ultimoAcesso.sistemaOperacional} ?: '—'"></span>
+                </p>
+            </div>
+            <p th:if="${ultimoAcesso == null}" class="muted" style="margin-top:12px;">Nenhum acesso registrado ainda.</p>
         </div>
 
         <div class="card" style="margin-bottom:20px;">
@@ -52,10 +102,29 @@
                 Alterações cadastrais precisam de autorização da EsteticaFlow.
                 Preencha o formulário e envie a solicitação.
             </p>
-            <div th:if="${solicitacaoPendente != null}" class="alert alert-info" style="margin-top:12px;">
-                Já existe uma solicitação pendente enviada em
-                <span th:text="${#temporals.format(solicitacaoPendente.dataCriacao, 'dd/MM/yyyy HH:mm')}"></span>.
-                Aguarde a análise da EsteticaFlow.
+            <div th:if="${solicitacaoPendente != null}" class="solicitacao-pendente-box" style="margin-top:12px;">
+                <strong>Solicitação pendente</strong>
+                <p style="margin:8px 0;">
+                    Enviada em
+                    <span th:text="${#temporals.format(solicitacaoPendente.dataCriacao, 'dd/MM/yyyy HH:mm')}"></span>.
+                    Aguarde a análise da EsteticaFlow.
+                </p>
+                <p style="margin:0 0 6px;"><strong>Dados solicitados:</strong></p>
+                <ul class="solicitacao-lista">
+                    <li>Razão social: <span th:text="${solicitacaoPendente.razaoSocial}"></span></li>
+                    <li>Nome fantasia: <span th:text="${solicitacaoPendente.nomeFantasia}"></span></li>
+                    <li>CNPJ: <span th:text="${solicitacaoPendente.cnpj}"></span></li>
+                    <li>Telefone:
+                        <span th:text="${solicitacaoPendente.telefone != null ? solicitacaoPendente.telefone : '(vazio)'}"></span>
+                    </li>
+                    <li>E-mail:
+                        <span th:text="${solicitacaoPendente.email != null ? solicitacaoPendente.email : '(vazio)'}"></span>
+                    </li>
+                </ul>
+                <p class="muted" style="margin:10px 0 0;">
+                    Quando a EsteticaFlow aprovar ou rejeitar, você verá uma notificação em
+                    <a th:href="@{/notificacoes}">Notificações</a>.
+                </p>
             </div>
             <form th:action="@{/configuracoes/empresa}" th:object="${empresa}" method="post" class="form-grid" style="margin-top:16px;">
                 <div th:replace="~{fragments/csrf :: csrf}"></div>
@@ -132,7 +201,9 @@
                                 <button type="submit" class="btn btn-danger btn-sm">Excluir</button>
                             </form>
                             <form th:if="${u.ativo}"
-                                  th:action="@{/configuracoes/usuarios/{id}/inativar(id=${u.id})}" method="post">
+                                  th:action="@{/configuracoes/usuarios/{id}/inativar(id=${u.id})}" method="post"
+                                  data-confirm="Inativar este usuário?"
+                                  data-confirm-title="Confirmar inativação">
                                 <div th:replace="~{fragments/csrf :: csrf}"></div>
                                 <button type="submit" class="btn btn-danger btn-sm">Inativar</button>
                             </form>
@@ -188,7 +259,9 @@
                             <span th:unless="${administrador and f.ativo}"
                                   th:text="${f.nome} + ' — ' + (${f.ativo} ? 'Ativa' : 'Inativa')"></span>
                             <form th:if="${administrador and f.ativo}"
-                                  th:action="@{/configuracoes/formas-pagamento/{id}/inativar(id=${f.id})}" method="post">
+                                  th:action="@{/configuracoes/formas-pagamento/{id}/inativar(id=${f.id})}" method="post"
+                                  data-confirm="Inativar esta forma de pagamento?"
+                                  data-confirm-title="Confirmar inativação">
                                 <div th:replace="~{fragments/csrf :: csrf}"></div>
                                 <button type="submit" class="btn btn-danger btn-sm">Inativar</button>
                             </form>
@@ -229,7 +302,9 @@
                             <span th:unless="${administrador and c.ativo}"
                                   th:text="${c.nome} + ' — ' + (${c.ativo} ? 'Ativa' : 'Inativa')"></span>
                             <form th:if="${administrador and c.ativo}"
-                                  th:action="@{/configuracoes/categorias/{id}/inativar(id=${c.id})}" method="post">
+                                  th:action="@{/configuracoes/categorias/{id}/inativar(id=${c.id})}" method="post"
+                                  data-confirm="Inativar esta categoria de produto?"
+                                  data-confirm-title="Confirmar inativação">
                                 <div th:replace="~{fragments/csrf :: csrf}"></div>
                                 <button type="submit" class="btn btn-danger btn-sm">Inativar</button>
                             </form>

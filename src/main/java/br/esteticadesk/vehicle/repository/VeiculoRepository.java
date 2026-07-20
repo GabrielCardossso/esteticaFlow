@@ -29,4 +29,17 @@ public interface VeiculoRepository extends JpaRepository<Veiculo, Long> {
     List<Veiculo> findByEmpresaIdAndClienteIdOrderByAtivoDescModelo(Long empresaId, Long clienteId);
 
     List<Veiculo> findByEmpresaIdAndAtivoTrueOrderByModelo(Long empresaId);
+
+    @Query("""
+            SELECT v FROM Veiculo v JOIN FETCH v.cliente
+            WHERE v.empresaId = :empresaId AND v.ativo = true
+              AND (
+                LOWER(v.placa) LIKE LOWER(CONCAT('%', :busca, '%'))
+                OR LOWER(v.modelo) LIKE LOWER(CONCAT('%', :busca, '%'))
+                OR LOWER(v.marca) LIKE LOWER(CONCAT('%', :busca, '%'))
+                OR LOWER(v.cliente.nome) LIKE LOWER(CONCAT('%', :busca, '%'))
+              )
+            ORDER BY v.modelo
+            """)
+    List<Veiculo> buscar(@Param("empresaId") Long empresaId, @Param("busca") String busca);
 }

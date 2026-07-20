@@ -33,8 +33,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class ConfiguracaoService {
 
     public static final String TEMA_COR = "tema.cor";
-    private static final Set<String> CORES = Set.of("teal", "verde", "azul", "roxo", "laranja", "vermelho",
-            "rosa", "dourado", "grafite");
+    public static final String TEMA_COR_HEX = "tema.cor.hex";
+    public static final String SESSAO_INATIVIDADE_ATIVA = "sessao.inatividade.ativa";
+    public static final String SESSAO_INATIVIDADE_MINUTOS = "sessao.inatividade.minutos";
+    private static final Set<String> CORES = Set.of("teal", "verde", "azul", "azul-escuro", "verde-escuro", "roxo",
+            "indigo", "laranja", "vermelho", "ambar", "rosa", "ciano", "dourado", "grafite", "custom");
+    private static final Set<Integer> TIMEOUTS = Set.of(15, 30, 60, 120, 240);
 
     private final SessaoUsuario sessao;
     private final EmpresaRepository empresas;
@@ -283,23 +287,100 @@ public class ConfiguracaoService {
     }
 
     public String temaCor() {
-        // Plano Básico (e qualquer plano sem personalização) usa sempre o teal principal.
         if (!assinaturas.permite(RecursoPlano.PERSONALIZACAO_TEMA)) {
             return "teal";
         }
         var cor = parametroTexto(TEMA_COR, "teal");
         var normalizada = cor == null ? "teal" : cor.trim().toLowerCase(Locale.ROOT);
+        if (normalizada.startsWith("#") && normalizada.matches("^#[0-9a-fA-F]{6}$")) {
+            return "custom";
+        }
         return CORES.contains(normalizada) ? normalizada : "teal";
     }
 
+    public String temaCorHex() {
+        if (!assinaturas.permite(RecursoPlano.PERSONALIZACAO_TEMA)) {
+            return "#157f8f";
+        }
+        var cor = temaCor();
+        if ("custom".equals(cor)) {
+            var hex = parametroTexto(TEMA_COR_HEX, "#157f8f");
+            return hex != null && hex.matches("^#[0-9a-fA-F]{6}$") ? hex.toLowerCase(Locale.ROOT) : "#157f8f";
+        }
+        return temaCorHexDaPaleta(cor);
+    }
+
     public void salvarTema(String cor) {
+        salvarTema(cor, null);
+    }
+
+    public void salvarTema(String cor, String hexPersonalizado) {
         exigirAdmin();
         assinaturas.exigirRecurso(RecursoPlano.PERSONALIZACAO_TEMA);
         var corNormalizada = cor == null ? "teal" : cor.trim().toLowerCase(Locale.ROOT);
-        if (!CORES.contains(corNormalizada)) {
+        if ("custom".equals(corNormalizada)) {
+            var hex = hexPersonalizado == null ? "" : hexPersonalizado.trim();
+            if (!hex.matches("^#[0-9a-fA-F]{6}$")) {
+                throw new IllegalArgumentException("Informe uma cor personalizada válida no formato #RRGGBB.");
+            }
+            salvarParametroTexto(TEMA_COR, "custom");
+            salvarParametroTexto(TEMA_COR_HEX, hex.toLowerCase(Locale.ROOT));
+            return;
+        }
+        if (!CORES.contains(corNormalizada) || "custom".equals(corNormalizada)) {
             throw new IllegalArgumentException("Cor de tema inválida.");
         }
         salvarParametroTexto(TEMA_COR, corNormalizada);
+        salvarParametroTexto(TEMA_COR_HEX, temaCorHexDaPaleta(corNormalizada));
+    }
+
+    private String temaCorHexDaPaleta(String cor) {
+        return switch (cor) {
+            case "verde" -> "#15803d";
+            case "verde-escuro" -> "#14532d";
+            case "azul" -> "#2563eb";
+            case "azul-escuro" -> "#1e3a8a";
+            case "roxo" -> "#7c3aed";
+            case "indigo" -> "#4f46e5";
+            case "laranja" -> "#ea580c";
+            case "vermelho" -> "#dc2626";
+            case "ambar" -> "#d97706";
+            case "rosa" -> "#db2777";
+            case "ciano" -> "#0891b2";
+            case "dourado" -> "#b7791f";
+            case "grafite" -> "#475569";
+            default -> "#157f8f";
+        };
+    }
+
+    public void restaurarTemaPadrao() {
+        exigirAdmin();
+        assinaturas.exigirRecurso(RecursoPlano.PERSONALIZACAO_TEMA);
+        salvarParametroTexto(TEMA_COR, "teal");
+        salvarParametroTexto(TEMA_COR_HEX, "#157f8f");
+    }
+
+    public boolean sessaoInatividadeAtiva() {
+        return parametro(SESSAO_INATIVIDADE_ATIVA, false);
+    }
+
+    public int sessaoInatividadeMinutos() {
+        try {
+            var valor = Integer.parseInt(parametroTexto(SESSAO_INATIVIDADE_MINUTOS, "30"));
+            return TIMEOUTS.contains(valor) ? valor : 30;
+        } catch (NumberFormatException exception) {
+            return 30;
+        }
+    }
+
+    public void salvarSessaoInatividade(boolean ativa, Integer minutos) {
+        exigirAdmin();
+        var minutosValidos = minutos == null ? 30 : minutos;
+        if (!TIMEOUTS.contains(minutosValidos)) {
+            throw new IllegalArgumentException("Tempo de inatividade inválido.");
+        }
+        salvarParametro(SESSAO_INATIVIDADE_ATIVA, ativa);
+        salvarParametroTexto(SESSAO_INATIVIDADE_MINUTOS, Integer.toString(minutosValidos));
     }
 
     public List<Empresa> listarEmpresas(boolean mostrarTodas) {
@@ -366,6 +447,8 @@ public class ConfiguracaoService {
         usuarios.save(admin);
 
         salvarParametroTextoEmpresa(empresa.getId(), TEMA_COR, "teal");
+        salvarParametroTextoEmpresa(empresa.getId(), SESSAO_INATIVIDADE_ATIVA, "false");
+        salvarParametroTextoEmpresa(empresa.getId(), SESSAO_INATIVIDADE_MINUTOS, "30");
         logs.registrar(empresa.getId(), sessao.getUsuarioLogado(), "EMPRESA_CRIADA",
                 "Plano=" + plano + ", vencimento=" + proximoVencimento);
         return empresa;

@@ -74,6 +74,22 @@ public class NotificacaoService {
         return salvar(empresaId, tipo, titulo, mensagem, referenciaTipo, referenciaId, acaoUrl);
     }
 
+    /** Cria notificação mesmo se já existir outra não lida com a mesma referência (ex.: decisão após envio). */
+    public Notificacao notificarEmpresaNova(Long empresaId, TipoNotificacao tipo, String titulo, String mensagem,
+            String referenciaTipo, Long referenciaId, String acaoUrl) {
+        return salvar(empresaId, tipo, titulo, mensagem, referenciaTipo, referenciaId, acaoUrl);
+    }
+
+    public void marcarLidasPorReferencia(Long empresaId, TipoNotificacao tipo, String referenciaTipo,
+            Long referenciaId) {
+        if (empresaId == null || tipo == null || referenciaTipo == null || referenciaId == null) {
+            return;
+        }
+        notificacoes.findByEmpresaIdAndTipoAndReferenciaTipoAndReferenciaIdAndLidaFalse(
+                        empresaId, tipo, referenciaTipo, referenciaId)
+                .forEach(n -> n.setLida(true));
+    }
+
     public Notificacao notificarSuperAdmin(TipoNotificacao tipo, String titulo, String mensagem,
             String referenciaTipo, Long referenciaId, String acaoUrl) {
         if (referenciaTipo != null && referenciaId != null
@@ -89,8 +105,9 @@ public class NotificacaoService {
         var n = new Notificacao();
         n.setEmpresaId(empresaId);
         n.setTipo(tipo);
-        n.setTitulo(titulo);
-        n.setMensagem(mensagem);
+        n.setTitulo(titulo == null ? "" : (titulo.length() > 150 ? titulo.substring(0, 147) + "..." : titulo));
+        var texto = mensagem == null ? "" : mensagem;
+        n.setMensagem(texto.length() > 1000 ? texto.substring(0, 997) + "..." : texto);
         n.setLida(false);
         n.setReferenciaTipo(referenciaTipo);
         n.setReferenciaId(referenciaId);

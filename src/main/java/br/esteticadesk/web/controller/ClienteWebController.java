@@ -151,7 +151,8 @@ public class ClienteWebController {
     public String inativar(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         clienteService.inativar(id);
         redirectAttributes.addFlashAttribute("sucesso", "Cliente inativado com sucesso.");
-        return "redirect:/clientes";
+        redirectAttributes.addFlashAttribute("undoUrl", "/clientes/" + id + "/reativar");
+        return "redirect:/clientes?ativos=false";
     }
 
     @PostMapping("/{id}/reativar")
