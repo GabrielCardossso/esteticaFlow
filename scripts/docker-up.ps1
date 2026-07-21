@@ -1,8 +1,13 @@
 # Sobe apenas o PostgreSQL do Docker e mostra como rodar a app localmente.
 # Uso: powershell -ExecutionPolicy Bypass -File .\scripts\docker-up.ps1
+# Requer arquivo .env na raiz (copie de .env.example) com POSTGRES_PASSWORD.
 
 $ErrorActionPreference = "Stop"
 Set-Location (Split-Path $PSScriptRoot -Parent)
+
+if (-not (Test-Path ".env")) {
+    Write-Error "Arquivo .env nao encontrado. Copie .env.example para .env e defina POSTGRES_PASSWORD."
+}
 
 Write-Host "Subindo PostgreSQL (Docker)..."
 docker compose up -d postgres
@@ -30,4 +35,4 @@ Write-Host ""
 Write-Host "Para subir app + banco no Docker:"
 Write-Host "  docker compose up -d --build"
 Write-Host ""
-Write-Host "Login: gabrielcardossso@gmail.com / Sync@933"
+Write-Host "Login: use o SUPER_ADMIN do seu banco. Senhas nao sao exibidas nem versionadas neste script."
