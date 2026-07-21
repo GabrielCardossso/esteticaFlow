@@ -61,46 +61,6 @@ Foi pensado como um **mini SaaS multiempresa**, com planos **Básico** e **Compl
 
 ---
 
-## ▶️ Como rodar localmente
-
-### Pré-requisitos
-
-- Java 21+
-- Maven 3.9+
-- Docker Desktop **ou** PostgreSQL local
-
-### Opção 1 — Tudo no Docker (recomendado)
-
-```bash
-# 1) Copie o exemplo de ambiente e ajuste a senha
-cp .env.example .env
-
-# 2) Suba app + banco
-docker compose up -d --build
-```
-
-- App: [http://localhost:8080](http://localhost:8080)  
-- Postgres (Docker): `localhost:5433`  
-- O Flyway aplica as migrations na subida  
-
-### Opção 2 — Banco no Docker + app na IDE
-
-```bash
-cp .env.example .env
-docker compose up -d postgres
-mvn spring-boot:run -Dspring-boot.run.profiles=local-docker
-```
-
-### Testes
-
-```bash
-mvn test
-```
-
-> Detalhes extras: veja também [`COMO-RODAR.md`](./COMO-RODAR.md).
-
----
-
 ## ⚙️ Variáveis de ambiente
 
 | Variável | Descrição |
@@ -108,10 +68,10 @@ mvn test
 | `SPRING_DATASOURCE_URL` | JDBC do PostgreSQL (em produção use `?sslmode=require`) |
 | `SPRING_DATASOURCE_USERNAME` | Usuário do banco |
 | `SPRING_DATASOURCE_PASSWORD` | Senha do banco |
-| `SPRING_PROFILES_ACTIVE` | Ex.: `prod`, `local-docker`, `docker` |
+| `SPRING_PROFILES_ACTIVE` | Ex.: `prod`, `docker` |
 | `SERVER_PORT` / `PORT` | Porta HTTP (Render injeta `PORT`) |
 
-**Nunca** versionar senhas reais. Use `.env` (gitignore) ou secrets do provedor.
+**Nunca** versionar senhas reais. Use secrets do provedor (Render / `.env` local ignorado pelo Git).
 
 ---
 
