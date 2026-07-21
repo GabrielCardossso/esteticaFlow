@@ -1,42 +1,93 @@
-# EsteticaFlow
+<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=0:14B8A6,100:0F766E&height=140&section=header&text=EsteticaFlow&fontSize=42&fontColor=ffffff&fontAlignY=35"/>
 
-Sistema web de gestão para empresas de estética automotiva: clientes, veículos, agenda, serviços, estoque, financeiro, relatórios e planos de assinatura (Básico e Completo), com suporte a múltiplas empresas.
+<h1 align="center">EsteticaFlow 🚗✨</h1>
 
-## Stack
+<p align="center">
+  <strong>ERP / SaaS</strong> de gestão para empresas de <strong>estética automotiva</strong>
+</p>
 
-| Camada | Tecnologia |
+<p align="center">
+  Clientes · Veículos · Agenda · Serviços · Estoque · Financeiro · Relatórios · Multiempresa
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white" />
+  <img src="https://img.shields.io/badge/Spring%20Boot-3.3-6DB33F?style=for-the-badge&logo=springboot&logoColor=white" />
+  <img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" />
+  <img src="https://img.shields.io/badge/Thymeleaf-005F0F?style=for-the-badge&logo=thymeleaf&logoColor=white" />
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" />
+</p>
+
+---
+
+## 💡 Sobre o projeto
+
+O **EsteticaFlow** é um sistema web completo para oficinas e estéticas automotivas gerenciarem o dia a dia em um só lugar.
+
+Foi pensado como um **mini SaaS multiempresa**, com planos **Básico** e **Completo**, painel de Super Admin e fluxo de aprovação para alterações cadastrais.
+
+> Backend e frontend são a **mesma aplicação** Spring Boot (Thymeleaf + CSS/JS estáticos).  
+> Hospedar o sistema = **1 serviço Java + 1 banco PostgreSQL**.
+
+---
+
+## ✨ Funcionalidades
+
+- 👥 **Clientes e veículos** com histórico de atendimento  
+- 📅 **Agenda** com múltiplos serviços por agendamento  
+- 🛠️ **Catálogo de serviços** e categorias  
+- 📦 **Estoque** com movimentações e custo de embalagem  
+- 💰 **Financeiro** (receitas, despesas e indicadores)  
+- 📊 **Relatórios** em PDF / Excel (conforme o plano)  
+- 🏢 **Multiempresa** + planos de assinatura  
+- 🔐 **Super Admin**, notificações e solicitações de alteração  
+- 🎨 **Personalização de tema** no plano Completo  
+
+---
+
+## 🚀 Tecnologias
+
+<p align="center">
+  <img src="https://skillicons.dev/icons?i=java,spring,postgres,html,css,js,docker,git,github,maven,idea" />
+</p>
+
+| Camada | Stack |
 | --- | --- |
 | Backend | Java 21 · Spring Boot 3.3 (Web, Security, Data JPA, Validation) |
-| Frontend | Thymeleaf (renderizado no servidor) + CSS/JS estáticos |
-| Banco de dados | PostgreSQL 16 · migrations com Flyway |
+| Frontend | Thymeleaf + CSS/JS estáticos |
+| Banco | PostgreSQL · migrations com **Flyway** |
 | Relatórios | OpenPDF (PDF) · Apache POI (Excel) |
-| Build / Deploy | Maven · Docker + Docker Compose |
+| Deploy | Docker · Maven · Render + Supabase (produção) |
 
-Importante: **backend e frontend são a mesma aplicação**. O Thymeleaf gera as páginas no servidor e os arquivos estáticos (`css/`, `js/`) são servidos pelo próprio Spring Boot. Não existe deploy separado de frontend — hospedar o sistema significa hospedar **um serviço Java + um banco PostgreSQL**.
+---
 
-## Rodando localmente
+## ▶️ Como rodar localmente
 
-Pré-requisitos: Docker Desktop (ou Java 21 + Maven + PostgreSQL local).
+### Pré-requisitos
+
+- Java 21+
+- Maven 3.9+
+- Docker Desktop **ou** PostgreSQL local
 
 ### Opção 1 — Tudo no Docker (recomendado)
 
 ```bash
+# 1) Copie o exemplo de ambiente e ajuste a senha
+cp .env.example .env
+
+# 2) Suba app + banco
 docker compose up -d --build
 ```
 
-- Aplicação: http://localhost:8080
-- PostgreSQL: exposto em `localhost:5433` (evita conflito com Postgres instalado no Windows)
-- As migrations do Flyway rodam automaticamente na subida.
+- App: [http://localhost:8080](http://localhost:8080)  
+- Postgres (Docker): `localhost:5433`  
+- O Flyway aplica as migrations na subida  
 
-### Opção 2 — App na IDE + banco no Docker
+### Opção 2 — Banco no Docker + app na IDE
 
 ```bash
+cp .env.example .env
 docker compose up -d postgres
-```
-
-Depois rode a aplicação com o perfil `local-docker` (aponta para `localhost:5433`):
-
-```bash
 mvn spring-boot:run -Dspring-boot.run.profiles=local-docker
 ```
 
@@ -46,102 +97,81 @@ mvn spring-boot:run -Dspring-boot.run.profiles=local-docker
 mvn test
 ```
 
-## Configuração por variáveis de ambiente
+> Detalhes extras: veja também [`COMO-RODAR.md`](./COMO-RODAR.md).
 
-| Variável | Descrição | Padrão local |
-| --- | --- | --- |
-| `SPRING_DATASOURCE_URL` | URL JDBC do PostgreSQL | `jdbc:postgresql://localhost:5432/esteticadesk_db` |
-| `SPRING_DATASOURCE_USERNAME` | Usuário do banco | `postgres` |
-| `SPRING_DATASOURCE_PASSWORD` | Senha do banco | *(obrigatória — sem default versionado)* |
-| `SPRING_PROFILES_ACTIVE` | Perfil (`local`, `docker`, `local-docker`, `prod`) | — |
-| `SERVER_PORT` | Porta HTTP da aplicação | `8080` |
+---
 
-Em produção, **nunca** use senhas padrão. Defina tudo via `.env` (gitignored), `application-local.properties` (gitignored) ou secrets do provedor.
+## ⚙️ Variáveis de ambiente
 
-Arquivos sensíveis já cobertos pelo `.gitignore` / `.dockerignore`: `.env`, `application-local.properties`, certificados, dumps e overrides do Compose.
+| Variável | Descrição |
+| --- | --- |
+| `SPRING_DATASOURCE_URL` | JDBC do PostgreSQL (em produção use `?sslmode=require`) |
+| `SPRING_DATASOURCE_USERNAME` | Usuário do banco |
+| `SPRING_DATASOURCE_PASSWORD` | Senha do banco |
+| `SPRING_PROFILES_ACTIVE` | Ex.: `prod`, `local-docker`, `docker` |
+| `SERVER_PORT` / `PORT` | Porta HTTP (Render injeta `PORT`) |
 
-## Hospedagem em produção
+**Nunca** versionar senhas reais. Use `.env` (gitignore) ou secrets do provedor.
 
-### Arquitetura de deploy
+---
 
-```
-                Internet (HTTPS)
-                      │
-            ┌─────────▼─────────┐
-            │  Proxy reverso     │  Caddy ou Nginx (TLS/certificado)
-            └─────────┬─────────┘
-                      │ :8080
-            ┌─────────▼─────────┐
-            │  EsteticaFlow      │  1 container (backend + frontend juntos)
-            │  Spring Boot       │  perfil: prod/docker
-            └─────────┬─────────┘
-                      │ :5432 (rede privada)
-            ┌─────────▼─────────┐
-            │  PostgreSQL 16     │  container com volume OU banco gerenciado
-            └───────────────────┘
+## ☁️ Produção
+
+Arquitetura atual de referência:
+
+```text
+Internet (HTTPS)
+      │
+  Render (Spring Boot / Docker)
+      │
+  Supabase (PostgreSQL)
 ```
 
-### Opção A — VPS única com Docker Compose (recomendada para começar)
+1. Banco no **Supabase** (preferir **Session pooler** / IPv4 no Render)  
+2. Web Service **Docker** no **Render**  
+3. Variáveis `SPRING_DATASOURCE_*` + `SPRING_PROFILES_ACTIVE=prod`  
+4. Após o primeiro deploy, limpar dados de demonstração no SQL Editor se necessário  
 
-Menor custo e usa exatamente o `Dockerfile` e o `docker-compose.yml` já existentes no repositório.
+---
 
-- **Onde:** uma VPS de 2 vCPU / 4 GB RAM (Hostinger VPS, Contabo, DigitalOcean, Hetzner). Custo típico: R$ 30–80/mês.
-- **App (back + front):** container `app` do compose, atrás de um proxy reverso (Caddy é o mais simples — HTTPS automático via Let's Encrypt).
-- **Banco:** container `postgres` do compose, com volume Docker para persistência, acessível **apenas pela rede interna** (não exponha a porta 5432 na internet).
-- **Domínio:** aponte um registro A (ex.: `app.seudominio.com.br`) para o IP da VPS.
-- **Backup:** agende `pg_dump` diário via cron e envie o arquivo para fora da VPS (ex.: bucket S3/Backblaze ou outro storage). O volume Docker sozinho não é backup.
+## 📁 Estrutura (visão geral)
 
-Passos resumidos na VPS:
-
-```bash
-git clone <repo> && cd esteticaFlow
-# criar .env com POSTGRES_PASSWORD forte e demais variáveis
-docker compose up -d --build
-# instalar Caddy e apontar app.seudominio.com.br -> localhost:8080
+```text
+esteticaFlow/
+├── src/main/java/br/esteticadesk/   # domínio, services, controllers
+├── src/main/resources/
+│   ├── db/migration/                # Flyway (V1…Vn) — não apagar em produção
+│   ├── templates/                   # Thymeleaf
+│   └── static/                      # CSS / JS
+├── Dockerfile
+├── docker-compose.yml
+└── pom.xml
 ```
 
-### Opção B — PaaS + banco gerenciado (menos operação manual)
+---
 
-Indicada se você não quer administrar servidor, aceitando custo um pouco maior.
+## 👨‍💻 Autor
 
-- **App:** Railway, Render ou Fly.io — todos fazem build direto do `Dockerfile` do repositório a cada push.
-- **Banco:** PostgreSQL gerenciado do próprio provedor (Railway/Render) ou Neon/Supabase. Backup e atualização ficam por conta do provedor.
-- **Configuração:** defina `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD` e `SPRING_PROFILES_ACTIVE=prod` no painel do provedor.
-- **Atenção:** planos gratuitos hibernam a aplicação (primeiro acesso lento) — para clientes pagantes, use plano pago.
+<p align="center">
+  <strong>Gabriel Cardoso</strong><br/>
+  Estudante de Desenvolvimento de Sistemas · SENAC
+</p>
 
-### Comparativo rápido
+<p align="center">
+  <a href="mailto:gabrielcardossso@gmail.com">
+    <img src="https://img.shields.io/badge/Gmail-D14836?style=for-the-badge&logo=gmail&logoColor=white" />
+  </a>
+  <a href="https://www.linkedin.com/in/gabrielcardossso/">
+    <img src="https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white" />
+  </a>
+  <a href="https://instagram.com/gabrielcrds_09">
+    <img src="https://img.shields.io/badge/Instagram-E4405F?style=for-the-badge&logo=instagram&logoColor=white" />
+  </a>
+  <a href="https://wa.me/5548991746960">
+    <img src="https://img.shields.io/badge/WhatsApp-25D366?style=for-the-badge&logo=whatsapp&logoColor=white" />
+  </a>
+</p>
 
-| Critério | A: VPS + Compose | B: PaaS + banco gerenciado |
-| --- | --- | --- |
-| Custo mensal | Menor (R$ 30–80) | Médio (US$ 10–25+) |
-| Esforço de operação | Você administra tudo | Provedor administra |
-| Backup do banco | Manual (cron + pg_dump) | Automático |
-| HTTPS | Caddy/Nginx (fácil) | Automático |
-| Escala futura | Migrar p/ banco gerenciado depois | Escala no painel |
+---
 
-**Recomendação:** comece com a **Opção A** (o projeto já está pronto para ela) e migre o banco para um serviço gerenciado quando a base de clientes justificar.
-
-### Checklist de produção
-
-- [ ] Senha forte do PostgreSQL via variável de ambiente (nunca a padrão)
-- [ ] Trocar a senha do usuário SUPER_ADMIN criado pelas migrations
-- [ ] HTTPS ativo (Caddy/Nginx ou PaaS)
-- [ ] Porta do banco fechada para a internet
-- [ ] Backup diário do banco testado (restaurar ao menos uma vez)
-- [ ] `SPRING_PROFILES_ACTIVE=prod` (cache do Thymeleaf ligado, logs em nível INFO)
-- [ ] Monitorar espaço em disco da VPS (logs + volume do banco)
-- [ ] Em produção limpa: a migration `V13__seed_dados_teste.sql` popula dados de demonstração — remova/ignore antes do primeiro deploy ou limpe após (não altere o arquivo se já foi aplicado; use `flyway repair` só se necessário)
-
-## Migrar de Render + Supabase para VPS
-
-Passos resumidos para sair de um deploy PaaS (Render) com banco Supabase e hospedar na VPS com Docker Compose:
-
-1. **Dump do banco:** no Supabase (ou via `pg_dump` com a connection string), exporte o schema e os dados:
-   ```bash
-   pg_dump "postgresql://USER:PASS@HOST:5432/DB?sslmode=require" -Fc -f esteticaflow.dump
-   ```
-2. **Secrets na VPS:** crie `.env` com `POSTGRES_PASSWORD`, `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD` e `SPRING_PROFILES_ACTIVE=prod`. Use JDBC com `sslmode=require` se o Postgres exigir TLS.
-3. **Subir stack:** `docker compose up -d --build` na VPS (app + Postgres local ou apontando para banco gerenciado).
-4. **Restaurar dados:** se usar Postgres no compose, restaure com `pg_restore` no container/volume antes de abrir tráfego.
-5. **DNS:** aponte o domínio (registro A) para o IP da VPS e configure HTTPS no proxy reverso (Caddy/Nginx).
-6. **Validar:** login, agenda, financeiro e backup; desligue o serviço antigo no Render após confirmação.
+<img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=0:14B8A6,100:0F766E&height=120&section=footer"/>
