@@ -25,7 +25,7 @@
 </p>
 
 <p align="center">
-  🌐 Site em produção:
+  🌐 Site:
   <a href="https://esteticaflow.onrender.com/"><strong>https://esteticaflow.onrender.com/</strong></a>
 </p>
 
