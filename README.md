@@ -1,6 +1,6 @@
 <img width="100%" src="https://capsule-render.vercel.app/api?type=waving&color=0:14B8A6,100:0F766E&height=140&section=header&text=EsteticaFlow&fontSize=42&fontColor=ffffff&fontAlignY=35"/>
 
-<h1 align="center">EsteticaFlow 🚗✨</h1>
+<h1 align="center">EsteticaFlow</h1>
 
 <p align="center">
   <strong>ERP / SaaS</strong> de gestão para empresas de <strong>estética automotiva</strong>
@@ -22,12 +22,15 @@
 
 ## 💡 Sobre o projeto
 
-O **EsteticaFlow** é um sistema web completo para oficinas e estéticas automotivas gerenciarem o dia a dia em um só lugar.
+**Organizar uma estética automotiva não deveria ser complicado.**
 
-Foi pensado como um **mini SaaS multiempresa**, com planos **Básico** e **Completo**, painel de Super Admin e fluxo de aprovação para alterações cadastrais.
+Muitas estéticas e lavações ainda controlam seus agendamentos em grupos de WhatsApp, cadernos, planilhas ou até mesmo de memória. Com o tempo, isso acaba gerando problemas como horários duplicados, clientes esquecidos, perda de informações, falta de controle do estoque, dificuldade para acompanhar pagamentos e pouca visão sobre o desempenho do negócio.
 
-> Backend e frontend são a **mesma aplicação** Spring Boot (Thymeleaf + CSS/JS estáticos).  
-> Hospedar o sistema = **1 serviço Java + 1 banco PostgreSQL**.
+Foi pensando nisso que nasceu o **EsteticaFlow**.
+
+O sistema reúne tudo o que a empresa precisa em um único lugar: clientes, veículos, agenda, serviços, estoque, financeiro, relatórios e muito mais. Tudo de forma simples, rápida e organizada, permitindo que o gestor tenha controle total da operação e possa focar no que realmente importa: atender bem seus clientes e fazer o negócio crescer.
+
+Com uma interface moderna e intuitiva, o EsteticaFlow reduz erros, economiza tempo e transforma a rotina da empresa em um processo muito mais eficiente e profissional.
 
 ---
 
@@ -58,55 +61,6 @@ Foi pensado como um **mini SaaS multiempresa**, com planos **Básico** e **Compl
 | Banco | PostgreSQL · migrations com **Flyway** |
 | Relatórios | OpenPDF (PDF) · Apache POI (Excel) |
 | Deploy | Docker · Maven · Render + Supabase (produção) |
-
----
-
-## ⚙️ Variáveis de ambiente
-
-| Variável | Descrição |
-| --- | --- |
-| `SPRING_DATASOURCE_URL` | JDBC do PostgreSQL (em produção use `?sslmode=require`) |
-| `SPRING_DATASOURCE_USERNAME` | Usuário do banco |
-| `SPRING_DATASOURCE_PASSWORD` | Senha do banco |
-| `SPRING_PROFILES_ACTIVE` | Ex.: `prod`, `docker` |
-| `SERVER_PORT` / `PORT` | Porta HTTP (Render injeta `PORT`) |
-
-**Nunca** versionar senhas reais. Use secrets do provedor (Render / `.env` local ignorado pelo Git).
-
----
-
-## ☁️ Produção
-
-Arquitetura atual de referência:
-
-```text
-Internet (HTTPS)
-      │
-  Render (Spring Boot / Docker)
-      │
-  Supabase (PostgreSQL)
-```
-
-1. Banco no **Supabase** (preferir **Session pooler** / IPv4 no Render)  
-2. Web Service **Docker** no **Render**  
-3. Variáveis `SPRING_DATASOURCE_*` + `SPRING_PROFILES_ACTIVE=prod`  
-4. Após o primeiro deploy, limpar dados de demonstração no SQL Editor se necessário  
-
----
-
-## 📁 Estrutura (visão geral)
-
-```text
-esteticaFlow/
-├── src/main/java/br/esteticadesk/   # domínio, services, controllers
-├── src/main/resources/
-│   ├── db/migration/                # Flyway (V1…Vn) — não apagar em produção
-│   ├── templates/                   # Thymeleaf
-│   └── static/                      # CSS / JS
-├── Dockerfile
-├── docker-compose.yml
-└── pom.xml
-```
 
 ---
 
