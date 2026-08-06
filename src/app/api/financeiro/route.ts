@@ -1,0 +1,20 @@
+import { exigirRecurso } from '@/auth/contexto';
+import { filtroFinanceiroSchema } from '@/schemas';
+import { comContexto, lerQuery } from '@/server/api';
+import { indicadores, listarLancamentos } from '@/server/financeiro';
+import { ok } from '@/domain/result';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+export async function GET(request: Request) {
+  const query = lerQuery(request, filtroFinanceiroSchema);
+  if (!query.ok) return query.resposta;
+  return comContexto(async (contexto) => {
+    const acesso = exigirRecurso(contexto, 'FINANCEIRO');
+    if (!acesso.ok) return acesso;
+    const lancamentos = await listarLancamentos(contexto, query.dados);
+    if (!lancamentos.ok) return lancamentos;
+    return ok({ ...lancamentos.value, indicadores: await indicadores(contexto) });
+  });
+}
