@@ -139,7 +139,7 @@ export function VisaoDoPainel() {
           rotulo="Faturamento do mês"
           valor={podeFinanceiro ? formatarMoeda(data.receitaMes) : '—'}
           variacao={data.variacaoReceita}
-          detalhe={podeFinanceiro ? undefined : 'Disponível no plano Completo'}
+          detalhe={podeFinanceiro ? undefined : 'Disponível no plano Pro'}
           icone={CircleDollarSign}
           tom="acento"
         />
@@ -175,8 +175,8 @@ export function VisaoDoPainel() {
             {!podeFinanceiro ? (
               <Vazio
                 icone={CircleDollarSign}
-                titulo="Módulo financeiro no plano Completo"
-                descricao="Assine o plano Completo para acompanhar receita, despesa e margem."
+                titulo="Módulo financeiro no plano Pro"
+                descricao="Assine o plano Pro para acompanhar receita, despesa e margem."
               />
             ) : serieGrafico.length === 0 ? (
               <Vazio icone={TrendingUp} titulo="Ainda sem histórico" />

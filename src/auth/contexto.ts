@@ -125,7 +125,7 @@ export async function carregarContexto(): Promise<Result<Contexto>> {
 export function exigirRecurso(contexto: Contexto, recurso: Recurso): Result<true> {
   if (contexto.permite(recurso)) return ok(true);
   return falha(
-    erro('RECURSO_DO_PLANO', 'Este recurso está disponível no plano Completo.', {
+    erro('RECURSO_DO_PLANO', 'Este recurso está disponível no plano Pro.', {
       detalhes: { recurso },
     }),
   );

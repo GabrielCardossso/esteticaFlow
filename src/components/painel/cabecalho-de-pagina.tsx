@@ -26,7 +26,7 @@ export function AvisoDePlano({ recurso }: { recurso: string }) {
   return (
     <div className="superficie flex flex-col items-center gap-3 px-6 py-14 text-center">
       <h2 className="text-lg font-semibold text-[var(--tinta)]">
-        {recurso} faz parte do plano Completo
+        {recurso} faz parte do plano Pro
       </h2>
       <p className="max-w-md text-sm text-[var(--tinta-suave)]">
         Fale com a EsteticaFlow para liberar este módulo. Seu histórico atual é preservado

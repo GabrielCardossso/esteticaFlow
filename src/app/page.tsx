@@ -72,7 +72,8 @@ export default function PaginaInicial() {
     <div className="min-h-dvh">
       <header className="sticky top-0 z-40 border-b border-[var(--borda)] bg-[var(--superficie-0)]/85 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-          <Marca />
+          <Marca className="sm:hidden" compacta />
+          <Marca className="hidden sm:flex" />
           <nav className="hidden items-center gap-6 text-sm text-[var(--tinta-suave)] md:flex">
             <a className="transition-colors hover:text-[var(--tinta)]" href="#recursos">
               Recursos
@@ -84,13 +85,13 @@ export default function PaginaInicial() {
               Suporte
             </Link>
           </nav>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
             <Botao comoFilho variante="fantasma" tamanho="pequeno">
               <Link href="/login">Entrar</Link>
             </Botao>
             <Botao comoFilho variante="acento" tamanho="pequeno">
-              <a href="#planos">
-                Ver planos
+              <a href="#planos" aria-label="Ver planos">
+                <span className="hidden sm:inline">Ver planos</span>
                 <ArrowRight />
               </a>
             </Botao>
@@ -307,10 +308,12 @@ export default function PaginaInicial() {
             <div className="mx-auto max-w-2xl text-center">
               <span className="rotulo-tecnico">Planos</span>
               <h2 className="mt-3 text-3xl font-bold tracking-tight text-[var(--tinta)] sm:text-4xl">
-                Preço fechado, sem taxa por atendimento
+                Preço que cabe na operação — sem taxa por atendimento
               </h2>
               <p className="mt-4 text-lg text-[var(--tinta-suave)]">
-                Comece organizando a agenda. Suba de plano quando precisar de estoque e financeiro.
+                Pensado para quem precisa controlar produto, água, energia e caixa antes de assumir
+                mais uma conta fixa. Comece pela rotina; evolua quando precisar de financeiro e
+                estoque.
               </p>
             </div>
 
@@ -336,7 +339,15 @@ export default function PaginaInicial() {
                     <h3 className="text-xl font-semibold text-[var(--tinta)]">{plano.nome}</h3>
                     <p className="mt-1.5 text-sm text-[var(--tinta-suave)]">{plano.descricao}</p>
 
-                    <p className="mt-6 flex items-baseline gap-1.5">
+                    <p className="mt-6 flex items-center gap-2 text-sm font-medium text-[var(--positivo)]">
+                      <Sparkles className="size-4" aria-hidden />
+                      Oferta de lançamento
+                    </p>
+                    <p className="mt-2 flex items-baseline gap-1.5">
+                      <span className="text-sm text-[var(--tinta-tenue)]">
+                        de <s>{formatarMoeda(plano.valorMensalTabela)}</s>
+                      </span>
+                      <span className="text-sm text-[var(--tinta-tenue)]">por</span>
                       <span className="numerico text-4xl font-bold text-[var(--tinta)]">
                         {formatarMoeda(plano.valorMensalPadrao)}
                       </span>
@@ -376,7 +387,8 @@ export default function PaginaInicial() {
             </div>
 
             <p className="mt-8 text-center text-sm text-[var(--tinta-tenue)]">
-              A troca de plano é feita pela EsteticaFlow a qualquer momento, sem perder histórico.
+              Valores de lançamento para novas empresas enquanto a campanha estiver ativa. A troca
+              de plano é feita pela EsteticaFlow a qualquer momento, sem perder histórico.
             </p>
           </div>
         </section>

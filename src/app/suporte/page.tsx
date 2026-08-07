@@ -48,7 +48,7 @@ const DUVIDAS = [
   {
     pergunta: 'Preciso de estoque e financeiro. Como habilito?',
     resposta:
-      'Esses módulos fazem parte do plano Completo. A troca de plano é feita pela EsteticaFlow e não faz você perder nenhum histórico.',
+      'Esses módulos fazem parte do plano Pro. A troca de plano é feita pela EsteticaFlow e não faz você perder nenhum histórico.',
   },
   {
     pergunta: 'Como altero os dados cadastrais da empresa?',

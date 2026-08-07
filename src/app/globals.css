@@ -141,6 +141,8 @@
   html {
     -webkit-text-size-adjust: 100%;
     scrollbar-color: var(--borda-forte) transparent;
+    overflow-x: hidden;
+    overflow-x: clip;
   }
 
   body {
@@ -150,6 +152,19 @@
     font-feature-settings: 'cv02', 'cv03', 'cv04';
     -webkit-font-smoothing: antialiased;
     min-height: 100dvh;
+    width: 100%;
+    overflow-x: hidden;
+    overflow-x: clip;
+  }
+
+  /* Impede o zoom automático do Safari ao focar campos menores que 16px,
+     sem limitar o zoom manual de quem precisa ampliar a interface. */
+  @media (max-width: 639px) {
+    input:not([type='checkbox']):not([type='radio']),
+    select,
+    textarea {
+      font-size: 16px;
+    }
   }
 
   /* Mantém os menus nativos de seleção coerentes com o tema ativo. */

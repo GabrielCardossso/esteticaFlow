@@ -64,7 +64,7 @@ export async function gerarPlanilha(relatorio: Relatorio): Promise<Buffer> {
     const aviso = resumo.addRow([]);
     void aviso;
     resumo.addRow([
-      'O detalhamento por lançamento está disponível no plano Completo.',
+      'O detalhamento por lançamento está disponível no plano Pro.',
     ]).font = { italic: true, color: { argb: 'FF6B7280' } };
     const buffer = await arquivo.xlsx.writeBuffer();
     return Buffer.from(buffer);

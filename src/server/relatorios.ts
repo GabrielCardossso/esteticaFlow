@@ -55,7 +55,7 @@ export interface Relatorio {
 
 /**
  * Monta o relatorio gerencial. O plano Basico recebe apenas os indicadores;
- * o detalhamento por lancamento e exclusivo do plano Completo.
+ * o detalhamento por lançamento é exclusivo do plano Pro.
  */
 export async function montarRelatorio(
   contexto: Contexto,

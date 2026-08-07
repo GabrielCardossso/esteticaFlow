@@ -155,8 +155,8 @@ export function CentralDeRelatorios() {
             <Cartao className="mt-4">
               <Vazio
                 icone={Download}
-                titulo="Detalhamento disponível no plano Completo"
-                descricao="O plano Básico entrega os indicadores consolidados. Ranking de serviços e lançamento a lançamento fazem parte do Completo."
+                titulo="Detalhamento disponível no plano Pro"
+                descricao="O plano Básico entrega os indicadores consolidados. Ranking de serviços e lançamento a lançamento fazem parte do Pro."
               />
             </Cartao>
           ) : (

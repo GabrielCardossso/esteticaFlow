@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { FormularioDeLogin } from '@/components/autenticacao/formulario-de-login';
@@ -53,13 +54,23 @@ export default function PaginaDeLogin() {
         </div>
       </aside>
 
-      <main id="conteudo" className="flex items-center justify-center px-4 py-12 sm:px-8">
+      <main
+        id="conteudo"
+        className="flex min-h-[100svh] items-start justify-center px-4 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))] sm:items-center sm:px-8 sm:py-12"
+      >
         <div className="w-full max-w-sm">
-          <div className="lg:hidden">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-sm font-medium text-[var(--tinta-suave)] transition-colors hover:text-[var(--acento-ativo)]"
+          >
+            <ArrowLeft className="size-4" aria-hidden />
+            Voltar para o site
+          </Link>
+          <div className="mt-6 lg:hidden">
             <Marca />
           </div>
 
-          <h2 className="mt-8 text-2xl font-bold tracking-tight text-[var(--tinta)] lg:mt-0">
+          <h2 className="mt-6 text-2xl font-bold tracking-tight text-[var(--tinta)] lg:mt-0">
             Entrar na sua conta
           </h2>
           <p className="mt-1.5 text-sm text-[var(--tinta-suave)]">

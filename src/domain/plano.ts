@@ -29,6 +29,9 @@ interface DefinicaoPlano {
   readonly nome: string;
   readonly descricao: string;
   readonly limiteUsuarios: number;
+  /** Preço de tabela exibido antes da condição de lançamento. */
+  readonly valorMensalTabela: string;
+  /** Mensalidade efetivamente aplicada às novas assinaturas na campanha atual. */
   readonly valorMensalPadrao: string;
   readonly recursos: ReadonlySet<Recurso>;
 }
@@ -54,15 +57,17 @@ const RECURSOS_COMPLETO: readonly Recurso[] = [
 export const CATALOGO_PLANOS: Readonly<Record<Plano, DefinicaoPlano>> = {
   BASICO: {
     nome: 'Básico',
-    descricao: 'Para quem está organizando a operação pela primeira vez.',
+    descricao: 'Para organizar a rotina e parar de depender do WhatsApp e de planilhas.',
     limiteUsuarios: 2,
+    valorMensalTabela: '79.90',
     valorMensalPadrao: '59.90',
     recursos: new Set(RECURSOS_BASICO),
   },
   COMPLETO: {
-    nome: 'Completo',
-    descricao: 'Operação inteira sob controle, com estoque, financeiro e relatórios.',
-    limiteUsuarios: 50,
+    nome: 'Pro',
+    descricao: 'Para acompanhar custo, estoque, caixa e resultado sem perder o ritmo da operação.',
+    limiteUsuarios: 10,
+    valorMensalTabela: '149.90',
     valorMensalPadrao: '119.90',
     recursos: new Set(RECURSOS_COMPLETO),
   },

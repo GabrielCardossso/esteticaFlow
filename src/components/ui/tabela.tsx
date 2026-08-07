@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 
 export function Tabela({ className, ...resto }: HTMLAttributes<HTMLTableElement>) {
   return (
-    <div className="w-full overflow-x-auto">
+    <div className="w-full touch-pan-x overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch]">
       <table className={cn('w-full border-collapse text-sm', className)} {...resto} />
     </div>
   );

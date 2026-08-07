@@ -80,7 +80,7 @@ export const Campo = forwardRef<
           aria-describedby={erro !== undefined ? `${id}-erro` : undefined}
           className={cn(
             BASE_CONTROLE,
-            'h-10',
+            'h-11 text-base sm:h-10 sm:text-sm',
             prefixo !== undefined ? 'pl-9' : undefined,
             erro !== undefined
               ? 'border-[var(--critico)] focus:border-[var(--critico)]'
@@ -120,7 +120,7 @@ export const AreaDeTexto = forwardRef<
         aria-invalid={erro !== undefined}
         className={cn(
           BASE_CONTROLE,
-          'resize-y py-2.5 leading-relaxed',
+          'resize-y py-2.5 text-base leading-relaxed sm:text-sm',
           erro !== undefined ? 'border-[var(--critico)]' : undefined,
         )}
         {...resto}
@@ -153,7 +153,7 @@ export const Selecao = forwardRef<
         aria-invalid={erro !== undefined}
         className={cn(
           BASE_CONTROLE,
-          'h-10 cursor-pointer appearance-none bg-[length:1rem] bg-[right_0.75rem_center] bg-no-repeat pr-9 [&_option]:bg-[var(--superficie-2)] [&_option]:text-[var(--tinta)]',
+          'h-11 cursor-pointer appearance-none bg-[length:1rem] bg-[right_0.75rem_center] bg-no-repeat pr-9 text-base sm:h-10 sm:text-sm [&_option]:bg-[var(--superficie-2)] [&_option]:text-[var(--tinta)]',
           erro !== undefined ? 'border-[var(--critico)]' : undefined,
         )}
         style={{

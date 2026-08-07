@@ -10,7 +10,10 @@ import { cn } from '@/lib/utils';
 
 interface RespostaDeBusca {
   termo: string;
-  grupos: Array<{ grupo: string; itens: Array<{ titulo: string; subtitulo: string; url: string }> }>;
+  grupos: Array<{
+    grupo: string;
+    itens: Array<{ titulo: string; subtitulo: string; url: string }>;
+  }>;
 }
 
 /** Atrasa a consulta enquanto o usuário ainda está digitando. */
@@ -69,7 +72,7 @@ export function BuscaGlobal() {
   const buscou = adiado.trim().length >= 2;
 
   return (
-    <div ref={referencia} className="relative max-w-md flex-1">
+    <div ref={referencia} className="relative min-w-0 max-w-md flex-1">
       <label htmlFor="busca-global" className="sr-only">
         Buscar clientes, veículos, agendamentos e produtos
       </label>
@@ -90,7 +93,7 @@ export function BuscaGlobal() {
             setAberto(true);
           }}
           onFocus={() => setAberto(true)}
-          className="h-9 w-full rounded-lg border border-[var(--borda)] bg-[var(--superficie-2)] pl-9 pr-14 text-sm text-[var(--tinta)] transition-colors placeholder:text-[var(--tinta-tenue)] focus:border-[var(--acento-ativo)] focus:outline-none focus:ring-2 focus:ring-[var(--acento-fraco)]"
+          className="h-10 w-full rounded-lg border border-[var(--borda)] bg-[var(--superficie-2)] pl-9 pr-14 text-base text-[var(--tinta)] transition-colors placeholder:text-[var(--tinta-tenue)] focus:border-[var(--acento-ativo)] focus:outline-none focus:ring-2 focus:ring-[var(--acento-fraco)] sm:h-9 sm:text-sm"
         />
         <span className="pointer-events-none absolute right-2.5 top-1/2 hidden -translate-y-1/2 items-center gap-1 sm:flex">
           {isFetching ? (

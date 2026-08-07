@@ -397,8 +397,8 @@ export function CentralDeConfiguracoes() {
               <p className="rotulo-tecnico mb-2">Acento de instrumentação</p>
               {!data.preferencias.podePersonalizar ? (
                 <p className="rounded-lg border border-[var(--borda)] bg-[var(--superficie-2)] p-3 text-xs text-[var(--tinta-suave)]">
-                  A personalização de cor faz parte do plano Completo. O plano Básico usa o âmbar
-                  padrão do sistema.
+                  A personalização de cor faz parte do plano Pro. O plano Básico usa o âmbar padrão
+                  do sistema.
                 </p>
               ) : (
                 <>

@@ -243,7 +243,7 @@ export async function criarUsuario(
   if (ativos >= limite) {
     return falha(
       conflito(
-        `O plano ${contexto.empresa.plano === 'BASICO' ? 'Básico' : 'Completo'} permite ${limite} usuários ativos. Faça upgrade para adicionar mais.`,
+        `O plano ${contexto.empresa.plano === 'BASICO' ? 'Básico' : 'Pro'} permite ${limite} usuários ativos. Faça upgrade para adicionar mais.`,
       ),
     );
   }

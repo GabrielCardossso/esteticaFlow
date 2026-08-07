@@ -163,7 +163,7 @@ function DocumentoRelatorio({ relatorio }: { relatorio: Relatorio }) {
 
         {!relatorio.detalhado ? (
           <Text style={estilos.aviso}>
-            O detalhamento por lançamento está disponível no plano Completo.
+            O detalhamento por lançamento está disponível no plano Pro.
           </Text>
         ) : (
           <>

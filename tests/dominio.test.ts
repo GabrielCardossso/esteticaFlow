@@ -268,7 +268,7 @@ describe('custo e compra de estoque', () => {
 // ---------------------------------------------------------------------------
 
 describe('matriz de planos', () => {
-  it('restringe estoque e financeiro ao plano Completo', () => {
+  it('restringe estoque e financeiro ao plano Pro', () => {
     expect(permiteRecurso('BASICO', 'ADMINISTRADOR', 'ESTOQUE')).toBe(false);
     expect(permiteRecurso('COMPLETO', 'ADMINISTRADOR', 'ESTOQUE')).toBe(true);
     expect(permiteRecurso('BASICO', 'ADMINISTRADOR', 'AGENDA')).toBe(true);
@@ -280,7 +280,7 @@ describe('matriz de planos', () => {
 
   it('aplica o limite de usuários por plano', () => {
     expect(limiteDeUsuarios('BASICO')).toBe(2);
-    expect(limiteDeUsuarios('COMPLETO')).toBe(50);
+    expect(limiteDeUsuarios('COMPLETO')).toBe(10);
   });
 });
 
