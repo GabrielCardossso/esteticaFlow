@@ -222,6 +222,8 @@ export function ExperienciaEsteticaFlow() {
               {(['BASICO', 'COMPLETO'] as const).map((chave) => {
                 const plano = CATALOGO_PLANOS[chave];
                 const destaque = chave === 'COMPLETO';
+                const recursosDoPlano = [...plano.recursos];
+                const recursosExibidos = destaque ? recursosDoPlano : recursosDoPlano.slice(0, 6);
                 return (
                   <article key={chave} className={cn('landing-plano', destaque && 'landing-plano-destaque')}>
                     {destaque ? <span className="landing-plano-selo"><Sparkles className="size-3.5" /> Mais escolhido</span> : null}
@@ -233,8 +235,11 @@ export function ExperienciaEsteticaFlow() {
                     </div>
                     <p className="mt-1"><span className="landing-preco">{formatarMoeda(plano.valorMensalPadrao)}</span><span className="ml-1 text-sm text-[#99a4b5]">/ mês</span></p>
                     <p className="mt-2 text-xs text-[#8791a3]">Até {plano.limiteUsuarios} {plano.limiteUsuarios === 1 ? 'usuário ativo' : 'usuários ativos'}</p>
-                    <ul className="mt-7 space-y-3">
-                      {[...plano.recursos].slice(0, 6).map((recurso: Recurso) => (
+                    <p className="mt-7 text-xs font-semibold text-[#aeb8c8]">
+                      {destaque ? 'Tudo do Básico, mais:' : 'Inclui:'}
+                    </p>
+                    <ul className="mt-3 space-y-3">
+                      {recursosExibidos.map((recurso: Recurso) => (
                         <li key={recurso} className="flex items-start gap-2.5 text-sm text-[#c5cdd9]"><Check className="mt-0.5 size-4 shrink-0 text-emerald-400" />{ROTULO_RECURSO[recurso]}</li>
                       ))}
                     </ul>

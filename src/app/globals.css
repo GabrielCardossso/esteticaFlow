@@ -495,14 +495,21 @@
   .landing {
     --landing-borda: rgb(255 255 255 / 0.1);
     --landing-superficie: rgb(17 21 30 / 0.78);
+    position: relative;
+    isolation: isolate;
     background:
       radial-gradient(circle at 50% -20%, rgb(var(--acento-rgb) / 0.2), transparent 36%),
       #080a0f;
   }
 
   .landing-ruido {
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.38'/%3E%3C/svg%3E");
-    mix-blend-mode: soft-light;
+    position: absolute;
+    background-image:
+      radial-gradient(rgb(255 255 255 / 0.055) 0.5px, transparent 0.65px),
+      radial-gradient(rgb(255 255 255 / 0.035) 0.5px, transparent 0.65px);
+    background-position: 0 0, 8px 8px;
+    background-size: 16px 16px;
+    mask-image: linear-gradient(to bottom, black, transparent 75%);
   }
 
   .landing-nav {
@@ -650,6 +657,23 @@
 
   .painel-lateral { background: linear-gradient(180deg, var(--superficie-1), color-mix(in srgb, var(--superficie-1) 82%, var(--superficie-0))); }
   .painel-topo { box-shadow: 0 8px 24px -20px rgb(0 0 0 / 0.65); }
+
+  /* Evita repintura do fundo global por trás da landing durante a rolagem. */
+  body:has(.landing) {
+    background-image: none;
+    background-attachment: scroll;
+  }
+
+  .landing main > section:not(:first-child) {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 760px;
+  }
+
+  @media (max-width: 639px) {
+    .landing-ruido { display: none; }
+    .landing-nav { backdrop-filter: none; }
+    .landing-cta-luz { filter: blur(16px); }
+  }
 }
 
 /* Movimento é informação, não enfeite: quem pediu menos movimento recebe menos. */
