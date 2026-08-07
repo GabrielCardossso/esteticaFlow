@@ -3,7 +3,7 @@ import type { Contexto } from '@/auth/contexto';
 import { db } from '@/db/client';
 import { agendamento, agendamentoServico, cliente, servico } from '@/db/schema';
 import { ok, type Result } from '@/domain/result';
-import { montarResumo, variacaoPercentual } from '@/domain/relatorio';
+import { variacaoPercentual } from '@/domain/relatorio';
 import { Dinheiro } from '@/domain/shared/decimal';
 import {
   fimDoDia,
@@ -22,12 +22,12 @@ export interface PainelDados {
   receitaMes: string;
   despesaMes: string;
   lucroMes: string;
-  margem: number;
+  margem: number | null;
   ticketMedio: string;
   variacaoReceita: number | null;
   atendimentosHoje: number;
   atendimentosMes: number;
-  concluidosMes: number;
+  atendimentosRecebidosMes: number;
   aReceber: string;
   serie: Array<{ mes: string; receita: string; despesa: string }>;
   servicosMaisVendidos: Array<{ nome: string; quantidade: number; valor: string }>;
@@ -72,14 +72,14 @@ export async function montarPainel(contexto: Contexto): Promise<Result<PainelDad
         despesaMes: Dinheiro.zero,
         lucroMes: Dinheiro.zero,
         aReceber: Dinheiro.zero,
-        margem: 0,
+        ticketMedio: Dinheiro.zero,
+        atendimentosRecebidosMes: 0,
+        margem: null,
       };
 
   const [atendimentosMes] = await db
     .select({
       total: count(),
-      concluidos: sql<number>`cast(count(*) filter (where ${agendamento.status} = 'CONCLUIDO') as int)`,
-      somaConcluidos: sql<string>`coalesce(sum(${agendamento.total}) filter (where ${agendamento.status} = 'CONCLUIDO'), 0)`,
     })
     .from(agendamento)
     .where(
@@ -99,13 +99,6 @@ export async function montarPainel(contexto: Contexto): Promise<Result<PainelDad
         inArray(agendamento.status, ['AGENDADO', 'EM_ANDAMENTO']),
       ),
     );
-
-  const concluidos = Number(atendimentosMes?.concluidos ?? 0);
-  const resumo = montarResumo(
-    financeiro.receitaMes,
-    financeiro.despesaMes,
-    concluidos,
-  );
 
   const idsConcluidosMes = await db
     .select({ id: agendamento.id })
@@ -159,14 +152,14 @@ export async function montarPainel(contexto: Contexto): Promise<Result<PainelDad
     receitaMes: financeiro.receitaMes,
     despesaMes: financeiro.despesaMes,
     lucroMes: financeiro.lucroMes,
-    margem: resumo.margem,
-    ticketMedio: resumo.ticketMedio,
+    margem: financeiro.margem,
+    ticketMedio: financeiro.ticketMedio,
     variacaoReceita: podeFinanceiro
       ? variacaoPercentual(financeiro.receitaMes, receitaAnterior)
       : null,
     atendimentosHoje: Number(atendimentosHoje?.total ?? 0),
     atendimentosMes: Number(atendimentosMes?.total ?? 0),
-    concluidosMes: concluidos,
+    atendimentosRecebidosMes: financeiro.atendimentosRecebidosMes,
     aReceber: financeiro.aReceber,
     serie,
     servicosMaisVendidos,

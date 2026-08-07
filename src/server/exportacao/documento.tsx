@@ -1,11 +1,4 @@
-import {
-  Document,
-  Page,
-  StyleSheet,
-  Text,
-  View,
-  renderToBuffer,
-} from '@react-pdf/renderer';
+import { Document, Page, StyleSheet, Text, View, renderToBuffer } from '@react-pdf/renderer';
 import type { Relatorio } from '@/server/relatorios';
 import { formatarData } from '@/domain/shared/tempo';
 import { formatarMoeda } from '@/domain/shared/texto';
@@ -69,13 +62,7 @@ interface Coluna {
   direita?: boolean;
 }
 
-function Tabela({
-  colunas,
-  linhas,
-}: {
-  colunas: Coluna[];
-  linhas: string[][];
-}) {
+function Tabela({ colunas, linhas }: { colunas: Coluna[]; linhas: string[][] }) {
   return (
     <View>
       <View style={[estilos.linha, estilos.cabecalho]}>
@@ -152,12 +139,14 @@ function DocumentoRelatorio({ relatorio }: { relatorio: Relatorio }) {
             </Text>
           </View>
           <View style={estilos.indicador}>
-            <Text style={estilos.rotuloIndicador}>Concluídos</Text>
-            <Text style={estilos.valorIndicador}>{relatorio.resumo.atendimentosConcluidos}</Text>
+            <Text style={estilos.rotuloIndicador}>Atendimentos recebidos</Text>
+            <Text style={estilos.valorIndicador}>{relatorio.resumo.atendimentosRecebidos}</Text>
           </View>
           <View style={estilos.indicador}>
             <Text style={estilos.rotuloIndicador}>Margem</Text>
-            <Text style={estilos.valorIndicador}>{relatorio.resumo.margem}%</Text>
+            <Text style={estilos.valorIndicador}>
+              {relatorio.resumo.margem === null ? '—' : `${relatorio.resumo.margem}%`}
+            </Text>
           </View>
         </View>
 

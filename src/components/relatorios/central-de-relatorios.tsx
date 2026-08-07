@@ -141,13 +141,15 @@ export function CentralDeRelatorios() {
             <Indicador
               rotulo="Saldo"
               valor={formatarMoeda(data.resumo.saldo)}
-              detalhe={`Margem de ${data.resumo.margem}%`}
+              detalhe={
+                data.resumo.margem === null ? 'Margem —' : `Margem de ${data.resumo.margem}%`
+              }
               tom={Number(data.resumo.saldo) >= 0 ? 'positivo' : 'critico'}
             />
             <Indicador
               rotulo="Ticket médio"
               valor={formatarMoeda(data.resumo.ticketMedio)}
-              detalhe={`${data.resumo.atendimentosConcluidos} concluídos`}
+              detalhe={`${data.resumo.atendimentosRecebidos} atendimentos recebidos`}
             />
           </section>
 

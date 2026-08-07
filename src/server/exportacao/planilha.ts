@@ -31,7 +31,10 @@ export async function gerarPlanilha(relatorio: Relatorio): Promise<Buffer> {
   resumo.addRow([]);
   resumo.addRow(['Empresa', relatorio.empresa]);
   resumo.addRow(['Plano', relatorio.plano]);
-  resumo.addRow(['Período', `${formatarData(relatorio.periodo.inicio)} a ${formatarData(relatorio.periodo.fim)}`]);
+  resumo.addRow([
+    'Período',
+    `${formatarData(relatorio.periodo.inicio)} a ${formatarData(relatorio.periodo.fim)}`,
+  ]);
   resumo.addRow(['Filtro', relatorio.filtroRotulo]);
   resumo.addRow([]);
 
@@ -40,7 +43,7 @@ export async function gerarPlanilha(relatorio: Relatorio): Promise<Buffer> {
     'Despesa',
     'Saldo',
     'Ticket médio',
-    'Atendimentos concluídos',
+    'Atendimentos recebidos',
     'Margem',
   ]);
   estilizarCabecalho(cabecalhoResumo);
@@ -50,8 +53,8 @@ export async function gerarPlanilha(relatorio: Relatorio): Promise<Buffer> {
     Number(relatorio.resumo.despesa),
     Number(relatorio.resumo.saldo),
     Number(relatorio.resumo.ticketMedio),
-    relatorio.resumo.atendimentosConcluidos,
-    relatorio.resumo.margem / 100,
+    relatorio.resumo.atendimentosRecebidos,
+    relatorio.resumo.margem === null ? '—' : relatorio.resumo.margem / 100,
   ]);
   valores.getCell(1).numFmt = FORMATO_MOEDA;
   valores.getCell(2).numFmt = FORMATO_MOEDA;
@@ -63,9 +66,10 @@ export async function gerarPlanilha(relatorio: Relatorio): Promise<Buffer> {
   if (!relatorio.detalhado) {
     const aviso = resumo.addRow([]);
     void aviso;
-    resumo.addRow([
-      'O detalhamento por lançamento está disponível no plano Pro.',
-    ]).font = { italic: true, color: { argb: 'FF6B7280' } };
+    resumo.addRow(['O detalhamento por lançamento está disponível no plano Pro.']).font = {
+      italic: true,
+      color: { argb: 'FF6B7280' },
+    };
     const buffer = await arquivo.xlsx.writeBuffer();
     return Buffer.from(buffer);
   }

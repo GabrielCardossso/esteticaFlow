@@ -92,6 +92,8 @@ export const notificacao = pgTable(
     titulo: varchar('titulo', { length: 150 }).notNull(),
     mensagem: varchar('mensagem', { length: 1000 }).notNull(),
     lida: boolean('lida').notNull().default(false),
+    /** Um alerta pode ser lido e ainda continuar representando uma condição ativa. */
+    ativa: boolean('ativa').notNull().default(true),
     referenciaTipo: varchar('referencia_tipo', { length: 40 }),
     referenciaId: bigint('referencia_id', { mode: 'number' }),
     acaoUrl: varchar('acao_url', { length: 255 }),

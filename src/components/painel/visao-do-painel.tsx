@@ -146,14 +146,20 @@ export function VisaoDoPainel() {
         <Indicador
           rotulo="Resultado do mês"
           valor={podeFinanceiro ? formatarMoeda(data.lucroMes) : '—'}
-          detalhe={podeFinanceiro ? `Margem de ${data.margem}%` : undefined}
+          detalhe={
+            podeFinanceiro
+              ? data.margem === null
+                ? 'Margem —'
+                : `Margem de ${data.margem}%`
+              : undefined
+          }
           icone={TrendingUp}
           tom={Number(data.lucroMes) >= 0 ? 'positivo' : 'critico'}
         />
         <Indicador
           rotulo="Ticket médio"
           valor={formatarMoeda(data.ticketMedio)}
-          detalhe={`${data.concluidosMes} concluídos no mês`}
+          detalhe={`${data.atendimentosRecebidosMes} atendimentos recebidos no mês`}
           icone={Receipt}
         />
         <Indicador
@@ -167,10 +173,7 @@ export function VisaoDoPainel() {
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
         {/* ----------------------------- Faturamento ---------------------- */}
         <Cartao className="lg:col-span-2" destaque>
-          <CartaoCabecalho
-            titulo="Faturamento e despesa"
-            descricao="Últimos seis meses fechados"
-          />
+          <CartaoCabecalho titulo="Faturamento e despesa" descricao="Últimos seis meses fechados" />
           <CartaoCorpo>
             {!podeFinanceiro ? (
               <Vazio
@@ -336,7 +339,9 @@ export function VisaoDoPainel() {
                       {data.despesasCategoria.map((_, indice) => (
                         <Cell
                           key={indice}
-                          fill={CORES_GRAFICO[indice % CORES_GRAFICO.length] ?? 'var(--borda-forte)'}
+                          fill={
+                            CORES_GRAFICO[indice % CORES_GRAFICO.length] ?? 'var(--borda-forte)'
+                          }
                         />
                       ))}
                     </Pie>

@@ -17,7 +17,6 @@ import { ROTULO_STATUS } from '@/domain/agendamento';
 import { permiteRecurso, type Plano } from '@/domain/plano';
 import {
   limitesDoPeriodo,
-  montarResumo,
   ordenarRanking,
   resolverPeriodo,
   ROTULO_FILTRO,
@@ -29,6 +28,7 @@ import { falha, naoEncontrado, ok, type Result } from '@/domain/result';
 import { Dinheiro } from '@/domain/shared/decimal';
 import { hojeISO } from '@/domain/shared/tempo';
 import type { FiltroRelatorio } from '@/schemas';
+import { montarResumoFinanceiroDoPeriodo } from './financeiro';
 
 export interface Relatorio {
   empresa: string;
@@ -88,53 +88,29 @@ export async function montarRelatorio(
   const periodo = resolverPeriodo(filtro.filtro, filtro.referencia ?? hojeISO());
   const limites = limitesDoPeriodo(periodo);
 
-  const [somaReceita] = await db
-    .select({ total: sql<string>`coalesce(sum(${receita.valor}), 0)` })
-    .from(receita)
-    .where(
-      and(
-        eq(receita.empresaId, empresaId),
-        between(receita.dataRecebimento, periodo.inicio, periodo.fim),
-      ),
-    );
-
-  const [somaDespesa] = await db
-    .select({ total: sql<string>`coalesce(sum(${despesa.valor}), 0)` })
-    .from(despesa)
-    .where(
-      and(
-        eq(despesa.empresaId, empresaId),
-        between(despesa.dataPagamento, periodo.inicio, periodo.fim),
-      ),
-    );
-
-  const concluidos = await db
-    .select({
-      id: agendamento.id,
-      dataHora: agendamento.dataHora,
-      total: agendamento.total,
-      status: agendamento.status,
-      clienteNome: cliente.nome,
-      veiculoPlaca: veiculo.placa,
-      veiculoModelo: veiculo.modelo,
-    })
-    .from(agendamento)
-    .innerJoin(cliente, eq(cliente.id, agendamento.clienteId))
-    .innerJoin(veiculo, eq(veiculo.id, agendamento.veiculoId))
-    .where(
-      and(
-        eq(agendamento.empresaId, empresaId),
-        between(agendamento.dataHora, limites.inicio, limites.fim),
-      ),
-    )
-    .orderBy(agendamento.dataHora);
-
-  const totalConcluidos = concluidos.filter((a) => a.status === 'CONCLUIDO').length;
-  const resumo = montarResumo(
-    somaReceita?.total ?? '0',
-    somaDespesa?.total ?? '0',
-    totalConcluidos,
-  );
+  const [resumo, concluidos] = await Promise.all([
+    montarResumoFinanceiroDoPeriodo(empresaId, periodo.inicio, periodo.fim),
+    db
+      .select({
+        id: agendamento.id,
+        dataHora: agendamento.dataHora,
+        total: agendamento.total,
+        status: agendamento.status,
+        clienteNome: cliente.nome,
+        veiculoPlaca: veiculo.placa,
+        veiculoModelo: veiculo.modelo,
+      })
+      .from(agendamento)
+      .innerJoin(cliente, eq(cliente.id, agendamento.clienteId))
+      .innerJoin(veiculo, eq(veiculo.id, agendamento.veiculoId))
+      .where(
+        and(
+          eq(agendamento.empresaId, empresaId),
+          between(agendamento.dataHora, limites.inicio, limites.fim),
+        ),
+      )
+      .orderBy(agendamento.dataHora),
+  ]);
 
   const relatorio: Relatorio = {
     empresa: nomeEmpresa,

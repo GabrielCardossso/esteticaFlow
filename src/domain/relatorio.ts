@@ -71,28 +71,31 @@ export interface ResumoFinanceiro {
   readonly despesa: string;
   readonly saldo: string;
   readonly ticketMedio: string;
-  readonly atendimentosConcluidos: number;
-  readonly margem: number;
+  readonly atendimentosRecebidos: number;
+  readonly margem: number | null;
 }
 
 export function montarResumo(
   receita: string,
   despesa: string,
-  atendimentosConcluidos: number,
+  receitaDeAtendimentos: string,
+  atendimentosRecebidos: number,
 ): ResumoFinanceiro {
   const saldo = Dinheiro.subtrair(receita, despesa);
   const ticketMedio =
-    atendimentosConcluidos > 0 ? Dinheiro.dividir(receita, atendimentosConcluidos) : Dinheiro.zero;
+    atendimentosRecebidos > 0
+      ? Dinheiro.dividir(receitaDeAtendimentos, atendimentosRecebidos)
+      : Dinheiro.zero;
   const receitaNumero = Dinheiro.paraNumero(receita);
-  const margem = receitaNumero === 0 ? 0 : (Dinheiro.paraNumero(saldo) / receitaNumero) * 100;
+  const margem = receitaNumero === 0 ? null : (Dinheiro.paraNumero(saldo) / receitaNumero) * 100;
 
   return {
     receita: Dinheiro.de(receita),
     despesa: Dinheiro.de(despesa),
     saldo,
     ticketMedio,
-    atendimentosConcluidos,
-    margem: Number(margem.toFixed(1)),
+    atendimentosRecebidos,
+    margem: margem === null ? null : Number(margem.toFixed(1)),
   };
 }
 

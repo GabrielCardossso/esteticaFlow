@@ -368,15 +368,41 @@ describe('períodos de relatório', () => {
     expect(periodo.fim).toBe('2030-02-28');
   });
 
-  it('calcula ticket médio e margem', () => {
-    const resumo = montarResumo('1000.00', '400.00', 4);
-    expect(resumo.saldo).toBe('600.00');
-    expect(resumo.ticketMedio).toBe('250.00');
-    expect(resumo.margem).toBe(60);
+  it('calcula ticket médio somente com atendimentos recebidos', () => {
+    const resumo = montarResumo('800.00', '400.00', '300.00', 2);
+    expect(resumo.saldo).toBe('400.00');
+    expect(resumo.ticketMedio).toBe('150.00');
+    expect(resumo.atendimentosRecebidos).toBe(2);
+    expect(resumo.margem).toBe(50);
   });
 
-  it('não divide por zero quando não houve atendimento', () => {
-    expect(montarResumo('0.00', '0.00', 0).ticketMedio).toBe('0.00');
+  it('não divide por zero quando não houve atendimento recebido', () => {
+    const resumo = montarResumo('500.00', '0.00', '0.00', 0);
+    expect(resumo.ticketMedio).toBe('0.00');
+  });
+
+  it('ignora receita avulsa no ticket médio dos atendimentos', () => {
+    const resumo = montarResumo('800.00', '0.00', '300.00', 2);
+    expect(resumo.ticketMedio).toBe('150.00');
+  });
+
+  it('calcula resultado mesmo quando não há receita e omite margem', () => {
+    const resumo = montarResumo('0.00', '1000.00', '0.00', 0);
+    expect(resumo.saldo).toBe('-1000.00');
+    expect(resumo.margem).toBeNull();
+  });
+
+  it('calcula margem com receita recebida e despesas do período', () => {
+    const resumo = montarResumo('1000.00', '600.00', '1000.00', 2);
+    expect(resumo.saldo).toBe('400.00');
+    expect(resumo.margem).toBe(40);
+  });
+
+  it('mantém atendimento pendente fora do faturamento e do ticket', () => {
+    const resumo = montarResumo('339.70', '9639.90', '339.70', 2);
+    expect(resumo.saldo).toBe('-9300.20');
+    expect(resumo.ticketMedio).toBe('169.85');
+    expect(resumo.atendimentosRecebidos).toBe(2);
   });
 });
 

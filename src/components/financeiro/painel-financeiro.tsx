@@ -174,7 +174,11 @@ export function PainelFinanceiro() {
         <Indicador
           rotulo="Resultado do mês"
           valor={formatarMoeda(indicadores?.lucroMes ?? 0)}
-          detalhe={`Margem de ${indicadores?.margem ?? 0}%`}
+          detalhe={
+            indicadores?.margem === null || indicadores === undefined
+              ? 'Margem —'
+              : `Margem de ${indicadores.margem}%`
+          }
           tom={Number(indicadores?.lucroMes ?? 0) >= 0 ? 'positivo' : 'critico'}
         />
         <Indicador

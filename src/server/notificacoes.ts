@@ -31,8 +31,9 @@ interface EntradaNotificacao {
 }
 
 /**
- * Deduplicacao por referencia: enquanto o usuario nao ler o alerta anterior
- * sobre o mesmo assunto, nao criamos outro. Evita inundar a caixa.
+ * Deduplicacao por referencia e ciclo ativo: ler um alerta nao significa que
+ * a condicao que o causou foi resolvida. Um novo aviso so nasce depois que o
+ * alerta anterior for encerrado pela sincronizacao operacional.
  */
 async function criar(entrada: EntradaNotificacao): Promise<number | null> {
   const {
@@ -56,7 +57,7 @@ async function criar(entrada: EntradaNotificacao): Promise<number | null> {
           eq(notificacao.tipo, tipo),
           eq(notificacao.referenciaTipo, referenciaTipo),
           eq(notificacao.referenciaId, referenciaId),
-          eq(notificacao.lida, false),
+          eq(notificacao.ativa, true),
         ),
       )
       .limit(1);
@@ -70,6 +71,7 @@ async function criar(entrada: EntradaNotificacao): Promise<number | null> {
       tipo,
       titulo: truncar(titulo, 150),
       mensagem: truncar(mensagem, 1000),
+      ativa: !novaSempre,
       referenciaTipo,
       referenciaId,
       acaoUrl,
@@ -89,6 +91,30 @@ export async function notificarPlataforma(
   entrada: Omit<EntradaNotificacao, 'empresaId'>,
 ): Promise<number | null> {
   return criar({ ...entrada, empresaId: null });
+}
+
+/** Encerra alertas operacionais que ja nao representam o estado atual. */
+async function encerrarAlertasAusentes(
+  empresaId: number,
+  tipo: TipoNotificacao,
+  referenciaTipo: string,
+  referenciasAtivas: readonly number[],
+): Promise<void> {
+  const condicoes = [
+    eq(notificacao.empresaId, empresaId),
+    eq(notificacao.tipo, tipo),
+    eq(notificacao.referenciaTipo, referenciaTipo),
+    eq(notificacao.ativa, true),
+  ];
+
+  if (referenciasAtivas.length > 0) {
+    condicoes.push(notInArray(notificacao.referenciaId, [...referenciasAtivas]));
+  }
+
+  await db
+    .update(notificacao)
+    .set({ ativa: false, lida: true })
+    .where(and(...condicoes));
 }
 
 export interface NotificacaoDaLista {
@@ -116,10 +142,12 @@ async function sincronizarAlertas(contexto: Contexto): Promise<void> {
       tipo: 'ASSINATURA',
       titulo: 'Assinatura em atraso',
       mensagem: `A assinatura está em atraso há ${dias} ${dias === 1 ? 'dia' : 'dias'}. Regularize para evitar o bloqueio do acesso.`,
-      referenciaTipo: 'EMPRESA',
+      referenciaTipo: 'ASSINATURA_ATRASO',
       referenciaId: contexto.empresaId,
       acaoUrl: '/painel/configuracoes',
     });
+  } else {
+    await encerrarAlertasAusentes(contexto.empresaId, 'ASSINATURA', 'ASSINATURA_ATRASO', []);
   }
 
   if (contexto.permite('ESTOQUE')) {
@@ -128,20 +156,8 @@ async function sincronizarAlertas(contexto: Contexto): Promise<void> {
     // Alerta de estoque descreve um estado atual, não um evento histórico.
     // Ao repor um produto, o aviso pendente precisa deixar de contar como
     // notificação ativa, mesmo se o usuário não abrir a tela de estoque.
-    const condicoesResolvidas = [
-      eq(notificacao.empresaId, contexto.empresaId),
-      eq(notificacao.tipo, 'ESTOQUE_BAIXO'),
-      eq(notificacao.referenciaTipo, 'PRODUTO'),
-      eq(notificacao.lida, false),
-    ];
     const idsEmAlerta = alertas.map((alerta) => alerta.produtoId);
-    if (idsEmAlerta.length > 0) {
-      condicoesResolvidas.push(notInArray(notificacao.referenciaId, idsEmAlerta));
-    }
-    await db
-      .update(notificacao)
-      .set({ lida: true })
-      .where(and(...condicoesResolvidas));
+    await encerrarAlertasAusentes(contexto.empresaId, 'ESTOQUE_BAIXO', 'PRODUTO', idsEmAlerta);
 
     for (const alerta of alertas.slice(0, 20)) {
       await notificarEmpresa({
@@ -167,6 +183,12 @@ async function sincronizarAlertas(contexto: Contexto): Promise<void> {
     const paraReativar = clientes.value
       .filter((c) => precisaReativacao(c.relacionamento))
       .slice(0, 10);
+    await encerrarAlertasAusentes(
+      contexto.empresaId,
+      'CLIENTE_INATIVO',
+      'CLIENTE',
+      paraReativar.map((cliente) => cliente.id),
+    );
     for (const cliente of paraReativar) {
       await notificarEmpresa({
         empresaId: contexto.empresaId,

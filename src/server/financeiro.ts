@@ -2,16 +2,10 @@ import { and, between, desc, eq, inArray, sql } from 'drizzle-orm';
 import type { Contexto } from '@/auth/contexto';
 import { db } from '@/db/client';
 import { agendamento, despesa, formaPagamento, receita } from '@/db/schema';
+import { montarResumo, type ResumoFinanceiro } from '@/domain/relatorio';
 import { falha, naoEncontrado, ok, type Result } from '@/domain/result';
 import { Dinheiro } from '@/domain/shared/decimal';
-import {
-  fimDoMes,
-  hojeISO,
-  inicioDaSemana,
-  inicioDoMes,
-  m,
-  paraISO,
-} from '@/domain/shared/tempo';
+import { fimDoMes, hojeISO, inicioDaSemana, inicioDoMes, m, paraISO } from '@/domain/shared/tempo';
 import { contemTermo } from '@/domain/shared/texto';
 import type { DespesaPayload, FiltroFinanceiro, ReceitaAvulsaPayload } from '@/schemas';
 import { registrar } from './log';
@@ -24,30 +18,81 @@ export interface IndicadoresFinanceiros {
   despesaMes: string;
   lucroMes: string;
   aReceber: string;
-  margem: number;
+  ticketMedio: string;
+  atendimentosRecebidosMes: number;
+  margem: number | null;
+}
+
+interface TotaisDeReceita {
+  total: string;
+  totalAtendimentos: string;
+  atendimentosRecebidos: number;
+}
+
+async function obterTotaisDeReceita(
+  empresaId: number,
+  inicio: string,
+  fim: string,
+): Promise<TotaisDeReceita> {
+  const [linha] = await db
+    .select({
+      total: sql<string>`coalesce(sum(${receita.valor}), 0)`,
+      totalAtendimentos: sql<string>`coalesce(sum(${receita.valor}) filter (where ${receita.agendamentoId} is not null), 0)`,
+      atendimentosRecebidos: sql<number>`cast(count(*) filter (where ${receita.agendamentoId} is not null) as int)`,
+    })
+    .from(receita)
+    .where(and(eq(receita.empresaId, empresaId), between(receita.dataRecebimento, inicio, fim)));
+  return {
+    total: Dinheiro.de(linha?.total ?? '0'),
+    totalAtendimentos: Dinheiro.de(linha?.totalAtendimentos ?? '0'),
+    atendimentosRecebidos: Number(linha?.atendimentosRecebidos ?? 0),
+  };
 }
 
 async function somarReceitas(empresaId: number, inicio: string, fim: string): Promise<string> {
-  const [linha] = await db
-    .select({ total: sql<string>`coalesce(sum(${receita.valor}), 0)` })
-    .from(receita)
-    .where(
-      and(
-        eq(receita.empresaId, empresaId),
-        between(receita.dataRecebimento, inicio, fim),
-      ),
-    );
-  return Dinheiro.de(linha?.total ?? '0');
+  return (await obterTotaisDeReceita(empresaId, inicio, fim)).total;
 }
 
 async function somarDespesas(empresaId: number, inicio: string, fim: string): Promise<string> {
   const [linha] = await db
     .select({ total: sql<string>`coalesce(sum(${despesa.valor}), 0)` })
     .from(despesa)
-    .where(
-      and(eq(despesa.empresaId, empresaId), between(despesa.dataPagamento, inicio, fim)),
-    );
+    .where(and(eq(despesa.empresaId, empresaId), between(despesa.dataPagamento, inicio, fim)));
   return Dinheiro.de(linha?.total ?? '0');
+}
+
+/** Regra canônica dos indicadores usados por painel, financeiro e relatórios. */
+export async function montarResumoFinanceiroDoPeriodo(
+  empresaId: number,
+  inicio: string,
+  fim: string,
+): Promise<ResumoFinanceiro> {
+  const [receitas, totalDespesas] = await Promise.all([
+    obterTotaisDeReceita(empresaId, inicio, fim),
+    somarDespesas(empresaId, inicio, fim),
+  ]);
+
+  return montarResumo(
+    receitas.total,
+    totalDespesas,
+    receitas.totalAtendimentos,
+    receitas.atendimentosRecebidos,
+  );
+}
+
+async function somarAReceber(empresaId: number): Promise<string> {
+  const [pendente] = await db
+    .select({ total: sql<string>`coalesce(sum(${agendamento.total}), 0)` })
+    .from(agendamento)
+    .where(
+      and(
+        eq(agendamento.empresaId, empresaId),
+        eq(agendamento.pago, false),
+        inArray(agendamento.status, ['EM_ANDAMENTO', 'CONCLUIDO']),
+      ),
+    );
+
+  return Dinheiro.de(pendente?.total ?? '0');
 }
 
 export async function indicadores(contexto: Contexto): Promise<IndicadoresFinanceiros> {
@@ -56,40 +101,25 @@ export async function indicadores(contexto: Contexto): Promise<IndicadoresFinanc
   const mesInicio = paraISO(inicioDoMes(hoje));
   const anoInicio = paraISO(m(hoje).startOf('year'));
 
-  const [receitaDia, receitaSemana, receitaMes, receitaAno, despesaMes, pendente] =
-    await Promise.all([
-      somarReceitas(contexto.empresaId, hoje, hoje),
-      somarReceitas(contexto.empresaId, semana, hoje),
-      somarReceitas(contexto.empresaId, mesInicio, hoje),
-      somarReceitas(contexto.empresaId, anoInicio, hoje),
-      somarDespesas(contexto.empresaId, mesInicio, hoje),
-      db
-        .select({ total: sql<string>`coalesce(sum(${agendamento.total}), 0)` })
-        .from(agendamento)
-        .where(
-          and(
-            eq(agendamento.empresaId, contexto.empresaId),
-            eq(agendamento.pago, false),
-            inArray(agendamento.status, ['EM_ANDAMENTO', 'CONCLUIDO']),
-          ),
-        ),
-    ]);
-
-  const lucroMes = Dinheiro.subtrair(receitaMes, despesaMes);
-  const receitaNumero = Dinheiro.paraNumero(receitaMes);
+  const [receitaDia, receitaSemana, receitaAno, resumoMes, aReceber] = await Promise.all([
+    somarReceitas(contexto.empresaId, hoje, hoje),
+    somarReceitas(contexto.empresaId, semana, hoje),
+    somarReceitas(contexto.empresaId, anoInicio, hoje),
+    montarResumoFinanceiroDoPeriodo(contexto.empresaId, mesInicio, hoje),
+    somarAReceber(contexto.empresaId),
+  ]);
 
   return {
     receitaDia,
     receitaSemana,
-    receitaMes,
+    receitaMes: resumoMes.receita,
     receitaAno,
-    despesaMes,
-    lucroMes,
-    aReceber: Dinheiro.de(pendente[0]?.total ?? '0'),
-    margem:
-      receitaNumero === 0
-        ? 0
-        : Number(((Dinheiro.paraNumero(lucroMes) / receitaNumero) * 100).toFixed(1)),
+    despesaMes: resumoMes.despesa,
+    lucroMes: resumoMes.saldo,
+    aReceber,
+    ticketMedio: resumoMes.ticketMedio,
+    atendimentosRecebidosMes: resumoMes.atendimentosRecebidos,
+    margem: resumoMes.margem,
   };
 }
 
@@ -105,7 +135,9 @@ export interface LancamentoFinanceiro {
 export async function listarLancamentos(
   contexto: Contexto,
   filtro: FiltroFinanceiro,
-): Promise<Result<{ lancamentos: LancamentoFinanceiro[]; inicio: string; fim: string; saldo: string }>> {
+): Promise<
+  Result<{ lancamentos: LancamentoFinanceiro[]; inicio: string; fim: string; saldo: string }>
+> {
   const hoje = hojeISO();
   const inicio = filtro.inicio ?? paraISO(inicioDoMes(hoje));
   const fimBruto = filtro.fim ?? paraISO(fimDoMes(hoje));
@@ -155,10 +187,7 @@ export async function listarLancamentos(
       })
       .from(despesa)
       .where(
-        and(
-          eq(despesa.empresaId, contexto.empresaId),
-          between(despesa.dataPagamento, inicio, fim),
-        ),
+        and(eq(despesa.empresaId, contexto.empresaId), between(despesa.dataPagamento, inicio, fim)),
       )
       .orderBy(desc(despesa.dataPagamento));
 
@@ -280,11 +309,12 @@ export async function serieDeFaturamento(contexto: Contexto, meses = 6) {
     const referencia = m().subtract(indice, 'months');
     const inicio = paraISO(inicioDoMes(referencia));
     const fim = paraISO(fimDoMes(referencia));
-    const [receitaMes, despesaMes] = await Promise.all([
-      somarReceitas(contexto.empresaId, inicio, fim),
-      somarDespesas(contexto.empresaId, inicio, fim),
-    ]);
-    serie.push({ mes: referencia.format('MMM/YY'), receita: receitaMes, despesa: despesaMes });
+    const resumo = await montarResumoFinanceiroDoPeriodo(contexto.empresaId, inicio, fim);
+    serie.push({
+      mes: referencia.format('MMM/YY'),
+      receita: resumo.receita,
+      despesa: resumo.despesa,
+    });
   }
   return serie;
 }
