@@ -132,28 +132,21 @@ export async function montarRelatorio(
 
   const idsConcluidos = concluidos.filter((a) => a.status === 'CONCLUIDO').map((a) => a.id);
 
-  if (idsConcluidos.length > 0) {
-    const itens = await db
-      .select({
-        nome: servico.nome,
-        quantidade: sql<number>`cast(count(*) as int)`,
-        valor: sql<string>`coalesce(sum(${agendamentoServico.precoUnitario}), 0)`,
-      })
-      .from(agendamentoServico)
-      .innerJoin(servico, eq(servico.id, agendamentoServico.servicoId))
-      .where(inArray(agendamentoServico.agendamentoId, idsConcluidos))
-      .groupBy(servico.nome);
+  const rankingPromise =
+    idsConcluidos.length === 0
+      ? Promise.resolve([])
+      : db
+          .select({
+            nome: servico.nome,
+            quantidade: sql<number>`cast(count(*) as int)`,
+            valor: sql<string>`coalesce(sum(${agendamentoServico.precoUnitario}), 0)`,
+          })
+          .from(agendamentoServico)
+          .innerJoin(servico, eq(servico.id, agendamentoServico.servicoId))
+          .where(inArray(agendamentoServico.agendamentoId, idsConcluidos))
+          .groupBy(servico.nome);
 
-    relatorio.rankingServicos = ordenarRanking(
-      itens.map((i) => ({
-        nome: i.nome,
-        quantidade: Number(i.quantidade),
-        valor: Dinheiro.de(i.valor),
-      })),
-    );
-  }
-
-  const categorias = await db
+  const categoriasPromise = db
     .select({
       categoria: despesa.categoria,
       valor: sql<string>`coalesce(sum(${despesa.valor}), 0)`,
@@ -167,11 +160,7 @@ export async function montarRelatorio(
     )
     .groupBy(despesa.categoria);
 
-  relatorio.despesasPorCategoria = categorias
-    .map((c) => ({ categoria: c.categoria, valor: Dinheiro.de(c.valor) }))
-    .sort((a, b) => Dinheiro.comparar(b.valor, a.valor));
-
-  const formas = await db
+  const formasPromise = db
     .select({
       forma: formaPagamento.nome,
       valor: sql<string>`coalesce(sum(${receita.valor}), 0)`,
@@ -186,11 +175,7 @@ export async function montarRelatorio(
     )
     .groupBy(formaPagamento.nome);
 
-  relatorio.receitasPorForma = formas
-    .map((f) => ({ forma: f.forma, valor: Dinheiro.de(f.valor) }))
-    .sort((a, b) => Dinheiro.comparar(b.valor, a.valor));
-
-  const receitasDetalhe = await db
+  const receitasDetalhePromise = db
     .select({
       data: receita.dataRecebimento,
       descricao: receita.descricao,
@@ -207,9 +192,7 @@ export async function montarRelatorio(
     )
     .orderBy(receita.dataRecebimento);
 
-  relatorio.lancamentosReceita = receitasDetalhe;
-
-  const despesasDetalhe = await db
+  const despesasDetalhePromise = db
     .select({
       data: despesa.dataPagamento,
       descricao: despesa.descricao,
@@ -225,25 +208,56 @@ export async function montarRelatorio(
     )
     .orderBy(despesa.dataPagamento);
 
+  const servicosPorAgendamentoPromise =
+    concluidos.length === 0
+      ? Promise.resolve([])
+      : db
+          .select({ agendamentoId: agendamentoServico.agendamentoId, nome: servico.nome })
+          .from(agendamentoServico)
+          .innerJoin(servico, eq(servico.id, agendamentoServico.servicoId))
+          .where(
+            inArray(
+              agendamentoServico.agendamentoId,
+              concluidos.map((a) => a.id),
+            ),
+          );
+  const [
+    itens,
+    categorias,
+    formas,
+    receitasDetalhe,
+    despesasDetalhe,
+    servicosPorAgendamentoLinhas,
+  ] = await Promise.all([
+    rankingPromise,
+    categoriasPromise,
+    formasPromise,
+    receitasDetalhePromise,
+    despesasDetalhePromise,
+    servicosPorAgendamentoPromise,
+  ]);
+
+  relatorio.rankingServicos = ordenarRanking(
+    itens.map((item) => ({
+      nome: item.nome,
+      quantidade: Number(item.quantidade),
+      valor: Dinheiro.de(item.valor),
+    })),
+  );
+  relatorio.despesasPorCategoria = categorias
+    .map((categoria) => ({ categoria: categoria.categoria, valor: Dinheiro.de(categoria.valor) }))
+    .sort((a, b) => Dinheiro.comparar(b.valor, a.valor));
+  relatorio.receitasPorForma = formas
+    .map((forma) => ({ forma: forma.forma, valor: Dinheiro.de(forma.valor) }))
+    .sort((a, b) => Dinheiro.comparar(b.valor, a.valor));
+  relatorio.lancamentosReceita = receitasDetalhe;
   relatorio.lancamentosDespesa = despesasDetalhe;
 
   const servicosPorAgendamento = new Map<number, string[]>();
-  if (concluidos.length > 0) {
-    const linhas = await db
-      .select({ agendamentoId: agendamentoServico.agendamentoId, nome: servico.nome })
-      .from(agendamentoServico)
-      .innerJoin(servico, eq(servico.id, agendamentoServico.servicoId))
-      .where(
-        inArray(
-          agendamentoServico.agendamentoId,
-          concluidos.map((a) => a.id),
-        ),
-      );
-    for (const linha of linhas) {
-      const atual = servicosPorAgendamento.get(linha.agendamentoId) ?? [];
-      atual.push(linha.nome);
-      servicosPorAgendamento.set(linha.agendamentoId, atual);
-    }
+  for (const linha of servicosPorAgendamentoLinhas) {
+    const atual = servicosPorAgendamento.get(linha.agendamentoId) ?? [];
+    atual.push(linha.nome);
+    servicosPorAgendamento.set(linha.agendamentoId, atual);
   }
 
   relatorio.atendimentos = concluidos.map((a) => ({

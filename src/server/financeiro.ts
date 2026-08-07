@@ -49,10 +49,6 @@ async function obterTotaisDeReceita(
   };
 }
 
-async function somarReceitas(empresaId: number, inicio: string, fim: string): Promise<string> {
-  return (await obterTotaisDeReceita(empresaId, inicio, fim)).total;
-}
-
 async function somarDespesas(empresaId: number, inicio: string, fim: string): Promise<string> {
   const [linha] = await db
     .select({ total: sql<string>`coalesce(sum(${despesa.valor}), 0)` })
@@ -101,19 +97,40 @@ export async function indicadores(contexto: Contexto): Promise<IndicadoresFinanc
   const mesInicio = paraISO(inicioDoMes(hoje));
   const anoInicio = paraISO(m(hoje).startOf('year'));
 
-  const [receitaDia, receitaSemana, receitaAno, resumoMes, aReceber] = await Promise.all([
-    somarReceitas(contexto.empresaId, hoje, hoje),
-    somarReceitas(contexto.empresaId, semana, hoje),
-    somarReceitas(contexto.empresaId, anoInicio, hoje),
-    montarResumoFinanceiroDoPeriodo(contexto.empresaId, mesInicio, hoje),
+  const [receitas, despesaMes, aReceber] = await Promise.all([
+    db
+      .select({
+        dia: sql<string>`coalesce(sum(${receita.valor}) filter (where ${receita.dataRecebimento} = ${hoje}), 0)`,
+        semana: sql<string>`coalesce(sum(${receita.valor}) filter (where ${receita.dataRecebimento} between ${semana} and ${hoje}), 0)`,
+        mes: sql<string>`coalesce(sum(${receita.valor}) filter (where ${receita.dataRecebimento} between ${mesInicio} and ${hoje}), 0)`,
+        ano: sql<string>`coalesce(sum(${receita.valor}), 0)`,
+        atendimentosMes: sql<string>`coalesce(sum(${receita.valor}) filter (where ${receita.agendamentoId} is not null and ${receita.dataRecebimento} between ${mesInicio} and ${hoje}), 0)`,
+        quantidadeAtendimentosMes: sql<number>`cast(count(*) filter (where ${receita.agendamentoId} is not null and ${receita.dataRecebimento} between ${mesInicio} and ${hoje}) as int)`,
+      })
+      .from(receita)
+      .where(
+        and(
+          eq(receita.empresaId, contexto.empresaId),
+          between(receita.dataRecebimento, anoInicio, hoje),
+        ),
+      ),
+    somarDespesas(contexto.empresaId, mesInicio, hoje),
     somarAReceber(contexto.empresaId),
   ]);
 
+  const linha = receitas[0];
+  const resumoMes = montarResumo(
+    Dinheiro.de(linha?.mes ?? '0'),
+    despesaMes,
+    Dinheiro.de(linha?.atendimentosMes ?? '0'),
+    Number(linha?.quantidadeAtendimentosMes ?? 0),
+  );
+
   return {
-    receitaDia,
-    receitaSemana,
+    receitaDia: Dinheiro.de(linha?.dia ?? '0'),
+    receitaSemana: Dinheiro.de(linha?.semana ?? '0'),
     receitaMes: resumoMes.receita,
-    receitaAno,
+    receitaAno: Dinheiro.de(linha?.ano ?? '0'),
     despesaMes: resumoMes.despesa,
     lucroMes: resumoMes.saldo,
     aReceber,
@@ -143,65 +160,66 @@ export async function listarLancamentos(
   const fimBruto = filtro.fim ?? paraISO(fimDoMes(hoje));
   const fim = m(fimBruto).isBefore(m(inicio)) ? inicio : fimBruto;
 
-  const lancamentos: LancamentoFinanceiro[] = [];
+  const entradasPromise =
+    filtro.tipo === 'saidas'
+      ? Promise.resolve([])
+      : db
+          .select({
+            id: receita.id,
+            descricao: receita.descricao,
+            valor: receita.valor,
+            data: receita.dataRecebimento,
+            forma: formaPagamento.nome,
+          })
+          .from(receita)
+          .leftJoin(formaPagamento, eq(formaPagamento.id, receita.formaPagamentoId))
+          .where(
+            and(
+              eq(receita.empresaId, contexto.empresaId),
+              between(receita.dataRecebimento, inicio, fim),
+            ),
+          )
+          .orderBy(desc(receita.dataRecebimento));
 
-  if (filtro.tipo !== 'saidas') {
-    const entradas = await db
-      .select({
-        id: receita.id,
-        descricao: receita.descricao,
-        valor: receita.valor,
-        data: receita.dataRecebimento,
-        forma: formaPagamento.nome,
-      })
-      .from(receita)
-      .leftJoin(formaPagamento, eq(formaPagamento.id, receita.formaPagamentoId))
-      .where(
-        and(
-          eq(receita.empresaId, contexto.empresaId),
-          between(receita.dataRecebimento, inicio, fim),
-        ),
-      )
-      .orderBy(desc(receita.dataRecebimento));
+  const saidasPromise =
+    filtro.tipo === 'entradas'
+      ? Promise.resolve([])
+      : db
+          .select({
+            id: despesa.id,
+            descricao: despesa.descricao,
+            valor: despesa.valor,
+            data: despesa.dataPagamento,
+            categoria: despesa.categoria,
+          })
+          .from(despesa)
+          .where(
+            and(
+              eq(despesa.empresaId, contexto.empresaId),
+              between(despesa.dataPagamento, inicio, fim),
+            ),
+          )
+          .orderBy(desc(despesa.dataPagamento));
 
-    for (const entrada of entradas) {
-      lancamentos.push({
-        id: entrada.id,
-        tipo: 'ENTRADA',
-        descricao: entrada.descricao,
-        categoria: entrada.forma ?? 'Recebimento',
-        valor: entrada.valor,
-        data: entrada.data,
-      });
-    }
-  }
-
-  if (filtro.tipo !== 'entradas') {
-    const saidas = await db
-      .select({
-        id: despesa.id,
-        descricao: despesa.descricao,
-        valor: despesa.valor,
-        data: despesa.dataPagamento,
-        categoria: despesa.categoria,
-      })
-      .from(despesa)
-      .where(
-        and(eq(despesa.empresaId, contexto.empresaId), between(despesa.dataPagamento, inicio, fim)),
-      )
-      .orderBy(desc(despesa.dataPagamento));
-
-    for (const saida of saidas) {
-      lancamentos.push({
-        id: saida.id,
-        tipo: 'SAIDA',
-        descricao: saida.descricao,
-        categoria: saida.categoria,
-        valor: saida.valor,
-        data: saida.data,
-      });
-    }
-  }
+  const [entradas, saidas] = await Promise.all([entradasPromise, saidasPromise]);
+  const lancamentos: LancamentoFinanceiro[] = [
+    ...entradas.map((entrada) => ({
+      id: entrada.id,
+      tipo: 'ENTRADA' as const,
+      descricao: entrada.descricao,
+      categoria: entrada.forma ?? 'Recebimento',
+      valor: entrada.valor,
+      data: entrada.data,
+    })),
+    ...saidas.map((saida) => ({
+      id: saida.id,
+      tipo: 'SAIDA' as const,
+      descricao: saida.descricao,
+      categoria: saida.categoria,
+      valor: saida.valor,
+      data: saida.data,
+    })),
+  ];
 
   const filtrados = lancamentos.filter(
     (item) =>
@@ -304,19 +322,44 @@ export async function listarFormasPagamento(contexto: Contexto, incluirInativas:
 
 /** Serie de faturamento dos ultimos meses, para o grafico do painel. */
 export async function serieDeFaturamento(contexto: Contexto, meses = 6) {
-  const serie: Array<{ mes: string; receita: string; despesa: string }> = [];
-  for (let indice = meses - 1; indice >= 0; indice -= 1) {
-    const referencia = m().subtract(indice, 'months');
-    const inicio = paraISO(inicioDoMes(referencia));
-    const fim = paraISO(fimDoMes(referencia));
-    const resumo = await montarResumoFinanceiroDoPeriodo(contexto.empresaId, inicio, fim);
-    serie.push({
+  const referenciaInicial = m().subtract(meses - 1, 'months');
+  const inicio = paraISO(inicioDoMes(referenciaInicial));
+  const fim = paraISO(fimDoMes(m()));
+  const mesDaReceita = sql<string>`to_char(date_trunc('month', ${receita.dataRecebimento}), 'YYYY-MM')`;
+  const mesDaDespesa = sql<string>`to_char(date_trunc('month', ${despesa.dataPagamento}), 'YYYY-MM')`;
+
+  const [receitas, despesas] = await Promise.all([
+    db
+      .select({ mes: mesDaReceita, total: sql<string>`coalesce(sum(${receita.valor}), 0)` })
+      .from(receita)
+      .where(
+        and(
+          eq(receita.empresaId, contexto.empresaId),
+          between(receita.dataRecebimento, inicio, fim),
+        ),
+      )
+      .groupBy(mesDaReceita),
+    db
+      .select({ mes: mesDaDespesa, total: sql<string>`coalesce(sum(${despesa.valor}), 0)` })
+      .from(despesa)
+      .where(
+        and(eq(despesa.empresaId, contexto.empresaId), between(despesa.dataPagamento, inicio, fim)),
+      )
+      .groupBy(mesDaDespesa),
+  ]);
+
+  const receitasPorMes = new Map(receitas.map((item) => [item.mes, Dinheiro.de(item.total)]));
+  const despesasPorMes = new Map(despesas.map((item) => [item.mes, Dinheiro.de(item.total)]));
+
+  return Array.from({ length: meses }, (_, indice) => {
+    const referencia = referenciaInicial.clone().add(indice, 'months');
+    const chave = referencia.format('YYYY-MM');
+    return {
       mes: referencia.format('MMM/YY'),
-      receita: resumo.receita,
-      despesa: resumo.despesa,
-    });
-  }
-  return serie;
+      receita: receitasPorMes.get(chave) ?? Dinheiro.zero,
+      despesa: despesasPorMes.get(chave) ?? Dinheiro.zero,
+    };
+  });
 }
 
 export async function despesasPorCategoria(contexto: Contexto, inicio: string, fim: string) {

@@ -4,6 +4,7 @@ import { carregarContexto } from '@/auth/contexto';
 import { Casca } from '@/components/painel/casca';
 import { tokensDeAcento } from '@/domain/tema';
 import { lerPreferencias } from '@/server/configuracoes';
+import { contarNaoLidas } from '@/server/notificacoes';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,7 +16,10 @@ export default async function LayoutDoPainel({ children }: { children: ReactNode
     redirect(`/login?motivo=${motivo}`);
   }
 
-  const preferencias = await lerPreferencias(contexto.value);
+  const [preferencias, notificacoesNaoLidas] = await Promise.all([
+    lerPreferencias(contexto.value),
+    contarNaoLidas(contexto.value),
+  ]);
 
   // O acento do tenant entra como variável CSS: um único ponto de verdade
   // para toda a interface, já ajustado para contraste AA nos dois modos.
@@ -33,6 +37,20 @@ export default async function LayoutDoPainel({ children }: { children: ReactNode
         proximoVencimento={contexto.value.empresa.proximoVencimento}
         inatividadeAtiva={preferencias.inatividadeAtiva}
         inatividadeMinutos={preferencias.inatividadeMinutos}
+        sessaoInicial={{
+          usuario: {
+            id: contexto.value.usuario.usuarioId,
+            nome: contexto.value.usuario.nome,
+            email: contexto.value.usuario.email,
+            papel: contexto.value.papel,
+            ehSuperAdmin: contexto.value.usuario.ehSuperAdmin,
+            ehAdministrador: contexto.value.usuario.ehAdministrador,
+          },
+          empresa: contexto.value.empresa,
+          recursos: [...contexto.value.recursos],
+          preferencias,
+          notificacoesNaoLidas,
+        }}
       >
         {children}
       </Casca>

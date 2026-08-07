@@ -31,7 +31,7 @@ import type { Papel, Recurso, StatusAssinatura } from '@/domain/plano';
 import { diasEmAtraso } from '@/domain/plano';
 import type { ModoTema } from '@/domain/tema';
 import { formatarData } from '@/domain/shared/tempo';
-import { useSessao } from '@/hooks/use-sessao';
+import { useSessao, type SessaoAtual } from '@/hooks/use-sessao';
 import { api } from '@/lib/api';
 import { aplicarTemaNoDocumento } from '@/lib/tema-cliente';
 import { cn } from '@/lib/utils';
@@ -73,6 +73,7 @@ export function Casca({
   proximoVencimento,
   inatividadeAtiva,
   inatividadeMinutos,
+  sessaoInicial,
 }: {
   children: ReactNode;
   modoInicial: ModoTema;
@@ -84,10 +85,11 @@ export function Casca({
   proximoVencimento: string;
   inatividadeAtiva: boolean;
   inatividadeMinutos: number;
+  sessaoInicial: SessaoAtual;
 }) {
   const caminho = usePathname();
   const clienteDeCache = useQueryClient();
-  const { data: sessao } = useSessao();
+  const { data: sessao } = useSessao(sessaoInicial);
   const [menuAberto, setMenuAberto] = useState(false);
   const [modo, setModo] = useState<ModoTema>(modoInicial === 'sistema' ? 'escuro' : modoInicial);
 

@@ -1,10 +1,6 @@
 import { and, count, desc, eq, ne, sql } from 'drizzle-orm';
 import type { Contexto } from '@/auth/contexto';
-import {
-  exigirAdministrador,
-  exigirAdministradorDaEmpresa,
-  exigirRecurso,
-} from '@/auth/contexto';
+import { exigirAdministrador, exigirAdministradorDaEmpresa, exigirRecurso } from '@/auth/contexto';
 import { gerarHash } from '@/auth/senha';
 import { db } from '@/db/client';
 import {
@@ -26,6 +22,7 @@ import {
   CHAVE_TEMA_MODO,
   resolverMinutos,
   resolverTema,
+  type Acento,
   type ModoTema,
 } from '@/domain/tema';
 import type {
@@ -64,7 +61,7 @@ export async function gravarParametro(
 }
 
 export interface PreferenciasDaEmpresa {
-  acento: string;
+  acento: Acento;
   hex: string;
   modo: ModoTema;
   inatividadeAtiva: boolean;
@@ -212,7 +209,11 @@ async function contarUsuariosAtivos(empresaId: number): Promise<number> {
     .select({ total: count() })
     .from(usuario)
     .where(
-      and(eq(usuario.empresaId, empresaId), eq(usuario.ativo, true), ne(usuario.papel, 'SUPER_ADMIN')),
+      and(
+        eq(usuario.empresaId, empresaId),
+        eq(usuario.ativo, true),
+        ne(usuario.papel, 'SUPER_ADMIN'),
+      ),
     );
   return Number(contagem?.total ?? 0);
 }
@@ -375,11 +376,7 @@ export async function alternarUsuarioAtivo(
 // Dados cadastrais da empresa
 // ---------------------------------------------------------------------------
 
-function descreverAlteracao(
-  campo: string,
-  atual: string | null,
-  proposto: string | null,
-): string {
+function descreverAlteracao(campo: string, atual: string | null, proposto: string | null): string {
   const de = atual === null || atual === '' ? '(vazio)' : atual;
   const para = proposto === null || proposto === '' ? '(vazio)' : proposto;
   if (de.toLowerCase() === para.toLowerCase()) return `• ${campo}: ${para} (sem alteração)`;

@@ -234,8 +234,6 @@ export async function listarNotificacoes(
 }
 
 export async function contarNaoLidas(contexto: Contexto): Promise<number> {
-  await sincronizarAlertas(contexto);
-
   const escopo = contexto.usuario.ehSuperAdmin
     ? isNull(notificacao.empresaId)
     : eq(notificacao.empresaId, contexto.empresaId);

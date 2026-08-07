@@ -41,7 +41,12 @@ export interface SessaoAtual {
   notificacoesNaoLidas: number;
 }
 
-export function useSessao() {
+/**
+ * A casca do painel ja recebe esta informacao no Server Component. Ao usa-la
+ * como dado inicial, evitamos uma segunda chamada a /auth/sessao logo apos a
+ * hidratacao; as demais telas continuam compartilhando a mesma chave cacheada.
+ */
+export function useSessao(inicial?: SessaoAtual) {
   return useQuery({
     queryKey: chaves.sessao,
     queryFn: async (): Promise<SessaoAtual> => {
@@ -50,6 +55,7 @@ export function useSessao() {
     },
     staleTime: 60_000,
     retry: false,
+    initialData: inicial,
   });
 }
 

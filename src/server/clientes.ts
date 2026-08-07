@@ -60,24 +60,25 @@ export async function listarClientes(
 
   if (registros.length === 0) return ok([]);
 
-  const veiculosPorCliente = await db
-    .select({ clienteId: veiculo.clienteId, total: count() })
-    .from(veiculo)
-    .where(and(eq(veiculo.empresaId, contexto.empresaId), eq(veiculo.ativo, true)))
-    .groupBy(veiculo.clienteId);
-
-  const metricas = await db
-    .select({
-      clienteId: agendamento.clienteId,
-      total: count(),
-      gasto: sum(agendamento.total),
-      ultimo: max(agendamento.dataHora),
-    })
-    .from(agendamento)
-    .where(
-      and(eq(agendamento.empresaId, contexto.empresaId), eq(agendamento.status, 'CONCLUIDO')),
-    )
-    .groupBy(agendamento.clienteId);
+  const [veiculosPorCliente, metricas] = await Promise.all([
+    db
+      .select({ clienteId: veiculo.clienteId, total: count() })
+      .from(veiculo)
+      .where(and(eq(veiculo.empresaId, contexto.empresaId), eq(veiculo.ativo, true)))
+      .groupBy(veiculo.clienteId),
+    db
+      .select({
+        clienteId: agendamento.clienteId,
+        total: count(),
+        gasto: sum(agendamento.total),
+        ultimo: max(agendamento.dataHora),
+      })
+      .from(agendamento)
+      .where(
+        and(eq(agendamento.empresaId, contexto.empresaId), eq(agendamento.status, 'CONCLUIDO')),
+      )
+      .groupBy(agendamento.clienteId),
+  ]);
 
   const mapaVeiculos = new Map(veiculosPorCliente.map((v) => [v.clienteId, Number(v.total)]));
   const mapaMetricas = new Map(metricas.map((m) => [m.clienteId, m]));
@@ -91,7 +92,10 @@ export async function listarClientes(
       if (contemTermo(registro.nome, termo)) return true;
       if (contemTermo(registro.email, termo)) return true;
       if (contemTermo(registro.cidade, termo)) return true;
-      if (digitos !== '' && (registro.telefone.includes(digitos) || (registro.cpfCnpj ?? '').includes(digitos))) {
+      if (
+        digitos !== '' &&
+        (registro.telefone.includes(digitos) || (registro.cpfCnpj ?? '').includes(digitos))
+      ) {
         return true;
       }
       return false;
@@ -117,7 +121,8 @@ export async function listarClientes(
   const ordenada = [...lista].sort((a, b) => {
     switch (filtro.ordenacao) {
       case 'ultimo_atendimento': {
-        if (a.ultimoAtendimento === b.ultimoAtendimento) return a.nome.localeCompare(b.nome, 'pt-BR');
+        if (a.ultimoAtendimento === b.ultimoAtendimento)
+          return a.nome.localeCompare(b.nome, 'pt-BR');
         if (a.ultimoAtendimento === null) return 1;
         if (b.ultimoAtendimento === null) return -1;
         return b.ultimoAtendimento.localeCompare(a.ultimoAtendimento);

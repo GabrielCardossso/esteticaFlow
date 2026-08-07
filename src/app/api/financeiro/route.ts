@@ -13,8 +13,11 @@ export async function GET(request: Request) {
   return comContexto(async (contexto) => {
     const acesso = exigirRecurso(contexto, 'FINANCEIRO');
     if (!acesso.ok) return acesso;
-    const lancamentos = await listarLancamentos(contexto, query.dados);
+    const [lancamentos, indicadoresDoPeriodo] = await Promise.all([
+      listarLancamentos(contexto, query.dados),
+      indicadores(contexto),
+    ]);
     if (!lancamentos.ok) return lancamentos;
-    return ok({ ...lancamentos.value, indicadores: await indicadores(contexto) });
+    return ok({ ...lancamentos.value, indicadores: indicadoresDoPeriodo });
   });
 }

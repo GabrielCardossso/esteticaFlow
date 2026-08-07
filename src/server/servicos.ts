@@ -31,27 +31,28 @@ export async function listarServicos(
     condicoes.push(eq(servico.categoriaServicoId, filtro.categoriaId));
   }
 
-  const registros = await db
-    .select({
-      id: servico.id,
-      nome: servico.nome,
-      descricao: servico.descricao,
-      preco: servico.preco,
-      tempoEstimadoMinutos: servico.tempoEstimadoMinutos,
-      ativo: servico.ativo,
-      categoriaId: categoriaServico.id,
-      categoriaNome: categoriaServico.nome,
-    })
-    .from(servico)
-    .innerJoin(categoriaServico, eq(categoriaServico.id, servico.categoriaServicoId))
-    .where(and(...condicoes))
-    .orderBy(servico.nome);
-
-  const vendas = await db
-    .select({ servicoId: agendamentoServico.servicoId, total: count() })
-    .from(agendamentoServico)
-    .where(eq(agendamentoServico.empresaId, contexto.empresaId))
-    .groupBy(agendamentoServico.servicoId);
+  const [registros, vendas] = await Promise.all([
+    db
+      .select({
+        id: servico.id,
+        nome: servico.nome,
+        descricao: servico.descricao,
+        preco: servico.preco,
+        tempoEstimadoMinutos: servico.tempoEstimadoMinutos,
+        ativo: servico.ativo,
+        categoriaId: categoriaServico.id,
+        categoriaNome: categoriaServico.nome,
+      })
+      .from(servico)
+      .innerJoin(categoriaServico, eq(categoriaServico.id, servico.categoriaServicoId))
+      .where(and(...condicoes))
+      .orderBy(servico.nome),
+    db
+      .select({ servicoId: agendamentoServico.servicoId, total: count() })
+      .from(agendamentoServico)
+      .where(eq(agendamentoServico.empresaId, contexto.empresaId))
+      .groupBy(agendamentoServico.servicoId),
+  ]);
 
   const mapaVendas = new Map(vendas.map((v) => [v.servicoId, Number(v.total)]));
 

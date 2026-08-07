@@ -119,7 +119,12 @@ async function criarDemonstracao(db: ReturnType<typeof drizzle<typeof schema>>):
     .where(eq(empresa.cnpj, CNPJ_DEMO))
     .limit(1);
 
-  if (existente !== undefined) return false;
+  if (existente !== undefined) {
+    if (process.env.SEED_DEMO_RECRIAR !== 'true') return false;
+    // O CNPJ ficticio identifica apenas o tenant demonstrativo. As FKs em
+    // cascata removem exclusivamente os registros desta empresa.
+    await db.delete(empresa).where(eq(empresa.id, existente.id));
+  }
 
   const senhaHash = await bcrypt.hash(process.env.SEED_DEMO_SENHA ?? SENHA_DEMO, 10);
 
@@ -441,10 +446,10 @@ async function criarDemonstracao(db: ReturnType<typeof drizzle<typeof schema>>):
           ['Aline Barros', '85274196300', '48994455667', 'aline@exemplo.com.br'],
           ['Diego Ramos', '45678912300', '48995566778', 'diego@exemplo.com.br'],
           ['Sofia Nascimento', '96385274100', '48996677889', 'sofia@exemplo.com.br'],
-        ].map(([nome, cpfCnpj, telefone, email], indice) => ({
+        ].map(([nome, _cpfCnpj, telefone, email], indice) => ({
           empresaId: demo.id,
           nome: nome as string,
-          cpfCnpj: cpfCnpj as string,
+          cpfCnpj: null,
           telefone: telefone as string,
           email: email as string,
           cidade: indice < 12 ? 'Florianópolis' : 'São José',
@@ -515,17 +520,24 @@ async function criarDemonstracao(db: ReturnType<typeof drizzle<typeof schema>>):
       ['Lavagem técnica completa', 'Higienização de ar-condicionado'],
     ];
 
+    const atendimentosPorMes = [27, 29, 28, 31, 29, 30];
+    // Tickets cotidianos variados, com um detalhamento premium mensal. Os
+    // indicadores surgem dos agendamentos e receitas, nunca de valores fixos.
+    const roteiroDeServicos = [
+      1, 2, 3, 4, 6, 7, 1, 2, 3, 4, 6, 7, 1, 2, 3, 4, 6, 7, 1, 2, 3, 4, 6, 7, 1, 2, 3, 4, 6, 5,
+    ];
     const historico = Array.from({ length: 6 }, (_, indice) =>
-      combinacoes.map((nomes, ordem) => {
+      Array.from({ length: atendimentosPorMes[indice] ?? 28 }, (_, ordem) => {
+        const nomes = combinacoes[roteiroDeServicos[ordem] ?? 1] ?? combinacoes[1] ?? [];
         const lista = nomes.map(servicoPorNome);
         const subtotal = lista.reduce((total, item) => total + Number(item.preco), 0);
-        const desconto = ordem === 3 ? 30 : ordem === 5 ? 90 : 0;
+        const desconto = ordem % 11 === 3 ? 30 : ordem % 17 === 5 ? 50 : 0;
         return {
           empresaId: demo.id,
-          clienteId: clientes[(indice * 3 + ordem) % clientes.length]?.id ?? 0,
-          veiculoId: veiculos[(indice * 4 + ordem) % veiculos.length]?.id ?? 0,
+          clienteId: clientes[(indice * 5 + ordem) % clientes.length]?.id ?? 0,
+          veiculoId: veiculos[(indice * 7 + ordem) % veiculos.length]?.id ?? 0,
           responsavelId: equipe[1 + ((indice + ordem) % (equipe.length - 1))]?.id ?? null,
-          dataHora: dataDoMes(5 - indice, 3 + ordem * 3, 8 + (ordem % 4) * 2),
+          dataHora: dataDoMes(5 - indice, 2 + ((ordem * 3) % 26), 8 + (ordem % 5) * 2),
           duracaoMinutos: String(
             lista.reduce((total, item) => total + item.tempoEstimadoMinutos, 0),
           ),
@@ -578,24 +590,25 @@ async function criarDemonstracao(db: ReturnType<typeof drizzle<typeof schema>>):
           categoria: 'FIXA' | 'FORNECEDOR' | 'VARIAVEL';
           valor: number;
         }> = [
-          { descricao: 'Aluguel do estúdio', categoria: 'FIXA', valor: 3200 },
-          { descricao: 'Energia elétrica', categoria: 'FIXA', valor: 890 + indice * 25 },
-          { descricao: 'Água e coleta', categoria: 'FIXA', valor: 640 + indice * 18 },
-          { descricao: 'Internet e telefone', categoria: 'FIXA', valor: 179.9 },
+          { descricao: 'Aluguel do estúdio', categoria: 'FIXA', valor: 2800 },
+          { descricao: 'Energia elétrica', categoria: 'FIXA', valor: 640 + indice * 18 },
+          { descricao: 'Água e coleta', categoria: 'FIXA', valor: 430 + (indice % 3) * 22 },
+          { descricao: 'Internet e telefone', categoria: 'FIXA', valor: 169.9 },
+          { descricao: 'Apoio operacional e pró-labore', categoria: 'FIXA', valor: 980 },
           {
             descricao: 'Compra de produtos e reposição',
             categoria: 'FORNECEDOR',
-            valor: 2100 + indice * 180,
+            valor: 1750 + (indice % 4) * 130,
           },
           {
             descricao: 'Marketing local e anúncios',
             categoria: 'VARIAVEL',
-            valor: 680 + indice * 45,
+            valor: 520 + (indice % 3) * 85,
           },
           {
             descricao: 'Manutenção de equipamentos',
             categoria: 'VARIAVEL',
-            valor: 320 + (indice % 3) * 145,
+            valor: 260 + (indice % 3) * 90,
           },
         ];
         return despesasDoMes.map(({ descricao, categoria, valor }) => ({
@@ -626,7 +639,7 @@ async function criarDemonstracao(db: ReturnType<typeof drizzle<typeof schema>>):
     );
 
     const futuros = [
-      ['Lavagem técnica completa', 'Cristalização de para-brisa'],
+      ['Polimento técnico 2 etapas', 'Hidratação de couro'],
       ['Higienização interna'],
       ['Polimento comercial', 'Revitalização de plásticos'],
       ['Lavagem premium SUV', 'Hidratação de couro'],
@@ -649,6 +662,23 @@ async function criarDemonstracao(db: ReturnType<typeof drizzle<typeof schema>>):
       };
     });
     await tx.insert(agendamento).values(futuros);
+
+    await tx.insert(agendamento).values(
+      [0, 2, 4].map((mesesAtras, indice) => ({
+        empresaId: demo.id,
+        clienteId: clientes[(indice + 9) % clientes.length]?.id ?? 0,
+        veiculoId: veiculos[(indice + 10) % veiculos.length]?.id ?? 0,
+        responsavelId: equipe[1 + indice]?.id ?? null,
+        dataHora: dataDoMes(mesesAtras, 24 - indice, 14),
+        duracaoMinutos: '120',
+        status: 'CANCELADO' as const,
+        observacoes: 'Cancelado pelo cliente; reagendar em contato posterior.',
+        subtotal: '409.80',
+        desconto: '0.00',
+        total: '409.80',
+        pago: false,
+      })),
+    );
   });
 
   return true;

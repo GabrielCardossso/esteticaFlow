@@ -19,7 +19,7 @@ import { Botao } from '@/components/ui/botao';
 import { Campo, Selecao } from '@/components/ui/campo';
 import { Cartao } from '@/components/ui/cartao';
 import { Dialogo } from '@/components/ui/dialogo';
-import { EsqueletoDeLista } from '@/components/ui/esqueleto';
+import { Esqueleto, EsqueletoDeLista } from '@/components/ui/esqueleto';
 import { Etiqueta } from '@/components/ui/etiqueta';
 import { Indicador } from '@/components/ui/indicador';
 import { Cabecalho, Celula, Coluna, Corpo, Linha, Tabela } from '@/components/ui/tabela';
@@ -160,33 +160,41 @@ export function PainelFinanceiro() {
       />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Indicador
-          rotulo="Recebido hoje"
-          valor={formatarMoeda(indicadores?.receitaDia ?? 0)}
-          icone={CircleDollarSign}
-        />
-        <Indicador
-          rotulo="Recebido no mês"
-          valor={formatarMoeda(indicadores?.receitaMes ?? 0)}
-          detalhe={`Semana: ${formatarMoeda(indicadores?.receitaSemana ?? 0)}`}
-          tom="acento"
-        />
-        <Indicador
-          rotulo="Resultado do mês"
-          valor={formatarMoeda(indicadores?.lucroMes ?? 0)}
-          detalhe={
-            indicadores?.margem === null || indicadores === undefined
-              ? 'Margem —'
-              : `Margem de ${indicadores.margem}%`
-          }
-          tom={Number(indicadores?.lucroMes ?? 0) >= 0 ? 'positivo' : 'critico'}
-        />
-        <Indicador
-          rotulo="A receber"
-          valor={formatarMoeda(indicadores?.aReceber ?? 0)}
-          detalhe="Atendimentos em aberto"
-          icone={Wallet}
-        />
+        {isLoading
+          ? Array.from({ length: 4 }, (_, indice) => <Esqueleto key={indice} className="h-28" />)
+          : [
+              <Indicador
+                key="hoje"
+                rotulo="Recebido hoje"
+                valor={formatarMoeda(indicadores?.receitaDia ?? 0)}
+                icone={CircleDollarSign}
+              />,
+              <Indicador
+                key="mes"
+                rotulo="Recebido no mês"
+                valor={formatarMoeda(indicadores?.receitaMes ?? 0)}
+                detalhe={`Semana: ${formatarMoeda(indicadores?.receitaSemana ?? 0)}`}
+                tom="acento"
+              />,
+              <Indicador
+                key="resultado"
+                rotulo="Resultado do mês"
+                valor={formatarMoeda(indicadores?.lucroMes ?? 0)}
+                detalhe={
+                  indicadores?.margem === null || indicadores === undefined
+                    ? 'Margem —'
+                    : `Margem de ${indicadores.margem}%`
+                }
+                tom={Number(indicadores?.lucroMes ?? 0) >= 0 ? 'positivo' : 'critico'}
+              />,
+              <Indicador
+                key="receber"
+                rotulo="A receber"
+                valor={formatarMoeda(indicadores?.aReceber ?? 0)}
+                detalhe="Atendimentos em aberto"
+                icone={Wallet}
+              />,
+            ]}
       </section>
 
       <Cartao className="mt-4">
