@@ -37,7 +37,8 @@ import {
   type Acento,
   type ModoTema,
 } from '@/domain/tema';
-import { usePermissao, useSessao } from '@/hooks/use-sessao';
+import { usePermissao, useSessao, type SessaoAtual } from '@/hooks/use-sessao';
+import { aplicarTemaNoDocumento } from '@/lib/tema-cliente';
 import { api, mensagemDeErro } from '@/lib/api';
 import { chaves } from '@/lib/chaves';
 import { cn } from '@/lib/utils';
@@ -123,12 +124,22 @@ export function CentralDeConfiguracoes() {
 
   const salvarTema = useMutation({
     mutationFn: async (dados: { acento: Acento; hex?: string; modo: ModoTema }) => {
-      await api.put('/configuracoes/tema', dados);
+      const resposta = await api.put<RespostaConfiguracoes['preferencias']>(
+        '/configuracoes/tema',
+        dados,
+      );
+      return resposta.data;
     },
-    onSuccess: () => {
+    onSuccess: (preferencias) => {
+      aplicarTemaNoDocumento(preferencias);
+      cache.setQueryData<RespostaConfiguracoes>(chaves.configuracoes, (atual) =>
+        atual === undefined ? atual : { ...atual, preferencias },
+      );
+      cache.setQueryData<SessaoAtual>(chaves.sessao, (atual) =>
+        atual === undefined ? atual : { ...atual, preferencias },
+      );
       invalidar();
       toast.success('Tema atualizado.');
-      window.location.reload();
     },
     onError: (erro) => toast.error(mensagemDeErro(erro)),
   });
@@ -299,9 +310,7 @@ export function CentralDeConfiguracoes() {
               <div>
                 <p className="rotulo-tecnico">Telefone</p>
                 <p className="numerico mt-0.5 text-[var(--tinta)]">
-                  {data.empresa.telefone === null
-                    ? '—'
-                    : formatarTelefone(data.empresa.telefone)}
+                  {data.empresa.telefone === null ? '—' : formatarTelefone(data.empresa.telefone)}
                 </p>
               </div>
             </div>
@@ -369,9 +378,7 @@ export function CentralDeConfiguracoes() {
                   <button
                     key={modo}
                     type="button"
-                    onClick={() =>
-                      salvarTema.mutate({ acento: data.preferencias.acento, modo })
-                    }
+                    onClick={() => salvarTema.mutate({ acento: data.preferencias.acento, modo })}
                     className={cn(
                       'flex flex-1 items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-sm transition-colors',
                       modoAtual === modo
@@ -611,9 +618,7 @@ export function CentralDeConfiguracoes() {
                       <button
                         type="button"
                         aria-label={forma.ativo ? 'Arquivar forma' : 'Reativar forma'}
-                        onClick={() =>
-                          alternarForma.mutate({ id: forma.id, ativo: !forma.ativo })
-                        }
+                        onClick={() => alternarForma.mutate({ id: forma.id, ativo: !forma.ativo })}
                         className="text-[var(--tinta-tenue)] transition-colors hover:text-[var(--tinta)]"
                       >
                         {forma.ativo ? (

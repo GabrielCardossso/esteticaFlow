@@ -22,8 +22,8 @@ const CANAIS = [
     icone: Mail,
     titulo: 'E-mail',
     descricao: 'Para dúvidas de cadastro, plano e faturamento.',
-    acao: 'contato@esteticaflow.com.br',
-    href: 'mailto:contato@esteticaflow.com.br',
+    acao: 'gabrielcardossso@gmail.com',
+    href: 'mailto:gabrielcardossso@gmail.com',
   },
   {
     icone: Phone,

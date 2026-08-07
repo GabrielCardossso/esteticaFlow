@@ -22,7 +22,7 @@ export default async function LayoutDoPainel({ children }: { children: ReactNode
   const tokens = tokensDeAcento(preferencias.hex);
 
   return (
-    <div style={tokens as React.CSSProperties} className="min-h-dvh">
+    <div data-tema-tenant style={tokens as React.CSSProperties} className="min-h-dvh">
       <Casca
         modoInicial={preferencias.modo}
         empresa={contexto.value.empresa.nomeFantasia}

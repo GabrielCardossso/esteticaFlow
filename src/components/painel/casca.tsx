@@ -33,6 +33,7 @@ import type { ModoTema } from '@/domain/tema';
 import { formatarData } from '@/domain/shared/tempo';
 import { useSessao } from '@/hooks/use-sessao';
 import { api } from '@/lib/api';
+import { aplicarTemaNoDocumento } from '@/lib/tema-cliente';
 import { cn } from '@/lib/utils';
 
 interface ItemDeMenu {
@@ -96,6 +97,14 @@ export function Casca({
   useEffect(() => {
     setMenuAberto(false);
   }, [caminho]);
+
+  useEffect(() => {
+    if (sessao === undefined) return;
+    const modoDaSessao =
+      sessao.preferencias.modo === 'sistema' ? 'escuro' : sessao.preferencias.modo;
+    setModo(modoDaSessao);
+    aplicarTemaNoDocumento(sessao.preferencias);
+  }, [sessao]);
 
   const alternarModo = useCallback(() => {
     const proximo: ModoTema = modo === 'escuro' ? 'claro' : 'escuro';

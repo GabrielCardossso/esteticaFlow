@@ -82,7 +82,9 @@ export const Campo = forwardRef<
             BASE_CONTROLE,
             'h-10',
             prefixo !== undefined ? 'pl-9' : undefined,
-            erro !== undefined ? 'border-[var(--critico)] focus:border-[var(--critico)]' : undefined,
+            erro !== undefined
+              ? 'border-[var(--critico)] focus:border-[var(--critico)]'
+              : undefined,
           )}
           {...resto}
         />
@@ -151,7 +153,7 @@ export const Selecao = forwardRef<
         aria-invalid={erro !== undefined}
         className={cn(
           BASE_CONTROLE,
-          'h-10 cursor-pointer appearance-none bg-[length:1rem] bg-[right_0.75rem_center] bg-no-repeat pr-9',
+          'h-10 cursor-pointer appearance-none bg-[length:1rem] bg-[right_0.75rem_center] bg-no-repeat pr-9 [&_option]:bg-[var(--superficie-2)] [&_option]:text-[var(--tinta)]',
           erro !== undefined ? 'border-[var(--critico)]' : undefined,
         )}
         style={{

@@ -103,7 +103,7 @@ export default function PaginaInicial() {
         <section className="relative overflow-hidden border-b border-[var(--borda)]">
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-x-0 -top-40 h-96 opacity-40"
+            className="hero-aura pointer-events-none absolute inset-x-0 -top-40 h-96 opacity-40"
             style={{
               background:
                 'radial-gradient(60% 60% at 50% 50%, rgb(var(--acento-rgb) / 0.32), transparent 70%)',
@@ -111,7 +111,7 @@ export default function PaginaInicial() {
           />
           <div className="relative mx-auto max-w-6xl px-4 py-20 sm:px-6 lg:py-28">
             <div className="grid items-center gap-14 lg:grid-cols-[1.05fr_0.95fr]">
-              <div>
+              <div className="hero-entrada">
                 <span className="inline-flex items-center gap-2 rounded-full border border-[var(--borda-forte)] bg-[var(--superficie-2)] px-3 py-1 text-xs text-[var(--tinta-suave)]">
                   <Sparkles className="size-3.5 text-[var(--acento-ativo)]" aria-hidden />
                   Feito para estética automotiva, não adaptado de outro ramo
@@ -152,7 +152,7 @@ export default function PaginaInicial() {
               </div>
 
               {/* Mock de painel: o produto se explicando visualmente. */}
-              <div className="superficie filete-acento relative p-5">
+              <div className="hero-painel superficie filete-acento relative p-5">
                 <div className="flex items-center justify-between">
                   <span className="rotulo-tecnico">Painel · hoje</span>
                   <span className="inline-flex items-center gap-1.5 text-xs text-[var(--positivo)]">
@@ -187,9 +187,10 @@ export default function PaginaInicial() {
                     {[42, 64, 51, 88, 73, 96, 58].map((altura, indice) => (
                       <div
                         key={indice}
-                        className="flex-1 rounded-sm"
+                        className="barra-telemetria flex-1 rounded-sm"
                         style={{
                           height: `${altura}%`,
+                          animationDelay: `${180 + indice * 70}ms`,
                           background:
                             altura > 85
                               ? 'var(--acento-ativo)'
@@ -285,7 +286,10 @@ export default function PaginaInicial() {
 
             <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               {RECURSOS_VITRINE.map(({ icone: Icone, titulo, texto }) => (
-                <article key={titulo} className="superficie group p-6 transition-colors hover:border-[var(--acento-ativo)]">
+                <article
+                  key={titulo}
+                  className="cartao-vitrine superficie group p-6 hover:border-[var(--acento-ativo)]"
+                >
                   <div className="grid size-11 place-items-center rounded-lg border border-[var(--borda)] bg-[var(--superficie-2)] transition-colors group-hover:border-[var(--acento-ativo)]">
                     <Icone className="size-5 text-[var(--acento-ativo)]" aria-hidden />
                   </div>
@@ -340,8 +344,7 @@ export default function PaginaInicial() {
                     </p>
 
                     <p className="mt-2 text-sm text-[var(--tinta-suave)]">
-                      Até{' '}
-                      <strong className="text-[var(--tinta)]">{plano.limiteUsuarios}</strong>{' '}
+                      Até <strong className="text-[var(--tinta)]">{plano.limiteUsuarios}</strong>{' '}
                       {plano.limiteUsuarios === 1 ? 'usuário ativo' : 'usuários ativos'}
                     </p>
 

@@ -71,7 +71,7 @@ async function principal(): Promise<void> {
         razaoSocial: 'EsteticaFlow Tecnologia Ltda',
         nomeFantasia: 'EsteticaFlow',
         cnpj: '19131243000197',
-        email: 'contato@esteticaflow.com.br',
+        email: 'gabrielcardossso@gmail.com',
         plano: 'COMPLETO',
         valorMensalidade: '0.00',
         proximoVencimento: daquiAMeses(120),
@@ -138,14 +138,12 @@ async function principal(): Promise<void> {
       { empresaId: demo.id, chave: 'sessao.inatividade.minutos', valor: '30' },
     ]);
 
-    await tx
-      .insert(formaPagamento)
-      .values(
-        ['Dinheiro', 'PIX', 'Cartão de débito', 'Cartão de crédito'].map((nome) => ({
-          empresaId: demo.id,
-          nome,
-        })),
-      );
+    await tx.insert(formaPagamento).values(
+      ['Dinheiro', 'PIX', 'Cartão de débito', 'Cartão de crédito'].map((nome) => ({
+        empresaId: demo.id,
+        nome,
+      })),
+    );
 
     const categoriasServico = await tx
       .insert(categoriaServico)

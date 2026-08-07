@@ -9,11 +9,11 @@
 
 @theme {
   --font-sans:
-    'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
-    'Helvetica Neue', Arial, sans-serif;
+    'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
   --font-display:
-    'Barlow Condensed', 'Roboto Condensed', 'Oswald', ui-sans-serif, system-ui,
-    'Segoe UI', sans-serif;
+    'Barlow Condensed', 'Roboto Condensed', 'Oswald', ui-sans-serif, system-ui, 'Segoe UI',
+    sans-serif;
   --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', monospace;
 
   --radius-painel: 0.875rem;
@@ -68,7 +68,8 @@
 
   --sombra-painel: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -12px rgb(0 0 0 / 0.6);
   --sombra-elevada: 0 2px 4px rgb(0 0 0 / 0.5), 0 16px 48px -16px rgb(0 0 0 / 0.7);
-  --brilho-acento: 0 0 0 1px rgb(var(--acento-rgb) / 0.35), 0 0 24px -6px rgb(var(--acento-rgb) / 0.45);
+  --brilho-acento:
+    0 0 0 1px rgb(var(--acento-rgb) / 0.35), 0 0 24px -6px rgb(var(--acento-rgb) / 0.45);
 
   --grade: rgb(255 255 255 / 0.028);
 }
@@ -128,6 +129,19 @@
     font-feature-settings: 'cv02', 'cv03', 'cv04';
     -webkit-font-smoothing: antialiased;
     min-height: 100dvh;
+  }
+
+  /* Mantém os menus nativos de seleção coerentes com o tema ativo. */
+  select,
+  select option,
+  select optgroup {
+    background-color: var(--superficie-2);
+    color: var(--tinta);
+  }
+
+  select option:checked {
+    background-color: var(--acento-ativo);
+    color: var(--acento-texto);
   }
 
   /* Malha sutil de instrumentação no fundo da aplicação. */
@@ -267,6 +281,93 @@
   }
   .luz-viva {
     animation: pulsar-luz 2s var(--ease-mecanico) infinite;
+  }
+
+  /* Movimento discreto para a landing page: orienta o olhar sem competir com o conteúdo. */
+  @keyframes entrada-esquerda {
+    from {
+      opacity: 0;
+      transform: translateX(-18px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes entrada-direita {
+    from {
+      opacity: 0;
+      transform: translateX(18px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0) scale(1);
+    }
+  }
+
+  @keyframes respirar-aura {
+    0%,
+    100% {
+      opacity: 0.32;
+      transform: scale(0.96);
+    }
+    50% {
+      opacity: 0.56;
+      transform: scale(1.08);
+    }
+  }
+
+  @keyframes flutuar-painel {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-7px);
+    }
+  }
+
+  @keyframes crescer-telemetria {
+    from {
+      transform: scaleY(0.12);
+      opacity: 0.25;
+    }
+    to {
+      transform: scaleY(1);
+      opacity: 1;
+    }
+  }
+
+  .hero-entrada {
+    animation: entrada-esquerda 620ms var(--ease-mecanico) both;
+  }
+
+  .hero-painel {
+    animation:
+      entrada-direita 680ms var(--ease-mecanico) both,
+      flutuar-painel 5s 800ms ease-in-out infinite;
+  }
+
+  .hero-aura {
+    animation: respirar-aura 6s ease-in-out infinite;
+  }
+
+  .barra-telemetria {
+    transform-origin: bottom;
+    animation: crescer-telemetria 560ms var(--ease-mecanico) both;
+  }
+
+  .cartao-vitrine {
+    transition:
+      transform var(--duracao-media) var(--ease-mecanico),
+      border-color var(--duracao-media) var(--ease-mecanico),
+      box-shadow var(--duracao-media) var(--ease-mecanico);
+  }
+
+  .cartao-vitrine:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--sombra-elevada);
   }
 }
 
