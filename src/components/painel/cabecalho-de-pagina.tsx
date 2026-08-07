@@ -10,7 +10,7 @@ export function CabecalhoDePagina({
   acao?: ReactNode | undefined;
 }) {
   return (
-    <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
+    <header className="painel-cabecalho mb-6 flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0">
         <h1 className="text-2xl font-bold tracking-tight text-[var(--tinta)]">{titulo}</h1>
         {descricao !== undefined ? (

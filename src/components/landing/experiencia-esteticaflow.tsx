@@ -43,6 +43,20 @@ function atualizarOrigemDaReacao(event: PointerEvent<HTMLElement>) {
   alvo.style.setProperty('--reacao-y', `${((event.clientY - limites.top) / limites.height) * 100}%`);
 }
 
+function atualizarBrilhoDaLanding(event: PointerEvent<HTMLDivElement>) {
+  if (event.pointerType === 'touch') return;
+
+  const landing = event.currentTarget;
+  const limites = landing.getBoundingClientRect();
+  landing.style.setProperty('--cursor-x', `${event.clientX - limites.left}px`);
+  landing.style.setProperty('--cursor-y', `${event.clientY - limites.top}px`);
+}
+
+function centralizarBrilhoDaLanding(event: PointerEvent<HTMLDivElement>) {
+  event.currentTarget.style.setProperty('--cursor-x', '50%');
+  event.currentTarget.style.setProperty('--cursor-y', '20rem');
+}
+
 const servicos = [
   ['09:00', 'Renato Ferreira', 'Vitrificação premium', 'confirmado'],
   ['11:30', 'Marina Rocha', 'Polimento técnico', 'em andamento'],
@@ -61,8 +75,9 @@ export function ExperienciaEsteticaFlow() {
   const [menuAberto, setMenuAberto] = useState(false);
 
   return (
-    <div className="landing min-h-dvh overflow-x-clip bg-[#080a0f] text-[#edf1f7]">
+    <div className="landing min-h-dvh overflow-x-clip bg-[#080a0f] text-[#edf1f7]" onPointerMove={atualizarBrilhoDaLanding} onPointerLeave={centralizarBrilhoDaLanding}>
       <div className="landing-ruido pointer-events-none fixed inset-0 z-0 opacity-40" aria-hidden />
+      <div className="landing-cursor-brilho pointer-events-none fixed inset-0 z-[20]" aria-hidden />
       <header className="landing-nav fixed inset-x-0 top-0 z-50">
         <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/" aria-label="EsteticaFlow, início" className="relative z-10">
@@ -161,6 +176,33 @@ export function ExperienciaEsteticaFlow() {
           </div>
         </section>
 
+        <section className="landing-fita" aria-label="Benefícios do EsteticaFlow">
+          <div className="landing-fita-mascara">
+            <div className="landing-fita-trilho">
+              {[
+                'Agenda organizada',
+                'Histórico por veículo',
+                'Estoque em dia',
+                'Caixa com contexto',
+                'Relatórios acionáveis',
+                'Equipe no mesmo ritmo',
+              ].concat([
+                'Agenda organizada',
+                'Histórico por veículo',
+                'Estoque em dia',
+                'Caixa com contexto',
+                'Relatórios acionáveis',
+                'Equipe no mesmo ritmo',
+              ]).map((beneficio, indice) => (
+                <span key={`${beneficio}-${indice}`} className="landing-fita-item" aria-hidden={indice >= 6}>
+                  <span className="landing-fita-ponto" aria-hidden />
+                  {beneficio}
+                </span>
+              ))}
+            </div>
+          </div>
+        </section>
+
         <section id="operacao" className="relative py-24 sm:py-32">
           <div className="mx-auto grid max-w-7xl gap-14 px-4 sm:px-6 lg:grid-cols-[0.75fr_1.25fr] lg:items-center lg:gap-20 lg:px-8">
             <div>
@@ -169,6 +211,16 @@ export function ExperienciaEsteticaFlow() {
               <p className="mt-6 max-w-md text-base leading-relaxed text-[#9ea8ba]">
                 Cada clique tem consequência útil: um atendimento concluído atualiza o caixa; um produto consumido conversa com o estoque; o histórico fica pronto antes da próxima visita.
               </p>
+              <div className="landing-prova mt-7">
+                <article>
+                  <p className="landing-prova-rotulo">O problema</p>
+                  <p>Informação espalhada faz o time perguntar, esperar e perder o ritmo.</p>
+                </article>
+                <article>
+                  <p className="landing-prova-rotulo">A resposta</p>
+                  <p>Um fluxo único deixa cada decisão visível antes de ela virar urgência.</p>
+                </article>
+              </div>
               <a href="#planos" className="landing-link mt-8 inline-flex items-center gap-2 text-sm font-semibold text-[var(--acento-ativo)]">
                 Ver o que cabe na sua operação <ArrowRight className="size-4" />
               </a>
@@ -253,7 +305,14 @@ export function ExperienciaEsteticaFlow() {
                         <li key={recurso} className="flex items-start gap-2.5 text-sm text-[#c5cdd9]"><Check className="mt-0.5 size-4 shrink-0 text-emerald-400" />{ROTULO_RECURSO[recurso]}</li>
                       ))}
                     </ul>
-                    <Botao comoFilho tamanho="grande" variante={destaque ? 'acento' : 'contorno'} className="mt-9 w-full">
+                    <Botao
+                      comoFilho
+                      tamanho="grande"
+                      variante={destaque ? 'acento' : 'contorno'}
+                      className={cn('mt-9 w-full', destaque ? 'landing-cta-botao' : 'landing-cta-contorno')}
+                      onPointerEnter={atualizarOrigemDaReacao}
+                      onPointerMove={atualizarOrigemDaReacao}
+                    >
                       <Link href="/suporte">Quero este plano <ArrowRight /></Link>
                     </Botao>
                   </article>

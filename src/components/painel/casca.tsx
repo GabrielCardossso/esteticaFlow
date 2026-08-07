@@ -171,7 +171,7 @@ export function Casca({
             href={item.href}
             aria-current={selecionado ? 'page' : undefined}
             className={cn(
-              'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors duration-[var(--duracao-curta)]',
+              'painel-link group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors duration-[var(--duracao-curta)]',
               selecionado
                 ? 'bg-[var(--acento-fraco)] font-medium text-[var(--acento-ativo)]'
                 : 'text-[var(--tinta-suave)] hover:bg-[var(--superficie-2)] hover:text-[var(--tinta)]',

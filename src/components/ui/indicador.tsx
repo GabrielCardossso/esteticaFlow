@@ -28,7 +28,7 @@ export function Indicador({
   const subiu = typeof variacao === 'number' && variacao >= 0;
 
   return (
-    <Cartao className="p-4">
+    <Cartao className="painel-kpi p-4">
       <div className="flex items-start justify-between gap-2">
         <span className="rotulo-tecnico">{rotulo}</span>
         {Icone !== undefined ? (

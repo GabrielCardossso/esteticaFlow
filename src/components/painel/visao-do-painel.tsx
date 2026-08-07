@@ -172,7 +172,7 @@ export function VisaoDoPainel() {
 
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
         {/* ----------------------------- Faturamento ---------------------- */}
-        <Cartao className="lg:col-span-2" destaque>
+        <Cartao className="painel-cartao lg:col-span-2" destaque>
           <CartaoCabecalho titulo="Faturamento e despesa" descricao="Últimos seis meses fechados" />
           <CartaoCorpo>
             {!podeFinanceiro ? (
@@ -227,7 +227,7 @@ export function VisaoDoPainel() {
         </Cartao>
 
         {/* ----------------------------- Agenda --------------------------- */}
-        <Cartao>
+        <Cartao className="painel-cartao">
           <CartaoCabecalho
             titulo="Próximos atendimentos"
             acao={
@@ -282,7 +282,7 @@ export function VisaoDoPainel() {
 
       <div className="mt-4 grid gap-4 lg:grid-cols-3">
         {/* ----------------------------- Serviços ------------------------- */}
-        <Cartao className="lg:col-span-2">
+        <Cartao className="painel-cartao lg:col-span-2">
           <CartaoCabecalho titulo="Serviços mais executados" descricao="No mês corrente" />
           {data.servicosMaisVendidos.length === 0 ? (
             <Vazio icone={Receipt} titulo="Nenhum atendimento concluído no mês" />
@@ -314,7 +314,7 @@ export function VisaoDoPainel() {
         </Cartao>
 
         {/* ----------------------------- Relacionamento ------------------- */}
-        <Cartao>
+        <Cartao className="painel-cartao">
           <CartaoCabecalho
             titulo="Carteira de clientes"
             descricao={`${data.totalClientes} clientes ativos`}
@@ -393,7 +393,7 @@ export function VisaoDoPainel() {
 
       {/* ------------------------------- Estoque ------------------------- */}
       {podeEstoque && data.alertasEstoque.length > 0 ? (
-        <Cartao className="mt-4">
+        <Cartao className="painel-cartao mt-4">
           <CartaoCabecalho
             titulo="Estoque abaixo do mínimo"
             descricao="Reponha antes que falte no meio de um atendimento"
@@ -430,7 +430,7 @@ export function VisaoDoPainel() {
       ) : null}
 
       {podeFinanceiro && Number(data.aReceber) > 0 ? (
-        <Cartao className="mt-4">
+        <Cartao className="painel-cartao mt-4">
           <CartaoCorpo className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <Users className="size-5 text-[var(--atencao)]" aria-hidden />
