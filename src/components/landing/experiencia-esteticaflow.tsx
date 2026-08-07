@@ -18,7 +18,7 @@ import {
   X,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, type PointerEvent } from 'react';
 import { Marca, Simbolo } from '@/components/marca';
 import { Botao } from '@/components/ui/botao';
 import { CATALOGO_PLANOS, ROTULO_RECURSO, type Recurso } from '@/domain/plano';
@@ -33,6 +33,15 @@ const modulos = [
 ] as const;
 
 type Modulo = (typeof modulos)[number]['id'];
+
+function atualizarOrigemDaReacao(event: PointerEvent<HTMLElement>) {
+  if (event.pointerType === 'touch') return;
+
+  const alvo = event.currentTarget;
+  const limites = alvo.getBoundingClientRect();
+  alvo.style.setProperty('--reacao-x', `${((event.clientX - limites.left) / limites.width) * 100}%`);
+  alvo.style.setProperty('--reacao-y', `${((event.clientY - limites.top) / limites.height) * 100}%`);
+}
 
 const servicos = [
   ['09:00', 'Renato Ferreira', 'Vitrificação premium', 'confirmado'],
@@ -68,7 +77,7 @@ export function ExperienciaEsteticaFlow() {
 
           <div className="hidden items-center gap-2 sm:flex">
             <Link href="/login" className="landing-link px-3 py-2 text-sm">Entrar</Link>
-            <Botao comoFilho variante="acento" tamanho="medio" className="landing-cta-botao">
+            <Botao comoFilho variante="acento" tamanho="medio" className="landing-cta-botao" onPointerEnter={atualizarOrigemDaReacao} onPointerMove={atualizarOrigemDaReacao}>
               <Link href="/suporte">Começar agora <ArrowRight /></Link>
             </Botao>
           </div>
@@ -103,6 +112,7 @@ export function ExperienciaEsteticaFlow() {
           <div className="landing-orbita landing-orbita-um" aria-hidden />
           <div className="landing-orbita landing-orbita-dois" aria-hidden />
           <div className="landing-grade pointer-events-none absolute inset-0 -z-10" aria-hidden />
+          <div className="landing-hero-luz pointer-events-none absolute inset-x-0 top-16 -z-10" aria-hidden />
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-4xl text-center">
               <p className="landing-selo landing-entrada">
@@ -116,7 +126,7 @@ export function ExperienciaEsteticaFlow() {
                 Uma central de comando para agenda, clientes, estoque e financeiro se moverem juntos — com a precisão que o seu serviço pede.
               </p>
               <div className="landing-entrada mt-9 flex flex-wrap justify-center gap-3 [animation-delay:240ms]">
-                <Botao comoFilho variante="acento" tamanho="grande" className="landing-cta-botao">
+                <Botao comoFilho variante="acento" tamanho="grande" className="landing-cta-botao" onPointerEnter={atualizarOrigemDaReacao} onPointerMove={atualizarOrigemDaReacao}>
                   <Link href="/login">Conhecer o painel <ArrowRight /></Link>
                 </Botao>
                 <a href="#produto" className="landing-botao-secundario">Explorar a demonstração <ChevronRight className="size-4" /></a>
@@ -128,7 +138,7 @@ export function ExperienciaEsteticaFlow() {
               </div>
             </div>
 
-            <div id="produto" className="landing-demo-wrap landing-entrada mx-auto mt-14 max-w-6xl [animation-delay:360ms] sm:mt-20">
+            <div id="produto" className="landing-demo-wrap landing-demo-cinema mx-auto mt-14 max-w-6xl [animation-delay:360ms] sm:mt-20">
               <div className="landing-demo-brilho" aria-hidden />
               <DemoNavegavel ativo={moduloAtivo} aoMudar={setModuloAtivo} />
             </div>
@@ -136,7 +146,7 @@ export function ExperienciaEsteticaFlow() {
         </section>
 
         <section className="border-y border-white/[0.08] bg-white/[0.025] py-7">
-          <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-12 gap-y-5 px-4 text-center sm:px-6 lg:justify-between lg:px-8">
+          <div className="landing-revelar mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-12 gap-y-5 px-4 text-center sm:px-6 lg:justify-between lg:px-8">
             {[
               ['Tudo conectado', 'um registro alimenta o próximo'],
               ['Dados claros', 'sem depender de planilha paralela'],
@@ -186,7 +196,7 @@ export function ExperienciaEsteticaFlow() {
 
         <section className="border-y border-white/[0.08] bg-[#0c1018] py-24 sm:py-32">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="max-w-2xl">
+            <div className="landing-revelar max-w-2xl">
               <p className="landing-eyebrow">Detalhe que organiza</p>
               <h2 className="landing-h2 mt-4">Menos abas. Mais contexto.</h2>
               <p className="mt-5 text-[#9ea8ba]">As peças do painel foram desenhadas para deixar a leitura rápida e a próxima ação óbvia, inclusive quando o dia está cheio.</p>
@@ -195,7 +205,7 @@ export function ExperienciaEsteticaFlow() {
               {recursos.map(([titulo, texto, Icone], indice) => {
                 const Icon = Icone as typeof CalendarDays;
                 return (
-                  <article key={titulo as string} className={cn('landing-recurso group', indice === 0 ? 'md:col-span-2' : '')}>
+                  <article key={titulo as string} className={cn('landing-recurso landing-revelar group', indice === 0 ? 'md:col-span-2' : '')}>
                     <div className="landing-recurso-icone"><Icon className="size-5" /></div>
                     <div className="relative z-10 max-w-md">
                       <p className="landing-recurso-numero">0{indice + 1}</p>
@@ -213,7 +223,7 @@ export function ExperienciaEsteticaFlow() {
         <section id="planos" className="relative py-24 sm:py-32">
           <div className="landing-orbita landing-orbita-tres" aria-hidden />
           <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-            <div className="mx-auto max-w-2xl text-center">
+            <div className="landing-revelar mx-auto max-w-2xl text-center">
               <p className="landing-eyebrow">Planos simples</p>
               <h2 className="landing-h2 mt-4">Gestão boa não pode custar o lucro do mês.</h2>
               <p className="mt-5 text-[#9ea8ba]">Comece pela rotina. Quando a operação pedir mais, o painel cresce junto sem perder o histórico.</p>
@@ -225,7 +235,7 @@ export function ExperienciaEsteticaFlow() {
                 const recursosDoPlano = [...plano.recursos];
                 const recursosExibidos = destaque ? recursosDoPlano : recursosDoPlano.slice(0, 6);
                 return (
-                  <article key={chave} className={cn('landing-plano', destaque && 'landing-plano-destaque')}>
+                  <article key={chave} className={cn('landing-plano landing-revelar', destaque && 'landing-plano-destaque')}>
                     {destaque ? <span className="landing-plano-selo"><Sparkles className="size-3.5" /> Mais escolhido</span> : null}
                     <p className="text-sm font-semibold text-[#eef2f8]">{plano.nome}</p>
                     <p className="mt-2 min-h-11 text-sm leading-relaxed text-[#99a4b5]">{plano.descricao}</p>
@@ -254,12 +264,12 @@ export function ExperienciaEsteticaFlow() {
         </section>
 
         <section className="px-4 pb-10 sm:px-6 lg:px-8 lg:pb-14">
-          <div className="landing-cta-final mx-auto max-w-7xl overflow-hidden px-6 py-14 text-center sm:px-12 sm:py-20">
+          <div className="landing-cta-final landing-revelar mx-auto max-w-7xl overflow-hidden px-6 py-14 text-center sm:px-12 sm:py-20">
             <div className="landing-cta-luz" aria-hidden />
             <Simbolo className="relative mx-auto size-11" />
             <h2 className="relative mx-auto mt-6 max-w-2xl font-[family-name:var(--font-display)] text-4xl font-semibold tracking-tight text-white sm:text-5xl">Seu melhor atendimento começa antes do carro chegar.</h2>
             <p className="relative mx-auto mt-5 max-w-xl text-[#b1bac9]">Coloque a operação em movimento, sem aumentar o ruído no seu dia.</p>
-            <Botao comoFilho variante="acento" tamanho="grande" className="relative mt-8 landing-cta-botao">
+            <Botao comoFilho variante="acento" tamanho="grande" className="relative mt-8 landing-cta-botao" onPointerEnter={atualizarOrigemDaReacao} onPointerMove={atualizarOrigemDaReacao}>
               <Link href="/login">Acessar EsteticaFlow <ArrowRight /></Link>
             </Botao>
           </div>
@@ -278,8 +288,28 @@ export function ExperienciaEsteticaFlow() {
 }
 
 function DemoNavegavel({ ativo, aoMudar }: { ativo: Modulo; aoMudar: (modulo: Modulo) => void }) {
+  const inclinarPainel = (event: PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType === 'touch') return;
+
+    const sensor = event.currentTarget;
+    const limites = sensor.getBoundingClientRect();
+    const horizontal = (event.clientX - limites.left) / limites.width - 0.5;
+    const vertical = (event.clientY - limites.top) / limites.height - 0.5;
+
+    sensor.style.setProperty('--demo-rotacao-x', `${vertical * -4}deg`);
+    sensor.style.setProperty('--demo-rotacao-y', `${horizontal * 5}deg`);
+    sensor.style.setProperty('--demo-brilho-x', `${(horizontal + 0.5) * 100}%`);
+    sensor.style.setProperty('--demo-brilho-y', `${(vertical + 0.5) * 100}%`);
+  };
+
+  const repousarPainel = (event: PointerEvent<HTMLDivElement>) => {
+    event.currentTarget.style.setProperty('--demo-rotacao-x', '0deg');
+    event.currentTarget.style.setProperty('--demo-rotacao-y', '0deg');
+  };
+
   return (
-    <div className="landing-demo">
+    <div className="landing-demo-sensor" onPointerMove={inclinarPainel} onPointerLeave={repousarPainel}>
+      <div className="landing-demo">
       <div className="landing-demo-topo">
         <div className="flex items-center gap-1.5" aria-hidden><span className="size-2 rounded-full bg-[#ff5f57]" /><span className="size-2 rounded-full bg-[#febc2e]" /><span className="size-2 rounded-full bg-[#28c840]" /></div>
         <div className="hidden max-w-56 flex-1 items-center gap-2 rounded-md border border-white/[0.08] bg-black/20 px-3 py-1.5 text-[10px] text-[#728096] sm:flex"><Search className="size-3" /> app.esteticaflow.com/painel</div>
@@ -301,6 +331,7 @@ function DemoNavegavel({ ativo, aoMudar }: { ativo: Modulo; aoMudar: (modulo: Mo
           {ativo === 'financeiro' ? <VisaoFinanceira /> : null}
           {ativo === 'estoque' ? <VisaoEstoque /> : null}
         </div>
+      </div>
       </div>
     </div>
   );
