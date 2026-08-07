@@ -18,7 +18,7 @@ import {
   X,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useState, type PointerEvent } from 'react';
+import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import { Marca, Simbolo } from '@/components/marca';
 import { Botao } from '@/components/ui/botao';
 import { CATALOGO_PLANOS, ROTULO_RECURSO, type Recurso } from '@/domain/plano';
@@ -46,15 +46,8 @@ function atualizarOrigemDaReacao(event: PointerEvent<HTMLElement>) {
 function atualizarBrilhoDaLanding(event: PointerEvent<HTMLDivElement>) {
   if (event.pointerType === 'touch') return;
 
-  const landing = event.currentTarget;
-  const limites = landing.getBoundingClientRect();
-  landing.style.setProperty('--cursor-x', `${event.clientX - limites.left}px`);
-  landing.style.setProperty('--cursor-y', `${event.clientY - limites.top}px`);
-}
-
-function centralizarBrilhoDaLanding(event: PointerEvent<HTMLDivElement>) {
-  event.currentTarget.style.setProperty('--cursor-x', '50%');
-  event.currentTarget.style.setProperty('--cursor-y', '20rem');
+  event.currentTarget.style.setProperty('--cursor-x', `${event.clientX}px`);
+  event.currentTarget.style.setProperty('--cursor-y', `${event.clientY}px`);
 }
 
 const servicos = [
@@ -73,11 +66,42 @@ const recursos = [
 export function ExperienciaEsteticaFlow() {
   const [moduloAtivo, setModuloAtivo] = useState<Modulo>('operacao');
   const [menuAberto, setMenuAberto] = useState(false);
+  const landingRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const atualizarProgresso = () => {
+      const total = document.documentElement.scrollHeight - window.innerHeight;
+      const progresso = total <= 0 ? 0 : Math.min(1, Math.max(0, window.scrollY / total));
+      landingRef.current?.style.setProperty('--progresso-rolagem', String(progresso));
+    };
+
+    const atualizarCursor = (event: globalThis.PointerEvent) => {
+      if (event.pointerType === 'touch') return;
+      landingRef.current?.style.setProperty('--cursor-x', `${event.clientX}px`);
+      landingRef.current?.style.setProperty('--cursor-y', `${event.clientY}px`);
+    };
+
+    atualizarProgresso();
+    window.addEventListener('scroll', atualizarProgresso, { passive: true });
+    window.addEventListener('resize', atualizarProgresso);
+    window.addEventListener('pointermove', atualizarCursor, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', atualizarProgresso);
+      window.removeEventListener('resize', atualizarProgresso);
+      window.removeEventListener('pointermove', atualizarCursor);
+    };
+  }, []);
 
   return (
-    <div className="landing min-h-dvh overflow-x-clip bg-[#080a0f] text-[#edf1f7]" onPointerMove={atualizarBrilhoDaLanding} onPointerLeave={centralizarBrilhoDaLanding}>
+    <div
+      ref={landingRef}
+      onPointerMove={atualizarBrilhoDaLanding}
+      className="landing min-h-dvh overflow-x-clip bg-[#080a0f] text-[#edf1f7]"
+    >
       <div className="landing-ruido pointer-events-none fixed inset-0 z-0 opacity-40" aria-hidden />
       <div className="landing-cursor-brilho pointer-events-none fixed inset-0 z-[20]" aria-hidden />
+      <div className="landing-progresso pointer-events-none fixed inset-x-0 top-0 z-[60]" aria-hidden><span /></div>
       <header className="landing-nav fixed inset-x-0 top-0 z-50">
         <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/" aria-label="EsteticaFlow, início" className="relative z-10">
@@ -264,7 +288,6 @@ export function ExperienciaEsteticaFlow() {
                       <h3>{titulo as string}</h3>
                       <p>{texto as string}</p>
                     </div>
-                    <ArrowRight className="landing-recurso-seta" aria-hidden />
                   </article>
                 );
               })}
@@ -378,13 +401,13 @@ function DemoNavegavel({ ativo, aoMudar }: { ativo: Modulo; aoMudar: (modulo: Mo
         <aside className="hidden border-r border-white/[0.08] bg-black/20 p-3 lg:block">
           <div className="mb-7 flex items-center gap-2 px-2 pt-1"><Simbolo className="size-5" /><span className="font-[family-name:var(--font-display)] text-base font-semibold">Lumen<span className="text-[var(--acento-ativo)]">Auto</span></span></div>
           <div className="space-y-1">
-            {modulos.map(({ id, rotulo, icone: Icone }) => <button key={id} type="button" onClick={() => aoMudar(id)} className={cn('landing-demo-menu', ativo === id && 'landing-demo-menu-ativo')}><Icone className="size-3.5" />{rotulo}</button>)}
+            {modulos.map(({ id, rotulo, icone: Icone }) => <button key={id} type="button" aria-pressed={ativo === id} onClick={() => aoMudar(id)} className={cn('landing-demo-menu', ativo === id && 'landing-demo-menu-ativo')}><Icone className="size-3.5" />{rotulo}</button>)}
           </div>
           <div className="mt-9 rounded-lg border border-white/[0.07] bg-white/[0.03] p-2.5"><p className="text-[10px] text-[#758197]">Agosto · operação</p><p className="mt-1 text-lg font-semibold text-white">82%</p><div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10"><div className="h-full w-[82%] rounded-full bg-[var(--acento-ativo)]" /></div></div>
         </aside>
         <div className="min-w-0 p-4 sm:p-6">
           <div className="mb-5 flex items-center justify-between gap-3"><div><p className="text-xs text-[#8a95a8]">Sexta-feira, 7 de agosto</p><h3 className="mt-1 font-[family-name:var(--font-display)] text-2xl font-semibold tracking-tight text-white">{modulos.find((item) => item.id === ativo)?.rotulo}</h3></div><div className="grid size-9 place-items-center rounded-lg border border-white/10 bg-white/[0.04]"><Sparkles className="size-4 text-[var(--acento-ativo)]" /></div></div>
-          <div className="lg:hidden"><div className="mb-5 flex gap-1 overflow-x-auto pb-1">{modulos.map(({ id, rotulo }) => <button key={id} onClick={() => aoMudar(id)} className={cn('shrink-0 rounded-full px-3 py-1.5 text-xs', ativo === id ? 'bg-[var(--acento-ativo)] text-black' : 'bg-white/[0.06] text-[#9aa5b7]')}>{rotulo}</button>)}</div></div>
+          <div className="lg:hidden"><div className="mb-5 flex gap-1 overflow-x-auto pb-1">{modulos.map(({ id, rotulo }) => <button key={id} type="button" aria-pressed={ativo === id} onClick={() => aoMudar(id)} className={cn('shrink-0 rounded-full px-3 py-1.5 text-xs', ativo === id ? 'bg-[var(--acento-ativo)] text-black' : 'bg-white/[0.06] text-[#9aa5b7]')}>{rotulo}</button>)}</div></div>
           {ativo === 'operacao' ? <VisaoGeral /> : null}
           {ativo === 'agenda' ? <VisaoAgenda /> : null}
           {ativo === 'financeiro' ? <VisaoFinanceira /> : null}

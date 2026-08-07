@@ -498,6 +498,7 @@
     --landing-superficie: rgb(17 21 30 / 0.78);
     --cursor-x: 50%;
     --cursor-y: 20rem;
+    --progresso-rolagem: 0;
     position: relative;
     isolation: isolate;
     background:
@@ -516,8 +517,32 @@
   }
 
   .landing-cursor-brilho {
-    background: radial-gradient(26rem circle at var(--cursor-x) var(--cursor-y), rgb(var(--acento-rgb) / 0.14), transparent 52%);
-    opacity: 0.72;
+    background:
+      radial-gradient(18rem circle at var(--cursor-x) var(--cursor-y), rgb(var(--acento-rgb) / 0.17), transparent 42%),
+      radial-gradient(34rem circle at var(--cursor-x) var(--cursor-y), rgb(var(--acento-rgb) / 0.08), transparent 58%);
+    opacity: 0.9;
+  }
+  .landing-cursor-brilho::after {
+    position: absolute;
+    left: var(--cursor-x);
+    top: var(--cursor-y);
+    width: 8rem;
+    height: 8rem;
+    border: 1px solid rgb(var(--acento-rgb) / 0.24);
+    border-radius: 999px;
+    content: '';
+    opacity: 0.62;
+    transform: translate3d(-50%, -50%, 0) scale(0.72);
+  }
+  .landing-progresso { height: 3px; background: rgb(255 255 255 / 0.07); }
+  .landing-progresso span {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, var(--acento-ativo), #f8c15b, var(--acento-ativo));
+    box-shadow: 0 0 18px rgb(var(--acento-rgb) / 0.62);
+    transform: scaleX(var(--progresso-rolagem));
+    transform-origin: left center;
   }
 
   .landing-nav {
@@ -737,17 +762,6 @@
     --demo-brilho-x: 50%;
     --demo-brilho-y: 50%;
     position: relative;
-    transform-style: preserve-3d;
-  }
-  .landing-demo-sensor::after {
-    position: absolute;
-    inset: -2px;
-    z-index: 2;
-    border-radius: 1.25rem;
-    background: radial-gradient(360px circle at var(--demo-brilho-x) var(--demo-brilho-y), rgb(255 255 255 / 0.14), transparent 42%);
-    content: '';
-    pointer-events: none;
-    display: none;
   }
   .landing-demo {
     position: relative;
@@ -758,7 +772,6 @@
     background: linear-gradient(145deg, rgb(22 27 38 / 0.97), rgb(10 13 20 / 0.98));
     box-shadow: 0 32px 100px -35px #000, 0 0 0 1px rgb(var(--acento-rgb) / 0.08);
     transform: rotateX(var(--demo-rotacao-x)) rotateY(var(--demo-rotacao-y)) translateZ(0);
-    transform-style: preserve-3d;
     transition: transform 420ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 420ms cubic-bezier(0.16, 1, 0.3, 1);
     will-change: transform;
   }
@@ -807,8 +820,6 @@
   .landing-recurso-numero { color: #596478; font-family: var(--font-mono); font-size: 0.72rem; }
   .landing-recurso h3 { margin-top: 2rem; color: #f0f3f8; font-family: var(--font-display); font-size: 1.7rem; font-weight: 600; letter-spacing: -0.05em; }
   .landing-recurso p:last-child { margin-top: 0.55rem; color: #99a4b5; font-size: 0.9rem; line-height: 1.55; }
-  .landing-recurso-seta { position: absolute; bottom: 1.4rem; right: 1.4rem; color: #6d788a; transition: transform var(--duracao-media) var(--ease-mecanico), color var(--duracao-media) var(--ease-mecanico); }
-  .landing-recurso:hover .landing-recurso-seta { transform: translateX(4px); color: var(--acento-ativo); }
 
   .landing-plano { position: relative; border: 1px solid rgb(255 255 255 / 0.11); border-radius: 1rem; background: rgb(255 255 255 / 0.025); padding: 1.75rem; }
   .landing-plano-destaque { border-color: rgb(var(--acento-rgb) / 0.52); background: linear-gradient(145deg, rgb(var(--acento-rgb) / 0.14), rgb(255 255 255 / 0.025) 42%); box-shadow: 0 24px 70px -38px rgb(var(--acento-rgb) / 0.65); }
@@ -858,7 +869,6 @@
     .landing-hero-luz { height: 28rem; filter: blur(12px); }
     .landing-grade { animation-duration: 20s; }
     .landing-demo-cinema { animation-duration: 1100ms; }
-    .landing-demo-sensor::after { opacity: 0.3; background-size: 80% 80%; }
     .landing-demo { animation: landing-demo-mobile 9s ease-in-out infinite; }
     .landing-cta-botao:active { --reacao-texto: #f4f7fb; }
     .landing-cta-botao:active::before { transform: translate3d(-50%, -50%, 0) scale(1); }
