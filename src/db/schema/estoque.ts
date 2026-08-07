@@ -44,7 +44,10 @@ export const produto = pgTable(
       .notNull()
       .references(() => categoriaProduto.id),
     nome: varchar('nome', { length: 150 }).notNull(),
+    /** Base normalizada: UN, ML ou G. */
     unidadeMedida: unidadeMedidaEnum('unidade_medida').notNull(),
+    /** Unidade preferida para cadastro/entrada do produto. */
+    unidadeExibicao: unidadeMedidaEnum('unidade_exibicao').notNull().default('UN'),
     /** Quantidade contida em uma embalagem fechada (ex.: 2000 ml). */
     quantidadeEmbalagem: numeric('quantidade_embalagem', { precision: 12, scale: 3 }).notNull(),
     /** Valor pago pela embalagem inteira, nao pela unidade. */
@@ -82,6 +85,8 @@ export const estoque = pgTable(
     quantidadeMinima: numeric('quantidade_minima', { precision: 12, scale: 3 })
       .notNull()
       .default('0'),
+    /** Unidade escolhida para exibir e editar o ponto de reposicao. */
+    unidadeMinima: unidadeMedidaEnum('unidade_minima').notNull().default('UN'),
     criadoEm: timestamp('criado_em', { withTimezone: true }).notNull().defaultNow(),
     atualizadoEm: timestamp('atualizado_em', { withTimezone: true })
       .notNull()
@@ -113,6 +118,8 @@ export const movimentacaoEstoque = pgTable(
     tipo: tipoMovimentacaoEnum('tipo').notNull(),
     origem: origemMovimentacaoEnum('origem').notNull(),
     quantidade: numeric('quantidade', { precision: 12, scale: 3 }).notNull(),
+    /** Unidade informada no momento do movimento; quantidade fica normalizada. */
+    unidadeMovimentacao: unidadeMedidaEnum('unidade_movimentacao').notNull().default('UN'),
     valorFinanceiro: numeric('valor_financeiro', { precision: 12, scale: 2 }),
     motivo: varchar('motivo', { length: 500 }),
     ocorridoEm: timestamp('ocorrido_em', { withTimezone: true }).notNull().defaultNow(),

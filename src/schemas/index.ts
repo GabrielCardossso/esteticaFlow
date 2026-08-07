@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { FILTROS_PERIODO } from '@/domain/relatorio';
 import { PAPEIS, PLANOS } from '@/domain/plano';
 import { STATUS_AGENDAMENTO } from '@/domain/agendamento';
-import { UNIDADES } from '@/domain/estoque';
+import { UNIDADES, unidadesCompativeis } from '@/domain/estoque';
 import { ACENTOS, MINUTOS_INATIVIDADE, MODOS } from '@/domain/tema';
 import {
   booleanoDeQuery,
@@ -174,6 +174,7 @@ export const concluirSchema = z.object({
       z.object({
         produtoId: idNumerico,
         quantidade: dinheiroPositivo('Quantidade'),
+        unidadeMedida: z.enum(UNIDADES, { required_error: 'Selecione a unidade.' }),
       }),
     )
     .default([]),
@@ -198,17 +199,27 @@ export type FiltroAgenda = z.output<typeof filtroAgendaSchema>;
 export const produtoSchema = z.object({
   nome: textoObrigatorio('Nome', 150),
   categoriaProdutoId: idNumerico,
-  unidadeMedida: z.enum(UNIDADES, { required_error: 'Selecione a unidade de medida.' }),
+  unidadeEstoque: z.enum(UNIDADES, { required_error: 'Selecione a unidade de estoque.' }),
+  unidadeMinima: z.enum(UNIDADES, { required_error: 'Selecione a unidade do alerta.' }),
   quantidadeEmbalagem: dinheiroPositivo('Quantidade da embalagem'),
   valorEmbalagem: dinheiroNaoNegativo('Valor da embalagem'),
   quantidadeInicial: dinheiroNaoNegativo('Quantidade inicial').default('0'),
   quantidadeMinima: dinheiroNaoNegativo('Quantidade mínima').default('0'),
+}).superRefine((dados, contexto) => {
+  if (!unidadesCompativeis(dados.unidadeEstoque, dados.unidadeMinima)) {
+    contexto.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['unidadeMinima'],
+      message: 'O alerta mínimo deve usar uma unidade compatível com o estoque.',
+    });
+  }
 });
 export type ProdutoInput = z.input<typeof produtoSchema>;
 export type ProdutoPayload = z.output<typeof produtoSchema>;
 
 export const entradaEstoqueSchema = z.object({
   quantidade: dinheiroPositivo('Quantidade'),
+  unidadeMedida: z.enum(UNIDADES, { required_error: 'Selecione a unidade.' }),
   valorPago: dinheiroOpcional('Valor pago'),
   motivo: textoOpcional(500),
 });
@@ -217,12 +228,14 @@ export type EntradaEstoquePayload = z.output<typeof entradaEstoqueSchema>;
 
 export const saidaEstoqueSchema = z.object({
   quantidade: dinheiroPositivo('Quantidade'),
+  unidadeMedida: z.enum(UNIDADES, { required_error: 'Selecione a unidade.' }),
   motivo: textoOpcional(500),
 });
 export type SaidaEstoqueInput = z.input<typeof saidaEstoqueSchema>;
 
 export const minimoEstoqueSchema = z.object({
   quantidadeMinima: dinheiroNaoNegativo('Quantidade mínima'),
+  unidadeMinima: z.enum(UNIDADES, { required_error: 'Selecione a unidade.' }),
 });
 export type MinimoEstoqueInput = z.input<typeof minimoEstoqueSchema>;
 

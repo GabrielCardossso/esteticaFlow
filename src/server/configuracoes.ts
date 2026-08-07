@@ -307,7 +307,10 @@ export async function atualizarUsuario(
     atualizacao.senhaHash = await gerarHash(dados.senha);
   }
 
-  await db.update(usuario).set(atualizacao).where(eq(usuario.id, id));
+  await db
+    .update(usuario)
+    .set(atualizacao)
+    .where(and(eq(usuario.id, id), eq(usuario.empresaId, contexto.empresaId)));
 
   await registrar({
     empresaId: contexto.empresaId,

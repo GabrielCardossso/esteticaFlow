@@ -15,6 +15,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   return comContexto(async (contexto) => {
     const acesso = exigirRecurso(contexto, 'ESTOQUE');
     if (!acesso.ok) return acesso;
-    return alterarMinimo(contexto, numero, corpo.dados.quantidadeMinima);
+    return alterarMinimo(contexto, numero, corpo.dados.quantidadeMinima, corpo.dados.unidadeMinima);
   });
 }

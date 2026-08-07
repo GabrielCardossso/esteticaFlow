@@ -15,6 +15,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   return comContexto(async (contexto) => {
     const acesso = exigirRecurso(contexto, 'ESTOQUE');
     if (!acesso.ok) return acesso;
-    return registrarSaida(contexto, numero, corpo.dados.quantidade, corpo.dados.motivo);
+    return registrarSaida(contexto, numero, corpo.dados);
   });
 }

@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { Botao } from '@/components/ui/botao';
 import { Campo, Selecao } from '@/components/ui/campo';
 import { Dialogo } from '@/components/ui/dialogo';
+import { UNIDADES, dimensaoDaUnidade, type UnidadeMedida } from '@/domain/estoque';
 import { formatarQuantidade } from '@/domain/shared/texto';
 import { useConcluirAgendamento, useFormasDePagamento } from '@/hooks/use-agenda';
 import { usePermissao } from '@/hooks/use-sessao';
@@ -17,6 +18,11 @@ import type { ItemDeEstoque } from '@/server/estoque';
 interface LinhaDeConsumo {
   produtoId: string;
   quantidade: string;
+  unidadeMedida: UnidadeMedida;
+}
+
+function unidadesCompativeis(unidade: UnidadeMedida): UnidadeMedida[] {
+  return UNIDADES.filter((item) => dimensaoDaUnidade(item) === dimensaoDaUnidade(unidade));
 }
 
 /**
@@ -62,6 +68,7 @@ export function DialogoDeConclusao({
         .map((linha) => ({
           produtoId: Number(linha.produtoId),
           quantidade: linha.quantidade,
+          unidadeMedida: linha.unidadeMedida,
         })),
     };
 
@@ -125,7 +132,12 @@ export function DialogoDeConclusao({
                 variante="suave"
                 tamanho="pequeno"
                 type="button"
-                onClick={() => setConsumos((atual) => [...atual, { produtoId: '', quantidade: '' }])}
+                onClick={() =>
+                  setConsumos((atual) => [
+                    ...atual,
+                    { produtoId: '', quantidade: '', unidadeMedida: 'UN' },
+                  ])
+                }
               >
                 <Plus />
                 Adicionar item
@@ -152,7 +164,14 @@ export function DialogoDeConclusao({
                           setConsumos((atual) =>
                             atual.map((item, posicao) =>
                               posicao === indice
-                                ? { ...item, produtoId: evento.target.value }
+                                ? {
+                                    ...item,
+                                    produtoId: evento.target.value,
+                                    unidadeMedida:
+                                      (produtos ?? []).find(
+                                        (produto) => String(produto.produtoId) === evento.target.value,
+                                      )?.unidadeEstoque ?? 'UN',
+                                  }
                                 : item,
                             ),
                           )
@@ -172,7 +191,6 @@ export function DialogoDeConclusao({
                         className="w-32"
                         inputMode="decimal"
                         placeholder="0"
-                        prefixo={produto === undefined ? undefined : produto.unidadeMedida}
                         value={linha.quantidade}
                         onChange={(evento) =>
                           setConsumos((atual) =>
@@ -184,6 +202,25 @@ export function DialogoDeConclusao({
                           )
                         }
                       />
+
+                      <Selecao
+                        aria-label="Unidade"
+                        className="w-20"
+                        value={linha.unidadeMedida}
+                        onChange={(evento) =>
+                          setConsumos((atual) =>
+                            atual.map((item, posicao) =>
+                              posicao === indice
+                                ? { ...item, unidadeMedida: evento.target.value as UnidadeMedida }
+                                : item,
+                            ),
+                          )
+                        }
+                      >
+                        {unidadesCompativeis(produto?.unidadeMedida ?? 'UN').map((unidade) => (
+                          <option key={unidade} value={unidade}>{unidade}</option>
+                        ))}
+                      </Selecao>
 
                       <Botao
                         variante="fantasma"

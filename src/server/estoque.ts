@@ -14,9 +14,13 @@ import {
   calcularValorDaCompra,
   descricaoDaCompra,
   nivelDoEstoque,
+  normalizarQuantidade,
+  normalizarQuantidadeNaoNegativa,
   percentualDoEstoque,
+  validarUnidadeCompativel,
   validarBaixa,
   type NivelEstoque,
+  type UnidadeBase,
   type UnidadeMedida,
 } from '@/domain/estoque';
 import { conflito, falha, naoEncontrado, ok, type Result } from '@/domain/result';
@@ -28,13 +32,17 @@ import type {
   EntradaEstoquePayload,
   FiltroEstoque,
   ProdutoPayload,
+  SaidaEstoqueInput,
 } from '@/schemas';
 import { registrar } from './log';
 
 export interface ItemDeEstoque {
   produtoId: number;
   nome: string;
-  unidadeMedida: UnidadeMedida;
+  /** Unidade base persistida (UN, ML ou G). */
+  unidadeMedida: UnidadeBase;
+  unidadeEstoque: UnidadeMedida;
+  unidadeMinima: UnidadeMedida;
   categoriaId: number;
   categoriaNome: string;
   quantidadeAtual: string;
@@ -61,10 +69,12 @@ export async function listarEstoque(
       produtoId: produto.id,
       nome: produto.nome,
       unidadeMedida: produto.unidadeMedida,
+      unidadeEstoque: produto.unidadeExibicao,
       categoriaId: categoriaProduto.id,
       categoriaNome: categoriaProduto.nome,
       quantidadeAtual: estoque.quantidadeAtual,
       quantidadeMinima: estoque.quantidadeMinima,
+      unidadeMinima: estoque.unidadeMinima,
       quantidadeEmbalagem: produto.quantidadeEmbalagem,
       valorEmbalagem: produto.valorEmbalagem,
       custoUnitario: produto.custoUnitario,
@@ -87,6 +97,7 @@ export async function listarEstoque(
       const nivel = nivelDoEstoque(registro.quantidadeAtual, registro.quantidadeMinima);
       return {
         ...registro,
+        unidadeMedida: registro.unidadeMedida as UnidadeBase,
         nivel,
         percentual: percentualDoEstoque(registro.quantidadeAtual, registro.quantidadeMinima),
         valorEmEstoque: Dinheiro.multiplicar(registro.quantidadeAtual, registro.custoUnitario),
@@ -140,20 +151,39 @@ export async function criarProduto(
       ),
     )
     .limit(1);
-
   if (categoria === undefined) return falha(naoEncontrado('Categoria não encontrada.'));
-  if (!categoria.ativo) return falha(conflito('Esta categoria está arquivada.'));
+  if (!categoria.ativo) {
+    return falha(conflito('Esta categoria está arquivada.'));
+  }
 
-  const custo = calcularCustoUnitario(dados.valorEmbalagem, dados.quantidadeEmbalagem);
+  const embalagem = normalizarQuantidade(dados.quantidadeEmbalagem, dados.unidadeEstoque);
+  if (!embalagem.ok) return embalagem;
+  const inicial = normalizarQuantidadeNaoNegativa(
+    dados.quantidadeInicial,
+    dados.unidadeEstoque,
+    'quantidadeInicial',
+  );
+  if (!inicial.ok) return inicial;
+  const minimo = normalizarQuantidadeNaoNegativa(
+    dados.quantidadeMinima,
+    dados.unidadeMinima,
+    'quantidadeMinima',
+  );
+  if (!minimo.ok) return minimo;
+  if (embalagem.value.unidadeBase !== minimo.value.unidadeBase) {
+    return falha(conflito('A unidade do alerta deve ser compatível com a unidade de estoque.'));
+  }
+
+  const custo = calcularCustoUnitario(dados.valorEmbalagem, embalagem.value.quantidade);
   if (!custo.ok) return custo;
 
-  const valorCompraInicial = Quantidade.ehPositivo(dados.quantidadeInicial)
+  const valorCompraInicial = Quantidade.ehPositivo(inicial.value.quantidade)
     ? calcularValorDaCompra(
         {
-          quantidadeEmbalagem: dados.quantidadeEmbalagem,
+          quantidadeEmbalagem: embalagem.value.quantidade,
           valorEmbalagem: dados.valorEmbalagem,
         },
-        dados.quantidadeInicial,
+        inicial.value.quantidade,
       )
     : null;
 
@@ -166,8 +196,9 @@ export async function criarProduto(
         empresaId: contexto.empresaId,
         categoriaProdutoId: dados.categoriaProdutoId,
         nome: dados.nome,
-        unidadeMedida: dados.unidadeMedida,
-        quantidadeEmbalagem: dados.quantidadeEmbalagem,
+        unidadeMedida: embalagem.value.unidadeBase,
+        unidadeExibicao: dados.unidadeEstoque,
+        quantidadeEmbalagem: embalagem.value.quantidade,
         valorEmbalagem: dados.valorEmbalagem,
         custoUnitario: custo.value,
       })
@@ -178,8 +209,9 @@ export async function criarProduto(
     await tx.insert(estoque).values({
       empresaId: contexto.empresaId,
       produtoId: novo.id,
-      quantidadeAtual: dados.quantidadeInicial,
-      quantidadeMinima: dados.quantidadeMinima,
+      quantidadeAtual: inicial.value.quantidade,
+      quantidadeMinima: minimo.value.quantidade,
+      unidadeMinima: dados.unidadeMinima,
     });
 
     if (valorCompraInicial !== null && valorCompraInicial.ok) {
@@ -189,7 +221,8 @@ export async function criarProduto(
         usuarioId: contexto.usuario.usuarioId,
         tipo: 'ENTRADA',
         origem: 'MANUAL',
-        quantidade: dados.quantidadeInicial,
+        quantidade: inicial.value.quantidade,
+        unidadeMovimentacao: dados.unidadeEstoque,
         valorFinanceiro: valorCompraInicial.value,
         motivo: 'Estoque inicial',
       });
@@ -197,7 +230,7 @@ export async function criarProduto(
       if (Dinheiro.ehPositivo(valorCompraInicial.value)) {
         await tx.insert(despesa).values({
           empresaId: contexto.empresaId,
-          descricao: descricaoDaCompra(dados.nome, dados.quantidadeInicial, dados.unidadeMedida),
+          descricao: descricaoDaCompra(dados.nome, dados.quantidadeInicial, dados.unidadeEstoque),
           categoria: 'FORNECEDOR',
           valor: valorCompraInicial.value,
           dataPagamento: hojeISO(),
@@ -228,14 +261,50 @@ export async function atualizarProduto(
   dados: ProdutoPayload,
 ): Promise<Result<{ id: number }>> {
   const [existente] = await db
-    .select({ id: produto.id })
+    .select({
+      id: produto.id,
+      unidadeMedida: produto.unidadeMedida,
+      categoriaProdutoId: produto.categoriaProdutoId,
+    })
     .from(produto)
     .where(and(eq(produto.id, produtoId), eq(produto.empresaId, contexto.empresaId)))
     .limit(1);
 
   if (existente === undefined) return falha(naoEncontrado('Produto não encontrado.'));
 
-  const custo = calcularCustoUnitario(dados.valorEmbalagem, dados.quantidadeEmbalagem);
+  const [categoria] = await db
+    .select({ id: categoriaProduto.id, ativo: categoriaProduto.ativo })
+    .from(categoriaProduto)
+    .where(
+      and(
+        eq(categoriaProduto.id, dados.categoriaProdutoId),
+        eq(categoriaProduto.empresaId, contexto.empresaId),
+      ),
+    )
+    .limit(1);
+  if (categoria === undefined) return falha(naoEncontrado('Categoria não encontrada.'));
+  if (!categoria.ativo && categoria.id !== existente.categoriaProdutoId) {
+    return falha(conflito('Esta categoria esta arquivada.'));
+  }
+
+  const embalagem = normalizarQuantidade(dados.quantidadeEmbalagem, dados.unidadeEstoque);
+  if (!embalagem.ok) return embalagem;
+  const minimo = normalizarQuantidadeNaoNegativa(
+    dados.quantidadeMinima,
+    dados.unidadeMinima,
+    'quantidadeMinima',
+  );
+  if (!minimo.ok) return minimo;
+  if (
+    embalagem.value.unidadeBase !== existente.unidadeMedida ||
+    minimo.value.unidadeBase !== existente.unidadeMedida
+  ) {
+    return falha(
+      conflito('Não é possível mudar a dimensão de um produto que já possui estoque.'),
+    );
+  }
+
+  const custo = calcularCustoUnitario(dados.valorEmbalagem, embalagem.value.quantidade);
   if (!custo.ok) return custo;
 
   await db.transaction(async (tx) => {
@@ -244,16 +313,16 @@ export async function atualizarProduto(
       .set({
         categoriaProdutoId: dados.categoriaProdutoId,
         nome: dados.nome,
-        unidadeMedida: dados.unidadeMedida,
-        quantidadeEmbalagem: dados.quantidadeEmbalagem,
+        unidadeExibicao: dados.unidadeEstoque,
+        quantidadeEmbalagem: embalagem.value.quantidade,
         valorEmbalagem: dados.valorEmbalagem,
         custoUnitario: custo.value,
       })
-      .where(eq(produto.id, produtoId));
+      .where(and(eq(produto.id, produtoId), eq(produto.empresaId, contexto.empresaId)));
 
     await tx
       .update(estoque)
-      .set({ quantidadeMinima: dados.quantidadeMinima })
+      .set({ quantidadeMinima: minimo.value.quantidade, unidadeMinima: dados.unidadeMinima })
       .where(and(eq(estoque.produtoId, produtoId), eq(estoque.empresaId, contexto.empresaId)));
   });
 
@@ -315,7 +384,12 @@ export async function registrarEntrada(
   if (registro === undefined) return falha(naoEncontrado('Produto não encontrado.'));
   if (!registro.ativo) return falha(conflito('Não é possível movimentar um produto arquivado.'));
 
-  const valor = calcularValorDaCompra(registro, dados.quantidade, dados.valorPago);
+  const unidade = validarUnidadeCompativel(registro.unidadeMedida, dados.unidadeMedida);
+  if (!unidade.ok) return unidade;
+  const quantidade = normalizarQuantidade(dados.quantidade, dados.unidadeMedida);
+  if (!quantidade.ok) return quantidade;
+
+  const valor = calcularValorDaCompra(registro, quantidade.value.quantidade, dados.valorPago);
   if (!valor.ok) return valor;
 
   const saldo = await db.transaction(async (tx) => {
@@ -328,7 +402,7 @@ export async function registrarEntrada(
 
     if (linha === undefined) throw new Error('Produto sem registro de estoque.');
 
-    const novoSaldo = Quantidade.somar(linha.quantidadeAtual, dados.quantidade);
+    const novoSaldo = Quantidade.somar(linha.quantidadeAtual, quantidade.value.quantidade);
     await tx.update(estoque).set({ quantidadeAtual: novoSaldo }).where(eq(estoque.id, linha.id));
 
     await tx.insert(movimentacaoEstoque).values({
@@ -337,7 +411,8 @@ export async function registrarEntrada(
       usuarioId: contexto.usuario.usuarioId,
       tipo: 'ENTRADA',
       origem: 'MANUAL',
-      quantidade: dados.quantidade,
+      quantidade: quantidade.value.quantidade,
+      unidadeMovimentacao: dados.unidadeMedida,
       valorFinanceiro: valor.value,
       motivo: dados.motivo ?? 'Reposição de estoque',
     });
@@ -345,7 +420,7 @@ export async function registrarEntrada(
     if (Dinheiro.ehPositivo(valor.value)) {
       await tx.insert(despesa).values({
         empresaId: contexto.empresaId,
-        descricao: descricaoDaCompra(registro.nome, dados.quantidade, registro.unidadeMedida),
+        descricao: descricaoDaCompra(registro.nome, dados.quantidade, dados.unidadeMedida),
         categoria: 'FORNECEDOR',
         valor: valor.value,
         dataPagamento: hojeISO(),
@@ -368,17 +443,26 @@ export async function registrarEntrada(
 export async function registrarSaida(
   contexto: Contexto,
   produtoId: number,
-  quantidade: string,
-  motivo: string | null,
+  dados: SaidaEstoqueInput,
 ): Promise<Result<{ saldo: string }>> {
   const [registro] = await db
-    .select({ id: produto.id, nome: produto.nome, ativo: produto.ativo })
+    .select({
+      id: produto.id,
+      nome: produto.nome,
+      ativo: produto.ativo,
+      unidadeMedida: produto.unidadeMedida,
+    })
     .from(produto)
     .where(and(eq(produto.id, produtoId), eq(produto.empresaId, contexto.empresaId)))
     .limit(1);
 
   if (registro === undefined) return falha(naoEncontrado('Produto não encontrado.'));
   if (!registro.ativo) return falha(conflito('Não é possível movimentar um produto arquivado.'));
+
+  const unidade = validarUnidadeCompativel(registro.unidadeMedida, dados.unidadeMedida);
+  if (!unidade.ok) return unidade;
+  const quantidade = normalizarQuantidade(dados.quantidade, dados.unidadeMedida);
+  if (!quantidade.ok) return quantidade;
 
   const resultado = await db.transaction(async (tx) => {
     const [linha] = await tx
@@ -390,7 +474,7 @@ export async function registrarSaida(
 
     if (linha === undefined) throw new Error('Produto sem registro de estoque.');
 
-    const baixa = validarBaixa(linha.quantidadeAtual, quantidade, registro.nome);
+    const baixa = validarBaixa(linha.quantidadeAtual, quantidade.value.quantidade, registro.nome);
     if (!baixa.ok) return { erro: baixa.error } as const;
 
     await tx.update(estoque).set({ quantidadeAtual: baixa.value }).where(eq(estoque.id, linha.id));
@@ -401,8 +485,9 @@ export async function registrarSaida(
       usuarioId: contexto.usuario.usuarioId,
       tipo: 'SAIDA',
       origem: 'MANUAL',
-      quantidade,
-      motivo: motivo ?? 'Saída manual',
+      quantidade: quantidade.value.quantidade,
+      unidadeMovimentacao: dados.unidadeMedida,
+      motivo: dados.motivo ?? 'Saída manual',
     });
 
     return { saldo: baixa.value } as const;
@@ -424,12 +509,25 @@ export async function alterarMinimo(
   contexto: Contexto,
   produtoId: number,
   quantidadeMinima: string,
-): Promise<Result<{ quantidadeMinima: string }>> {
+  unidadeMinima: UnidadeMedida,
+): Promise<Result<{ quantidadeMinima: string; unidadeMinima: UnidadeMedida }>> {
+  const [produtoDaEmpresa] = await db
+    .select({ unidadeMedida: produto.unidadeMedida })
+    .from(produto)
+    .where(and(eq(produto.id, produtoId), eq(produto.empresaId, contexto.empresaId)))
+    .limit(1);
+  if (produtoDaEmpresa === undefined) return falha(naoEncontrado('Produto não encontrado.'));
+
+  const unidade = validarUnidadeCompativel(produtoDaEmpresa.unidadeMedida, unidadeMinima, 'unidadeMinima');
+  if (!unidade.ok) return unidade;
+  const minimo = normalizarQuantidadeNaoNegativa(quantidadeMinima, unidadeMinima, 'quantidadeMinima');
+  if (!minimo.ok) return minimo;
+
   const [atualizado] = await db
     .update(estoque)
-    .set({ quantidadeMinima })
+    .set({ quantidadeMinima: minimo.value.quantidade, unidadeMinima })
     .where(and(eq(estoque.produtoId, produtoId), eq(estoque.empresaId, contexto.empresaId)))
-    .returning({ quantidadeMinima: estoque.quantidadeMinima });
+    .returning({ quantidadeMinima: estoque.quantidadeMinima, unidadeMinima: estoque.unidadeMinima });
 
   if (atualizado === undefined) return falha(naoEncontrado('Produto não encontrado.'));
 
@@ -450,11 +548,13 @@ export async function listarMovimentacoes(contexto: Contexto, limite = 30) {
       tipo: movimentacaoEstoque.tipo,
       origem: movimentacaoEstoque.origem,
       quantidade: movimentacaoEstoque.quantidade,
+      unidadeMovimentacao: movimentacaoEstoque.unidadeMovimentacao,
       valorFinanceiro: movimentacaoEstoque.valorFinanceiro,
       motivo: movimentacaoEstoque.motivo,
       ocorridoEm: movimentacaoEstoque.ocorridoEm,
       produtoNome: produto.nome,
       unidadeMedida: produto.unidadeMedida,
+      unidadeEstoque: produto.unidadeExibicao,
       usuarioNome: usuario.nome,
     })
     .from(movimentacaoEstoque)

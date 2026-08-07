@@ -28,7 +28,13 @@ import { Etiqueta, type TomEtiqueta } from '@/components/ui/etiqueta';
 import { Medidor } from '@/components/ui/indicador';
 import { Cabecalho, Celula, Coluna, Corpo, Linha, Tabela } from '@/components/ui/tabela';
 import { Vazio } from '@/components/ui/vazio';
-import { UNIDADES, type NivelEstoque } from '@/domain/estoque';
+import {
+  UNIDADES,
+  dimensaoDaUnidade,
+  exibirQuantidadeInteligente,
+  type NivelEstoque,
+  type UnidadeMedida,
+} from '@/domain/estoque';
 import { formatarDataHora } from '@/domain/shared/tempo';
 import { formatarMoeda, formatarQuantidade } from '@/domain/shared/texto';
 import { usePermissao } from '@/hooks/use-sessao';
@@ -65,23 +71,35 @@ interface Movimentacao {
   tipo: string;
   origem: string;
   quantidade: string;
+  unidadeMovimentacao: UnidadeMedida;
   valorFinanceiro: string | null;
   motivo: string | null;
   ocorridoEm: string;
   produtoNome: string;
-  unidadeMedida: string;
+  unidadeMedida: ItemDeEstoque['unidadeMedida'];
+  unidadeEstoque: UnidadeMedida;
   usuarioNome: string | null;
 }
 
 const PRODUTO_VAZIO: ProdutoInput = {
   nome: '',
   categoriaProdutoId: 0,
-  unidadeMedida: 'UN',
+  unidadeEstoque: 'UN',
+  unidadeMinima: 'UN',
   quantidadeEmbalagem: '1',
   valorEmbalagem: '',
   quantidadeInicial: '0',
   quantidadeMinima: '0',
 };
+
+function unidadesDaMesmaDimensao(unidade: UnidadeMedida): UnidadeMedida[] {
+  return UNIDADES.filter((opcao) => dimensaoDaUnidade(opcao) === dimensaoDaUnidade(unidade));
+}
+
+function quantidadeFormatada(quantidade: string, unidadeBase: ItemDeEstoque['unidadeMedida']) {
+  const exibicao = exibirQuantidadeInteligente(quantidade, unidadeBase);
+  return `${formatarQuantidade(exibicao.quantidade)} ${exibicao.unidade}`;
+}
 
 export function PainelDeEstoque() {
   const { permite, carregando } = usePermissao();
@@ -207,12 +225,12 @@ export function PainelDeEstoque() {
 
   const formEntrada = useForm<EntradaEstoqueInput>({
     resolver: zodResolver(entradaEstoqueSchema),
-    defaultValues: { quantidade: '', valorPago: '', motivo: '' },
+    defaultValues: { quantidade: '', unidadeMedida: 'UN', valorPago: '', motivo: '' },
   });
 
   const formSaida = useForm<SaidaEstoqueInput>({
     resolver: zodResolver(saidaEstoqueSchema),
-    defaultValues: { quantidade: '', motivo: '' },
+    defaultValues: { quantidade: '', unidadeMedida: 'UN', motivo: '' },
   });
 
   const formCategoria = useForm<CategoriaInput>({
@@ -228,7 +246,8 @@ export function PainelDeEstoque() {
         : {
             nome: emEdicao.nome,
             categoriaProdutoId: emEdicao.categoriaId,
-            unidadeMedida: emEdicao.unidadeMedida,
+            unidadeEstoque: emEdicao.unidadeEstoque,
+            unidadeMinima: emEdicao.unidadeMinima,
             quantidadeEmbalagem: emEdicao.quantidadeEmbalagem,
             valorEmbalagem: emEdicao.valorEmbalagem,
             quantidadeInicial: '0',
@@ -239,8 +258,13 @@ export function PainelDeEstoque() {
 
   useEffect(() => {
     if (movimentando === null) return;
-    formEntrada.reset({ quantidade: '', valorPago: '', motivo: '' });
-    formSaida.reset({ quantidade: '', motivo: '' });
+    formEntrada.reset({
+      quantidade: '',
+      unidadeMedida: movimentando.item.unidadeEstoque,
+      valorPago: '',
+      motivo: '',
+    });
+    formSaida.reset({ quantidade: '', unidadeMedida: movimentando.item.unidadeEstoque, motivo: '' });
   }, [movimentando, formEntrada, formSaida]);
 
   if (carregando) return <EsqueletoDeLista linhas={6} />;
@@ -424,12 +448,11 @@ export function PainelDeEstoque() {
                       </div>
                     </Celula>
                     <Celula numerica>
-                      {formatarQuantidade(item.quantidadeAtual)}{' '}
-                      <span className="text-xs text-[var(--tinta-tenue)]">
-                        {item.unidadeMedida}
-                      </span>
+                      {quantidadeFormatada(item.quantidadeAtual, item.unidadeMedida)}
                     </Celula>
-                    <Celula numerica>{formatarQuantidade(item.quantidadeMinima)}</Celula>
+                    <Celula numerica>
+                      {quantidadeFormatada(item.quantidadeMinima, item.unidadeMedida)}
+                    </Celula>
                     <Celula numerica>{formatarMoeda(item.custoUnitario)}</Celula>
                     <Celula numerica>{formatarMoeda(item.valorEmEstoque)}</Celula>
                     <Celula className="text-right">
@@ -508,7 +531,7 @@ export function PainelDeEstoque() {
                       }
                     >
                       {movimentacao.tipo === 'ENTRADA' ? '+' : '−'}
-                      {formatarQuantidade(movimentacao.quantidade)}
+                      {quantidadeFormatada(movimentacao.quantidade, movimentacao.unidadeMedida)}
                     </span>
                   </div>
                   {movimentacao.motivo !== null ? (
@@ -581,10 +604,10 @@ export function PainelDeEstoque() {
                 ))}
             </Selecao>
             <Selecao
-              rotulo="Unidade de medida"
+              rotulo="Unidade do estoque"
               obrigatorio
-              erro={formProduto.formState.errors.unidadeMedida?.message}
-              {...formProduto.register('unidadeMedida')}
+              erro={formProduto.formState.errors.unidadeEstoque?.message}
+              {...formProduto.register('unidadeEstoque')}
             >
               {UNIDADES.map((unidade) => (
                 <option key={unidade} value={unidade}>
@@ -631,6 +654,18 @@ export function PainelDeEstoque() {
               erro={formProduto.formState.errors.quantidadeMinima?.message}
               {...formProduto.register('quantidadeMinima')}
             />
+            <Selecao
+              rotulo="Unidade do alerta"
+              obrigatorio
+              erro={formProduto.formState.errors.unidadeMinima?.message}
+              {...formProduto.register('unidadeMinima')}
+            >
+              {unidadesDaMesmaDimensao(formProduto.watch('unidadeEstoque')).map((unidade) => (
+                <option key={unidade} value={unidade}>
+                  {unidade}
+                </option>
+              ))}
+            </Selecao>
           </div>
         </form>
       </Dialogo>
@@ -685,10 +720,14 @@ export function PainelDeEstoque() {
               rotulo="Quantidade"
               obrigatorio
               inputMode="decimal"
-              prefixo={movimentando.item.unidadeMedida}
               erro={formEntrada.formState.errors.quantidade?.message}
               {...formEntrada.register('quantidade')}
             />
+            <Selecao rotulo="Unidade" {...formEntrada.register('unidadeMedida')}>
+              {unidadesDaMesmaDimensao(movimentando?.item.unidadeMedida ?? 'UN').map((unidade) => (
+                <option key={unidade} value={unidade}>{unidade}</option>
+              ))}
+            </Selecao>
             <Campo
               rotulo="Valor pago"
               inputMode="decimal"
@@ -714,10 +753,14 @@ export function PainelDeEstoque() {
               rotulo="Quantidade"
               obrigatorio
               inputMode="decimal"
-              prefixo={movimentando?.item.unidadeMedida}
               erro={formSaida.formState.errors.quantidade?.message}
               {...formSaida.register('quantidade')}
             />
+            <Selecao rotulo="Unidade" {...formSaida.register('unidadeMedida')}>
+              {unidadesDaMesmaDimensao(movimentando?.item.unidadeMedida ?? 'UN').map((unidade) => (
+                <option key={unidade} value={unidade}>{unidade}</option>
+              ))}
+            </Selecao>
             <AreaDeTexto
               rotulo="Motivo"
               placeholder="Perda, ajuste de inventário, uso interno..."

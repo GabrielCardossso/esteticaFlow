@@ -4,6 +4,84 @@ import { Dinheiro, dividirComEscala, Quantidade } from './shared/decimal';
 export const UNIDADES = ['UN', 'ML', 'L', 'KG', 'G'] as const;
 export type UnidadeMedida = (typeof UNIDADES)[number];
 
+/** Unidades que representam o saldo persistido. */
+export const UNIDADES_BASE = ['UN', 'ML', 'G'] as const;
+export type UnidadeBase = (typeof UNIDADES_BASE)[number];
+
+export type DimensaoUnidade = 'UNIDADE' | 'VOLUME' | 'PESO';
+
+export function dimensaoDaUnidade(unidade: UnidadeMedida): DimensaoUnidade {
+  if (unidade === 'UN') return 'UNIDADE';
+  if (unidade === 'ML' || unidade === 'L') return 'VOLUME';
+  return 'PESO';
+}
+
+export function unidadeBaseDa(unidade: UnidadeMedida): UnidadeBase {
+  if (unidade === 'L' || unidade === 'ML') return 'ML';
+  if (unidade === 'KG' || unidade === 'G') return 'G';
+  return 'UN';
+}
+
+/**
+ * Converte uma quantidade informada para a unidade base da sua dimensao.
+ * O banco nunca armazena litros ou quilogramas: somente mL, g ou un.
+ */
+export function normalizarQuantidade(
+  quantidade: string | number,
+  unidade: UnidadeMedida,
+): Result<{ quantidade: string; unidadeBase: UnidadeBase }> {
+  const validada = validarQuantidadePositiva(quantidade);
+  if (!validada.ok) return validada;
+  const fator = unidade === 'L' || unidade === 'KG' ? '1000' : '1';
+  return ok({
+    quantidade: Quantidade.multiplicar(validada.value, fator),
+    unidadeBase: unidadeBaseDa(unidade),
+  });
+}
+
+export function normalizarQuantidadeNaoNegativa(
+  quantidade: string | number,
+  unidade: UnidadeMedida,
+  campo = 'quantidade',
+): Result<{ quantidade: string; unidadeBase: UnidadeBase }> {
+  if (Quantidade.ehNegativo(quantidade)) {
+    return falha(validacao('A quantidade não pode ser negativa.', campo));
+  }
+  const fator = unidade === 'L' || unidade === 'KG' ? '1000' : '1';
+  return ok({ quantidade: Quantidade.multiplicar(Quantidade.de(quantidade), fator), unidadeBase: unidadeBaseDa(unidade) });
+}
+
+export function unidadesCompativeis(a: UnidadeMedida, b: UnidadeMedida): boolean {
+  return dimensaoDaUnidade(a) === dimensaoDaUnidade(b);
+}
+
+export function validarUnidadeCompativel(
+  unidadeBase: UnidadeMedida,
+  unidadeInformada: UnidadeMedida,
+  campo = 'unidadeMedida',
+): Result<true> {
+  if (unidadeBaseDa(unidadeInformada) === unidadeBase) return ok(true);
+  return falha(validacao('A unidade informada não é compatível com este produto.', campo));
+}
+
+function exibirNumero(quantidade: string): string {
+  return quantidade.replace(/\.?0+$/, '') || '0';
+}
+
+/** Converte o saldo base para uma forma curta e legível para a interface. */
+export function exibirQuantidadeInteligente(
+  quantidadeBase: string,
+  unidadeBase: UnidadeBase,
+): { quantidade: string; unidade: UnidadeMedida } {
+  if (unidadeBase === 'ML' && Quantidade.comparar(quantidadeBase, '1000') >= 0) {
+    return { quantidade: exibirNumero(Quantidade.dividir(quantidadeBase, '1000')), unidade: 'L' };
+  }
+  if (unidadeBase === 'G' && Quantidade.comparar(quantidadeBase, '1000') >= 0) {
+    return { quantidade: exibirNumero(Quantidade.dividir(quantidadeBase, '1000')), unidade: 'KG' };
+  }
+  return { quantidade: exibirNumero(quantidadeBase), unidade: unidadeBase };
+}
+
 export const ROTULO_UNIDADE: Readonly<Record<UnidadeMedida, string>> = {
   UN: 'unidade',
   ML: 'mililitro',

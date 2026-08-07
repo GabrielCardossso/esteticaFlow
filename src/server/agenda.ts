@@ -1,4 +1,4 @@
-import { and, asc, between, eq, inArray, sql } from 'drizzle-orm';
+import { and, asc, between, eq, inArray } from 'drizzle-orm';
 import type { Contexto } from '@/auth/contexto';
 import { db } from '@/db/client';
 import {
@@ -8,6 +8,7 @@ import {
   estoque,
   formaPagamento,
   movimentacaoEstoque,
+  produto,
   receita,
   servico,
   usuario,
@@ -26,7 +27,7 @@ import {
   type JanelaAgendamento,
   type StatusAgendamento,
 } from '@/domain/agendamento';
-import { validarBaixa } from '@/domain/estoque';
+import { normalizarQuantidade, validarBaixa, validarUnidadeCompativel } from '@/domain/estoque';
 import { conflito, falha, naoEncontrado, ok, validacao, type Result } from '@/domain/result';
 import { Quantidade } from '@/domain/shared/decimal';
 import {
@@ -450,10 +451,11 @@ export async function concluirAgendamento(
   const destino = transicionar(atual.status, 'CONCLUIR');
   if (!destino.ok) return destino;
 
-  const consumosAgregados = new Map<number, string>();
+  const consumosAgregados = new Map<number, ConcluirPayload['consumos']>();
   for (const consumo of dados.consumos) {
-    const acumulado = consumosAgregados.get(consumo.produtoId) ?? '0';
-    consumosAgregados.set(consumo.produtoId, Quantidade.somar(acumulado, consumo.quantidade));
+    const acumulado = consumosAgregados.get(consumo.produtoId) ?? [];
+    acumulado.push(consumo);
+    consumosAgregados.set(consumo.produtoId, acumulado);
   }
 
   let formaValida: number | null = null;
@@ -480,20 +482,33 @@ export async function concluirAgendamento(
     .where(eq(agendamentoServico.agendamentoId, id));
 
   const resultado = await db.transaction(async (tx) => {
-    for (const [produtoId, quantidade] of consumosAgregados) {
+    for (const [produtoId, consumos] of consumosAgregados) {
       const [saldo] = await tx
         .select({
           id: estoque.id,
           quantidadeAtual: estoque.quantidadeAtual,
-          nome: sql<string>`(select nome from produto where produto.id = ${produtoId})`,
+          nome: produto.nome,
+          unidadeMedida: produto.unidadeMedida,
+          ativo: produto.ativo,
         })
         .from(estoque)
+        .innerJoin(produto, eq(produto.id, estoque.produtoId))
         .where(and(eq(estoque.produtoId, produtoId), eq(estoque.empresaId, contexto.empresaId)))
         .for('update')
         .limit(1);
 
       if (saldo === undefined) {
         return { erro: naoEncontrado('Produto sem controle de estoque nesta empresa.') } as const;
+      }
+      if (!saldo.ativo) return { erro: conflito('Não é possível consumir um produto arquivado.') } as const;
+
+      let quantidade = Quantidade.zero;
+      for (const consumo of consumos) {
+        const unidade = validarUnidadeCompativel(saldo.unidadeMedida, consumo.unidadeMedida);
+        if (!unidade.ok) return { erro: unidade.error } as const;
+        const normalizada = normalizarQuantidade(consumo.quantidade, consumo.unidadeMedida);
+        if (!normalizada.ok) return { erro: normalizada.error } as const;
+        quantidade = Quantidade.somar(quantidade, normalizada.value.quantidade);
       }
 
       const baixa = validarBaixa(saldo.quantidadeAtual, quantidade, saldo.nome ?? 'produto');
@@ -512,6 +527,7 @@ export async function concluirAgendamento(
         tipo: 'SAIDA',
         origem: 'AGENDAMENTO',
         quantidade,
+        unidadeMovimentacao: saldo.unidadeMedida,
         motivo: `Consumo no atendimento ${id}`,
       });
     }
@@ -532,7 +548,7 @@ export async function concluirAgendamento(
     await tx
       .update(agendamento)
       .set({ status: 'CONCLUIDO', pago })
-      .where(eq(agendamento.id, id));
+      .where(and(eq(agendamento.id, id), eq(agendamento.empresaId, contexto.empresaId)));
 
     return { pago } as const;
   });
@@ -600,7 +616,10 @@ export async function registrarPagamento(
       valor: atual.total,
       dataRecebimento: hojeISO(),
     });
-    await tx.update(agendamento).set({ pago: true }).where(eq(agendamento.id, id));
+    await tx
+      .update(agendamento)
+      .set({ pago: true })
+      .where(and(eq(agendamento.id, id), eq(agendamento.empresaId, contexto.empresaId)));
   });
 
   await registrar({

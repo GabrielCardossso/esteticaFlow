@@ -10,7 +10,11 @@ import { classificarRelacionamento, linkWhatsApp } from '@/domain/cliente';
 import {
   calcularCustoUnitario,
   calcularValorDaCompra,
+  exibirQuantidadeInteligente,
   nivelDoEstoque,
+  normalizarQuantidade,
+  unidadesCompativeis,
+  validarUnidadeCompativel,
   validarBaixa,
 } from '@/domain/estoque';
 import {
@@ -261,6 +265,30 @@ describe('custo e compra de estoque', () => {
     expect(nivelDoEstoque('4.000', '5.000')).toBe('BAIXO');
     expect(nivelDoEstoque('5.500', '5.000')).toBe('SAUDAVEL');
     expect(nivelDoEstoque('100.000', '5.000')).toBe('SAUDAVEL');
+  });
+
+  it('normaliza litros para mL e quilogramas para g', () => {
+    expect(normalizarQuantidade('1.5', 'L')).toMatchObject({
+      ok: true,
+      value: { quantidade: '1500.000', unidadeBase: 'ML' },
+    });
+    expect(normalizarQuantidade('2.25', 'KG')).toMatchObject({
+      ok: true,
+      value: { quantidade: '2250.000', unidadeBase: 'G' },
+    });
+  });
+
+  it('rejeita unidades incompativeis', () => {
+    expect(unidadesCompativeis('L', 'ML')).toBe(true);
+    expect(unidadesCompativeis('KG', 'G')).toBe(true);
+    expect(unidadesCompativeis('L', 'G')).toBe(false);
+    expect(validarUnidadeCompativel('ML', 'G').ok).toBe(false);
+  });
+
+  it('exibe saldo grande em L e KG', () => {
+    expect(exibirQuantidadeInteligente('1500.000', 'ML')).toEqual({ quantidade: '1.5', unidade: 'L' });
+    expect(exibirQuantidadeInteligente('1250.000', 'G')).toEqual({ quantidade: '1.25', unidade: 'KG' });
+    expect(exibirQuantidadeInteligente('800.000', 'ML')).toEqual({ quantidade: '800', unidade: 'ML' });
   });
 });
 
