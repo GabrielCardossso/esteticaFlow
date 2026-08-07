@@ -21,7 +21,12 @@ export async function middleware(request: NextRequest) {
   const autenticado = sessao !== null;
 
   if (ehPublica(pathname)) {
-    if (autenticado && (pathname === '/login' || pathname === '/')) {
+    // O middleware so consegue validar a assinatura do JWT. A validade da
+    // conta (usuario/empresa/plano) e confirmada no runtime Node pelo layout
+    // do painel. Por isso, nunca redirecionamos /login apenas por haver um
+    // cookie assinado: uma sessao revogada no banco entraria em loop entre
+    // /login e /painel e impediria um novo login.
+    if (autenticado && pathname === '/') {
       return NextResponse.redirect(new URL('/painel', request.url));
     }
     return NextResponse.next();
