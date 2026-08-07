@@ -57,7 +57,11 @@ export function calcularValorDaCompra(
   quantidadeUnidades: string | number,
   valorPagoInformado?: string | number | null,
 ): Result<string> {
-  if (valorPagoInformado !== undefined && valorPagoInformado !== null && valorPagoInformado !== '') {
+  if (
+    valorPagoInformado !== undefined &&
+    valorPagoInformado !== null &&
+    valorPagoInformado !== ''
+  ) {
     if (Dinheiro.ehNegativo(valorPagoInformado)) {
       return falha(validacao('O valor pago na compra não pode ser negativo.', 'valorPago'));
     }
@@ -98,10 +102,7 @@ export function validarBaixa(
 ): Result<string> {
   if (Quantidade.comparar(saldoAtual, quantidade) < 0) {
     return falha(
-      validacao(
-        `Saldo insuficiente de "${nomeProduto}". Disponível: ${saldoAtual}.`,
-        'quantidade',
-      ),
+      validacao(`Saldo insuficiente de "${nomeProduto}". Disponível: ${saldoAtual}.`, 'quantidade'),
     );
   }
   return ok(Quantidade.subtrair(saldoAtual, quantidade));
@@ -113,8 +114,6 @@ export type NivelEstoque = 'CRITICO' | 'BAIXO' | 'SAUDAVEL';
 export function nivelDoEstoque(quantidadeAtual: string, quantidadeMinima: string): NivelEstoque {
   if (Quantidade.ehZero(quantidadeAtual)) return 'CRITICO';
   if (Quantidade.comparar(quantidadeAtual, quantidadeMinima) <= 0) return 'BAIXO';
-  const folga = Quantidade.multiplicar(quantidadeMinima, '1.5');
-  if (Quantidade.comparar(quantidadeAtual, folga) <= 0) return 'BAIXO';
   return 'SAUDAVEL';
 }
 

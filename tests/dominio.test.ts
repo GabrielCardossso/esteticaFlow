@@ -259,6 +259,7 @@ describe('custo e compra de estoque', () => {
   it('classifica o nível do estoque', () => {
     expect(nivelDoEstoque('0.000', '5.000')).toBe('CRITICO');
     expect(nivelDoEstoque('4.000', '5.000')).toBe('BAIXO');
+    expect(nivelDoEstoque('5.500', '5.000')).toBe('SAUDAVEL');
     expect(nivelDoEstoque('100.000', '5.000')).toBe('SAUDAVEL');
   });
 });
@@ -289,10 +290,16 @@ describe('ciclo da assinatura', () => {
 
   it('marca atraso depois do vencimento', () => {
     expect(
-      recalcularStatus({ ativo: true, status: 'ATIVA', proximoVencimento: vencimento }, '2030-01-11'),
+      recalcularStatus(
+        { ativo: true, status: 'ATIVA', proximoVencimento: vencimento },
+        '2030-01-11',
+      ),
     ).toBe('EM_ATRASO');
     expect(
-      recalcularStatus({ ativo: true, status: 'ATIVA', proximoVencimento: vencimento }, '2030-01-10'),
+      recalcularStatus(
+        { ativo: true, status: 'ATIVA', proximoVencimento: vencimento },
+        '2030-01-10',
+      ),
     ).toBe('ATIVA');
   });
 

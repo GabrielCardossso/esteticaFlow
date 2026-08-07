@@ -1,4 +1,4 @@
-import { and, count, desc, eq, isNull } from 'drizzle-orm';
+import { and, count, desc, eq, isNull, notInArray } from 'drizzle-orm';
 import type { Contexto } from '@/auth/contexto';
 import { db } from '@/db/client';
 import { notificacao } from '@/db/schema';
@@ -124,6 +124,25 @@ async function sincronizarAlertas(contexto: Contexto): Promise<void> {
 
   if (contexto.permite('ESTOQUE')) {
     const alertas = await alertasDeEstoque(contexto);
+
+    // Alerta de estoque descreve um estado atual, não um evento histórico.
+    // Ao repor um produto, o aviso pendente precisa deixar de contar como
+    // notificação ativa, mesmo se o usuário não abrir a tela de estoque.
+    const condicoesResolvidas = [
+      eq(notificacao.empresaId, contexto.empresaId),
+      eq(notificacao.tipo, 'ESTOQUE_BAIXO'),
+      eq(notificacao.referenciaTipo, 'PRODUTO'),
+      eq(notificacao.lida, false),
+    ];
+    const idsEmAlerta = alertas.map((alerta) => alerta.produtoId);
+    if (idsEmAlerta.length > 0) {
+      condicoesResolvidas.push(notInArray(notificacao.referenciaId, idsEmAlerta));
+    }
+    await db
+      .update(notificacao)
+      .set({ lida: true })
+      .where(and(...condicoesResolvidas));
+
     for (const alerta of alertas.slice(0, 20)) {
       await notificarEmpresa({
         empresaId: contexto.empresaId,
@@ -153,7 +172,8 @@ async function sincronizarAlertas(contexto: Contexto): Promise<void> {
         empresaId: contexto.empresaId,
         tipo: 'CLIENTE_INATIVO',
         titulo: `${cliente.relacionamento === 'INATIVO' ? 'Cliente inativo' : 'Cliente em risco'}: ${cliente.nome}`,
-        mensagem: 'Considere um contato de reativação. O histórico completo está na ficha do cliente.',
+        mensagem:
+          'Considere um contato de reativação. O histórico completo está na ficha do cliente.',
         referenciaTipo: 'CLIENTE',
         referenciaId: cliente.id,
         acaoUrl: `/painel/clientes/${cliente.id}`,
@@ -192,6 +212,8 @@ export async function listarNotificacoes(
 }
 
 export async function contarNaoLidas(contexto: Contexto): Promise<number> {
+  await sincronizarAlertas(contexto);
+
   const escopo = contexto.usuario.ehSuperAdmin
     ? isNull(notificacao.empresaId)
     : eq(notificacao.empresaId, contexto.empresaId);
