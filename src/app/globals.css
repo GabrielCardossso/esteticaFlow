@@ -112,6 +112,27 @@
   --grade: rgb(15 21 32 / 0.03);
 }
 
+/*
+ * Os tokens base do tenant vivem no contêiner do painel. As cores derivadas
+ * também precisam ser recalculadas nesse mesmo escopo: valores de custom
+ * properties herdados já chegam resolvidos e, sem isso, preservavam o âmbar
+ * da raiz mesmo depois de trocar a cor da empresa.
+ */
+[data-tema-tenant] {
+  --acento-ativo: var(--acento-escuro);
+  --acento-fraco: rgb(var(--acento-rgb) / 0.14);
+  --acento-medio: rgb(var(--acento-rgb) / 0.28);
+  --brilho-acento:
+    0 0 0 1px rgb(var(--acento-rgb) / 0.35), 0 0 24px -6px rgb(var(--acento-rgb) / 0.45);
+}
+
+:root[data-modo='claro'] [data-tema-tenant] {
+  --acento-ativo: var(--acento-claro);
+  --acento-fraco: rgb(var(--acento-rgb) / 0.1);
+  --acento-medio: rgb(var(--acento-rgb) / 0.2);
+  --brilho-acento: 0 0 0 1px rgb(var(--acento-rgb) / 0.3);
+}
+
 @layer base {
   * {
     border-color: var(--borda);
@@ -353,6 +374,72 @@
     animation: respirar-aura 6s ease-in-out infinite;
   }
 
+  .hero-vitrine {
+    isolation: isolate;
+    overflow: hidden;
+    background:
+      linear-gradient(145deg, rgb(var(--acento-rgb) / 0.11), transparent 34%), var(--superficie-1);
+  }
+
+  .hero-vitrine::after {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    opacity: 0.34;
+    background-image:
+      linear-gradient(rgb(255 255 255 / 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(255 255 255 / 0.035) 1px, transparent 1px);
+    background-size: 24px 24px;
+    mask-image: linear-gradient(to bottom, black, transparent 88%);
+  }
+
+  @keyframes varrer-vitrine {
+    from {
+      transform: translateX(-120%) rotate(12deg);
+    }
+    to {
+      transform: translateX(260%) rotate(12deg);
+    }
+  }
+
+  .varredura-vitrine::before {
+    content: '';
+    position: absolute;
+    z-index: 0;
+    inset: -25% auto -25% -30%;
+    width: 26%;
+    pointer-events: none;
+    background: linear-gradient(90deg, transparent, rgb(var(--acento-rgb) / 0.18), transparent);
+    animation: varrer-vitrine 7s 1.2s var(--ease-mecanico) infinite;
+  }
+
+  .hero-kpi {
+    position: relative;
+    overflow: hidden;
+    transition:
+      transform var(--duracao-media) var(--ease-mecanico),
+      border-color var(--duracao-media) var(--ease-mecanico);
+  }
+
+  .hero-kpi::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 2px;
+    background: var(--acento-ativo);
+    opacity: 0.8;
+  }
+
+  .hero-kpi:hover {
+    transform: translateY(-2px);
+    border-color: rgb(var(--acento-rgb) / 0.55);
+  }
+
+  .hero-painel .hero-kpi:nth-child(2)::before {
+    background: var(--positivo);
+  }
+
   .barra-telemetria {
     transform-origin: bottom;
     animation: crescer-telemetria 560ms var(--ease-mecanico) both;
@@ -368,6 +455,25 @@
   .cartao-vitrine:hover {
     transform: translateY(-4px);
     box-shadow: var(--sombra-elevada);
+  }
+
+  @keyframes revelar-na-rolagem {
+    from {
+      opacity: 0;
+      transform: translateY(26px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @supports (animation-timeline: view()) {
+    .revelar-na-rolagem {
+      animation: revelar-na-rolagem linear both;
+      animation-timeline: view();
+      animation-range: entry 5% cover 28%;
+    }
   }
 }
 

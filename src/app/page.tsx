@@ -114,17 +114,17 @@ export default function PaginaInicial() {
               <div className="hero-entrada">
                 <span className="inline-flex items-center gap-2 rounded-full border border-[var(--borda-forte)] bg-[var(--superficie-2)] px-3 py-1 text-xs text-[var(--tinta-suave)]">
                   <Sparkles className="size-3.5 text-[var(--acento-ativo)]" aria-hidden />
-                  Feito para estética automotiva, não adaptado de outro ramo
+                  Central de operação para estética automotiva
                 </span>
 
                 <h1 className="mt-6 text-balance text-4xl font-bold leading-[1.05] tracking-tight text-[var(--tinta)] sm:text-5xl lg:text-6xl">
-                  A sua operação inteira em{' '}
-                  <span className="text-[var(--acento-ativo)]">um painel só</span>
+                  Menos ruído na bancada.{' '}
+                  <span className="text-[var(--acento-ativo)]">Mais carro entregue.</span>
                 </h1>
 
                 <p className="mt-5 max-w-xl text-pretty text-lg leading-relaxed text-[var(--tinta-suave)]">
-                  Agenda, clientes, veículos, estoque e financeiro conversando entre si. Você
-                  registra o atendimento uma vez — o resto do sistema se atualiza sozinho.
+                  Agenda, clientes, veículos, estoque e financeiro trabalhando no ritmo da sua
+                  operação. Você registra uma vez; o resto acompanha o serviço.
                 </p>
 
                 <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -152,29 +152,29 @@ export default function PaginaInicial() {
               </div>
 
               {/* Mock de painel: o produto se explicando visualmente. */}
-              <div className="hero-painel superficie filete-acento relative p-5">
+              <div className="hero-painel hero-vitrine varredura-vitrine superficie filete-acento relative p-5">
                 <div className="flex items-center justify-between">
-                  <span className="rotulo-tecnico">Painel · hoje</span>
+                  <span className="rotulo-tecnico">Centro de comando · agora</span>
                   <span className="inline-flex items-center gap-1.5 text-xs text-[var(--positivo)]">
                     <span className="size-1.5 rounded-full bg-[var(--positivo)] luz-viva" />
-                    operando
+                    operação fluindo
                   </span>
                 </div>
 
                 <div className="mt-5 grid grid-cols-2 gap-3">
-                  <div className="superficie-2 p-3.5">
-                    <span className="rotulo-tecnico">Faturamento do mês</span>
+                  <div className="hero-kpi superficie-2 p-3.5">
+                    <span className="rotulo-tecnico">Faturamento em curso</span>
                     <p className="numerico mt-1.5 text-2xl font-semibold text-[var(--tinta)]">
                       R$ 48.320
                     </p>
-                    <span className="text-xs text-[var(--positivo)]">+18,4% vs. mês anterior</span>
+                    <span className="text-xs text-[var(--positivo)]">+18,4% no comparativo</span>
                   </div>
-                  <div className="superficie-2 p-3.5">
-                    <span className="rotulo-tecnico">Ticket médio</span>
+                  <div className="hero-kpi superficie-2 p-3.5">
+                    <span className="rotulo-tecnico">Próxima entrega</span>
                     <p className="numerico mt-1.5 text-2xl font-semibold text-[var(--tinta)]">
-                      R$ 612
+                      11:30
                     </p>
-                    <span className="text-xs text-[var(--tinta-suave)]">79 atendimentos</span>
+                    <span className="text-xs text-[var(--tinta-suave)]">Polimento 2 etapas</span>
                   </div>
                 </div>
 
@@ -230,7 +230,7 @@ export default function PaginaInicial() {
 
         {/* ---------------------------------------------------------------- */}
         <section className="border-b border-[var(--borda)] py-20">
-          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="revelar-na-rolagem mx-auto max-w-6xl px-4 sm:px-6">
             <div className="max-w-2xl">
               <span className="rotulo-tecnico">O problema</span>
               <h2 className="mt-3 text-3xl font-bold tracking-tight text-[var(--tinta)] sm:text-4xl">
@@ -272,7 +272,7 @@ export default function PaginaInicial() {
 
         {/* ---------------------------------------------------------------- */}
         <section id="recursos" className="border-b border-[var(--borda)] py-20">
-          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="revelar-na-rolagem mx-auto max-w-6xl px-4 sm:px-6">
             <div className="max-w-2xl">
               <span className="rotulo-tecnico">Recursos</span>
               <h2 className="mt-3 text-3xl font-bold tracking-tight text-[var(--tinta)] sm:text-4xl">
@@ -303,7 +303,7 @@ export default function PaginaInicial() {
 
         {/* ---------------------------------------------------------------- */}
         <section id="planos" className="border-b border-[var(--borda)] py-20">
-          <div className="mx-auto max-w-5xl px-4 sm:px-6">
+          <div className="revelar-na-rolagem mx-auto max-w-5xl px-4 sm:px-6">
             <div className="mx-auto max-w-2xl text-center">
               <span className="rotulo-tecnico">Planos</span>
               <h2 className="mt-3 text-3xl font-bold tracking-tight text-[var(--tinta)] sm:text-4xl">
@@ -383,7 +383,7 @@ export default function PaginaInicial() {
 
         {/* ---------------------------------------------------------------- */}
         <section className="py-20">
-          <div className="mx-auto max-w-4xl px-4 text-center sm:px-6">
+          <div className="revelar-na-rolagem mx-auto max-w-4xl px-4 text-center sm:px-6">
             <Gauge className="mx-auto size-10 text-[var(--acento-ativo)]" aria-hidden />
             <h2 className="mt-6 text-3xl font-bold tracking-tight text-[var(--tinta)] sm:text-4xl">
               Ligue o painel da sua operação
