@@ -161,7 +161,7 @@ export function Casca({
     href === '/painel' ? caminho === '/painel' : caminho.startsWith(href);
 
   const navegacao = (
-    <nav className="flex flex-1 flex-col gap-0.5 p-3" aria-label="Navegação principal">
+    <nav className="flex flex-1 flex-col gap-1 p-3" aria-label="Navegação principal">
       {visiveis.map((item) => {
         const Icone = item.icone;
         const selecionado = ativo(item.href);
@@ -171,7 +171,7 @@ export function Casca({
             href={item.href}
             aria-current={selecionado ? 'page' : undefined}
             className={cn(
-              'group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors duration-[var(--duracao-curta)]',
+              'group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors duration-[var(--duracao-curta)]',
               selecionado
                 ? 'bg-[var(--acento-fraco)] font-medium text-[var(--acento-ativo)]'
                 : 'text-[var(--tinta-suave)] hover:bg-[var(--superficie-2)] hover:text-[var(--tinta)]',
@@ -228,8 +228,8 @@ export function Casca({
   return (
     <div className="flex min-h-dvh">
       {/* -------------------------------- Lateral fixa (desktop) ---------- */}
-      <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-[var(--borda)] bg-[var(--superficie-1)] lg:flex">
-        <div className="flex h-16 items-center border-b border-[var(--borda)] px-5">
+      <aside className="painel-lateral sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-[var(--borda)] lg:flex">
+        <div className="flex h-[72px] items-center border-b border-[var(--borda)] px-5">
           <Link href="/painel" aria-label="Ir para o painel">
             <Marca />
           </Link>
@@ -247,8 +247,8 @@ export function Casca({
             onClick={() => setMenuAberto(false)}
             className="absolute inset-0 bg-black/70 backdrop-blur-sm"
           />
-          <div className="relative flex h-full w-72 max-w-[85vw] flex-col border-r border-[var(--borda)] bg-[var(--superficie-1)]">
-            <div className="flex h-16 items-center justify-between border-b border-[var(--borda)] px-5">
+          <div className="painel-lateral relative flex h-full w-72 max-w-[85vw] flex-col border-r border-[var(--borda)] shadow-2xl">
+            <div className="flex h-[72px] items-center justify-between border-b border-[var(--borda)] px-5">
               <Marca />
               <button
                 type="button"
@@ -267,7 +267,7 @@ export function Casca({
 
       {/* -------------------------------- Conteúdo ------------------------ */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-[var(--borda)] bg-[var(--superficie-0)]/85 px-4 backdrop-blur-md sm:px-6">
+        <header className="painel-topo sticky top-0 z-30 flex h-[72px] items-center gap-3 border-b border-[var(--borda)] bg-[var(--superficie-0)]/85 px-4 backdrop-blur-md sm:px-6">
           <button
             type="button"
             onClick={() => setMenuAberto(true)}
@@ -330,7 +330,7 @@ export function Casca({
           </div>
         ) : null}
 
-        <main id="conteudo" className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:py-8">
+        <main id="conteudo" className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
           {children}
         </main>
       </div>

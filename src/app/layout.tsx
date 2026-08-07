@@ -48,7 +48,7 @@ export const viewport: Viewport = {
  * fallback do sistema segura a interface enquanto elas chegam.
  */
 const FONTES_GOOGLE =
-  'https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap';
+  'https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Space+Grotesk:wght@400;500;600;700&display=swap';
 
 export default async function LayoutRaiz({ children }: { children: React.ReactNode }) {
   const jar = await cookies();
