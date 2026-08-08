@@ -5,6 +5,14 @@ import { HTTP_POR_CODIGO } from '@/domain/result';
 import { loginSchema } from '@/schemas';
 import { lerCorpo, respostaDeErroInesperado } from '@/server/api';
 import { autenticar, registrarAcesso } from '@/server/autenticacao';
+import {
+  consumirRateLimit,
+  hashRateLimit,
+  ipDaRequisicao,
+  LIMITES_RATE_LIMIT,
+  respostaDeRateLimit,
+  resetarRateLimit,
+} from '@/server/rate-limit';
 
 export const runtime = 'nodejs';
 
@@ -12,6 +20,15 @@ export async function POST(request: Request) {
   try {
     const corpo = await lerCorpo(request, loginSchema);
     if (!corpo.ok) return corpo.resposta;
+
+    const chaveIp = `login:ip:${hashRateLimit(ipDaRequisicao(request.headers))}`;
+    const chaveEmail = `login:email:${hashRateLimit(corpo.dados.email)}`;
+    const [limiteIp, limiteEmail] = await Promise.all([
+      consumirRateLimit(chaveIp, LIMITES_RATE_LIMIT.login),
+      consumirRateLimit(chaveEmail, LIMITES_RATE_LIMIT.login),
+    ]);
+    const limiteAtingido = !limiteIp.permitido ? limiteIp : limiteEmail;
+    if (!limiteAtingido.permitido) return respostaDeRateLimit(limiteAtingido);
 
     const resultado = await autenticar(corpo.dados);
     if (!resultado.ok) {
@@ -24,6 +41,8 @@ export async function POST(request: Request) {
     const { token, maxAge } = await assinarSessao(resultado.value, corpo.dados.lembrar);
     const jar = await cookies();
     jar.set(COOKIE_SESSAO, token, opcoesDoCookie(maxAge));
+
+    await resetarRateLimit([chaveIp, chaveEmail]);
 
     await registrarAcesso(resultado.value, request.headers);
 

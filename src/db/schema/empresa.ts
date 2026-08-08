@@ -6,6 +6,7 @@ import {
   check,
   date,
   index,
+  integer,
   numeric,
   pgTable,
   timestamp,
@@ -67,6 +68,22 @@ export const configuracao = pgTable(
   (t) => [uniqueIndex('uq_configuracao_empresa_chave').on(t.empresaId, t.chave)],
 );
 
+/** Contadores técnicos, inacessíveis pela Data API, usados para proteção contra abuso. */
+export const controleRateLimit = pgTable(
+  'controle_rate_limit',
+  {
+    chave: varchar('chave', { length: 200 }).primaryKey(),
+    janelaInicio: timestamp('janela_inicio', { withTimezone: true }).notNull(),
+    contagem: integer('contagem').notNull().default(0),
+    bloqueadoAte: timestamp('bloqueado_ate', { withTimezone: true }),
+    atualizadoEm: timestamp('atualizado_em', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index('ix_controle_rate_limit_atualizado').on(t.atualizadoEm),
+    check('ck_controle_rate_limit_contagem', sql`${t.contagem} >= 0`),
+  ],
+);
+
 export const solicitacaoAlteracaoEmpresa = pgTable(
   'solicitacao_alteracao_empresa',
   {
@@ -120,3 +137,4 @@ export type Empresa = typeof empresa.$inferSelect;
 export type NovaEmpresa = typeof empresa.$inferInsert;
 export type Configuracao = typeof configuracao.$inferSelect;
 export type SolicitacaoAlteracaoEmpresa = typeof solicitacaoAlteracaoEmpresa.$inferSelect;
+export type ControleRateLimit = typeof controleRateLimit.$inferSelect;

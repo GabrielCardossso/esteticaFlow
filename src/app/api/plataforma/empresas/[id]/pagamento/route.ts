@@ -1,12 +1,26 @@
 import { NextResponse } from 'next/server';
 import { comContexto, lerId } from '@/server/api';
 import { registrarPagamentoAssinatura } from '@/server/empresas';
+import {
+  consumirRateLimit,
+  hashRateLimit,
+  ipDaRequisicao,
+  LIMITES_RATE_LIMIT,
+  respostaDeRateLimit,
+} from '@/server/rate-limit';
 
 export const runtime = 'nodejs';
 
 export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const limite = await consumirRateLimit(
+    `pagamento:ip:${hashRateLimit(ipDaRequisicao(_request.headers))}`,
+    LIMITES_RATE_LIMIT.pagamento,
+  );
+  if (!limite.permitido) return respostaDeRateLimit(limite);
+
   const { id } = await params;
   const numero = lerId(id);
-  if (numero === null) return NextResponse.json({ erro: { mensagem: 'Id inválido.' } }, { status: 400 });
+  if (numero === null)
+    return NextResponse.json({ erro: { mensagem: 'Id inválido.' } }, { status: 400 });
   return comContexto((contexto) => registrarPagamentoAssinatura(contexto, numero));
 }
