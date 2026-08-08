@@ -1,9 +1,18 @@
-import { and, between, desc, eq, inArray, sql } from 'drizzle-orm';
+import { and, asc, between, desc, eq, inArray, sql } from 'drizzle-orm';
 import type { Contexto } from '@/auth/contexto';
 import { db } from '@/db/client';
-import { agendamento, despesa, formaPagamento, receita } from '@/db/schema';
+import {
+  agendamento,
+  cliente,
+  despesa,
+  formaPagamento,
+  parcelaRecebimento,
+  receita,
+  veiculo,
+} from '@/db/schema';
+import { permiteParcelamento } from '@/domain/financeiro';
 import { montarResumo, type ResumoFinanceiro } from '@/domain/relatorio';
-import { falha, naoEncontrado, ok, type Result } from '@/domain/result';
+import { conflito, falha, naoEncontrado, ok, type Result } from '@/domain/result';
 import { Dinheiro } from '@/domain/shared/decimal';
 import { fimDoMes, hojeISO, inicioDaSemana, inicioDoMes, m, paraISO } from '@/domain/shared/tempo';
 import { contemTermo } from '@/domain/shared/texto';
@@ -38,7 +47,7 @@ async function obterTotaisDeReceita(
     .select({
       total: sql<string>`coalesce(sum(${receita.valor}), 0)`,
       totalAtendimentos: sql<string>`coalesce(sum(${receita.valor}) filter (where ${receita.agendamentoId} is not null), 0)`,
-      atendimentosRecebidos: sql<number>`cast(count(*) filter (where ${receita.agendamentoId} is not null) as int)`,
+      atendimentosRecebidos: sql<number>`cast(count(distinct ${receita.agendamentoId}) filter (where ${receita.agendamentoId} is not null) as int)`,
     })
     .from(receita)
     .where(and(eq(receita.empresaId, empresaId), between(receita.dataRecebimento, inicio, fim)));
@@ -77,18 +86,154 @@ export async function montarResumoFinanceiroDoPeriodo(
 }
 
 async function somarAReceber(empresaId: number): Promise<string> {
-  const [pendente] = await db
-    .select({ total: sql<string>`coalesce(sum(${agendamento.total}), 0)` })
-    .from(agendamento)
-    .where(
-      and(
-        eq(agendamento.empresaId, empresaId),
-        eq(agendamento.pago, false),
-        inArray(agendamento.status, ['EM_ANDAMENTO', 'CONCLUIDO']),
+  const [parcelas, atendimentosSemParcelas] = await Promise.all([
+    db
+      .select({ total: sql<string>`coalesce(sum(${parcelaRecebimento.valor}), 0)` })
+      .from(parcelaRecebimento)
+      .where(and(eq(parcelaRecebimento.empresaId, empresaId), eq(parcelaRecebimento.paga, false))),
+    db
+      .select({ total: sql<string>`coalesce(sum(${agendamento.total}), 0)` })
+      .from(agendamento)
+      .where(
+        and(
+          eq(agendamento.empresaId, empresaId),
+          eq(agendamento.pago, false),
+          inArray(agendamento.status, ['EM_ANDAMENTO', 'CONCLUIDO']),
+          sql`not exists (
+            select 1 from ${parcelaRecebimento}
+            where ${parcelaRecebimento.agendamentoId} = ${agendamento.id}
+              and ${parcelaRecebimento.empresaId} = ${empresaId}
+          )`,
+        ),
       ),
-    );
+  ]);
 
-  return Dinheiro.de(pendente?.total ?? '0');
+  return Dinheiro.somar(parcelas[0]?.total ?? '0', atendimentosSemParcelas[0]?.total ?? '0');
+}
+
+export interface ParcelaFinanceira {
+  id: number;
+  agendamentoId: number;
+  numero: number;
+  totalParcelas: number;
+  valor: string;
+  dataVencimento: string;
+  paga: boolean;
+  dataPagamento: string | null;
+  atrasada: boolean;
+  formaPagamento: string;
+  cliente: string;
+  veiculo: string;
+}
+
+export async function listarParcelas(contexto: Contexto): Promise<ParcelaFinanceira[]> {
+  const hoje = hojeISO();
+  const registros = await db
+    .select({
+      id: parcelaRecebimento.id,
+      agendamentoId: parcelaRecebimento.agendamentoId,
+      numero: parcelaRecebimento.numero,
+      totalParcelas: parcelaRecebimento.totalParcelas,
+      valor: parcelaRecebimento.valor,
+      dataVencimento: parcelaRecebimento.dataVencimento,
+      paga: parcelaRecebimento.paga,
+      dataPagamento: parcelaRecebimento.dataPagamento,
+      formaPagamento: formaPagamento.nome,
+      cliente: cliente.nome,
+      veiculoPlaca: veiculo.placa,
+      veiculoModelo: veiculo.modelo,
+    })
+    .from(parcelaRecebimento)
+    .innerJoin(agendamento, eq(agendamento.id, parcelaRecebimento.agendamentoId))
+    .innerJoin(cliente, eq(cliente.id, agendamento.clienteId))
+    .innerJoin(veiculo, eq(veiculo.id, agendamento.veiculoId))
+    .innerJoin(formaPagamento, eq(formaPagamento.id, parcelaRecebimento.formaPagamentoId))
+    .where(eq(parcelaRecebimento.empresaId, contexto.empresaId))
+    .orderBy(asc(parcelaRecebimento.paga), asc(parcelaRecebimento.dataVencimento))
+    .limit(120);
+
+  return registros.map((item) => ({
+    ...item,
+    atrasada: !item.paga && item.dataVencimento < hoje,
+    veiculo: `${item.veiculoModelo} · ${item.veiculoPlaca}`,
+  }));
+}
+
+export async function marcarParcelaPaga(
+  contexto: Contexto,
+  id: number,
+): Promise<Result<{ id: number; agendamentoId: number }>> {
+  const hoje = hojeISO();
+  const resultado = await db.transaction(async (tx) => {
+    const [parcela] = await tx
+      .update(parcelaRecebimento)
+      .set({ paga: true, dataPagamento: hoje })
+      .where(
+        and(
+          eq(parcelaRecebimento.id, id),
+          eq(parcelaRecebimento.empresaId, contexto.empresaId),
+          eq(parcelaRecebimento.paga, false),
+        ),
+      )
+      .returning({
+        id: parcelaRecebimento.id,
+        agendamentoId: parcelaRecebimento.agendamentoId,
+        formaPagamentoId: parcelaRecebimento.formaPagamentoId,
+        numero: parcelaRecebimento.numero,
+        totalParcelas: parcelaRecebimento.totalParcelas,
+        valor: parcelaRecebimento.valor,
+      });
+
+    if (parcela === undefined) return null;
+
+    await tx.insert(receita).values({
+      empresaId: contexto.empresaId,
+      agendamentoId: parcela.agendamentoId,
+      parcelaRecebimentoId: parcela.id,
+      formaPagamentoId: parcela.formaPagamentoId,
+      descricao: `Parcela ${parcela.numero}/${parcela.totalParcelas} · Atendimento #${parcela.agendamentoId}`,
+      valor: parcela.valor,
+      dataRecebimento: hoje,
+    });
+
+    const [pendentes] = await tx
+      .select({ quantidade: sql<number>`cast(count(*) as int)` })
+      .from(parcelaRecebimento)
+      .where(
+        and(
+          eq(parcelaRecebimento.empresaId, contexto.empresaId),
+          eq(parcelaRecebimento.agendamentoId, parcela.agendamentoId),
+          eq(parcelaRecebimento.paga, false),
+        ),
+      );
+
+    if (Number(pendentes?.quantidade ?? 0) === 0) {
+      await tx
+        .update(agendamento)
+        .set({ pago: true })
+        .where(
+          and(
+            eq(agendamento.id, parcela.agendamentoId),
+            eq(agendamento.empresaId, contexto.empresaId),
+          ),
+        );
+    }
+
+    return { id: parcela.id, agendamentoId: parcela.agendamentoId };
+  });
+
+  if (resultado === null) {
+    return falha(conflito('Parcela não encontrada ou já recebida.'));
+  }
+
+  await registrar({
+    empresaId: contexto.empresaId,
+    usuarioId: contexto.usuario.usuarioId,
+    acao: 'PARCELA_RECEBIDA',
+    detalhes: `Parcela ${resultado.id} · Agendamento ${resultado.agendamentoId}`,
+  });
+
+  return ok(resultado);
 }
 
 export async function indicadores(contexto: Contexto): Promise<IndicadoresFinanceiros> {
@@ -105,7 +250,7 @@ export async function indicadores(contexto: Contexto): Promise<IndicadoresFinanc
         mes: sql<string>`coalesce(sum(${receita.valor}) filter (where ${receita.dataRecebimento} between ${mesInicio} and ${hoje}), 0)`,
         ano: sql<string>`coalesce(sum(${receita.valor}), 0)`,
         atendimentosMes: sql<string>`coalesce(sum(${receita.valor}) filter (where ${receita.agendamentoId} is not null and ${receita.dataRecebimento} between ${mesInicio} and ${hoje}), 0)`,
-        quantidadeAtendimentosMes: sql<number>`cast(count(*) filter (where ${receita.agendamentoId} is not null and ${receita.dataRecebimento} between ${mesInicio} and ${hoje}) as int)`,
+        quantidadeAtendimentosMes: sql<number>`cast(count(distinct ${receita.agendamentoId}) filter (where ${receita.agendamentoId} is not null and ${receita.dataRecebimento} between ${mesInicio} and ${hoje}) as int)`,
       })
       .from(receita)
       .where(
@@ -313,11 +458,15 @@ export async function registrarReceitaAvulsa(
 export async function listarFormasPagamento(contexto: Contexto, incluirInativas: boolean) {
   const condicoes = [eq(formaPagamento.empresaId, contexto.empresaId)];
   if (!incluirInativas) condicoes.push(eq(formaPagamento.ativo, true));
-  return db
+  const formas = await db
     .select()
     .from(formaPagamento)
     .where(and(...condicoes))
     .orderBy(desc(formaPagamento.ativo), formaPagamento.nome);
+  return formas.map((forma) => ({
+    ...forma,
+    permiteParcelamento: permiteParcelamento(forma.nome),
+  }));
 }
 
 /** Serie de faturamento dos ultimos meses, para o grafico do painel. */

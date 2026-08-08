@@ -6,6 +6,7 @@ import {
   check,
   date,
   index,
+  integer,
   numeric,
   pgTable,
   timestamp,
@@ -34,6 +35,52 @@ export const formaPagamento = pgTable(
   (t) => [uniqueIndex('uq_forma_pagamento_empresa_nome').on(t.empresaId, t.nome)],
 );
 
+export const parcelaRecebimento = pgTable(
+  'parcela_recebimento',
+  {
+    id: bigserial('id', { mode: 'number' }).primaryKey(),
+    empresaId: bigint('empresa_id', { mode: 'number' })
+      .notNull()
+      .references(() => empresa.id, { onDelete: 'cascade' }),
+    agendamentoId: bigint('agendamento_id', { mode: 'number' })
+      .notNull()
+      .references(() => agendamento.id, { onDelete: 'cascade' }),
+    formaPagamentoId: bigint('forma_pagamento_id', { mode: 'number' })
+      .notNull()
+      .references(() => formaPagamento.id),
+    numero: integer('numero').notNull(),
+    totalParcelas: integer('total_parcelas').notNull(),
+    valor: numeric('valor', { precision: 10, scale: 2 }).notNull(),
+    dataVencimento: date('data_vencimento').notNull(),
+    paga: boolean('paga').notNull().default(false),
+    dataPagamento: date('data_pagamento'),
+    criadoEm: timestamp('criado_em', { withTimezone: true }).notNull().defaultNow(),
+    atualizadoEm: timestamp('atualizado_em', { withTimezone: true })
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (t) => [
+    uniqueIndex('uq_parcela_recebimento_agendamento_numero').on(t.agendamentoId, t.numero),
+    index('ix_parcela_recebimento_empresa_status_vencimento').on(
+      t.empresaId,
+      t.paga,
+      t.dataVencimento,
+    ),
+    index('ix_parcela_recebimento_forma').on(t.formaPagamentoId),
+    check(
+      'ck_parcela_recebimento_numero',
+      sql`${t.numero} > 0 AND ${t.numero} <= ${t.totalParcelas}`,
+    ),
+    check('ck_parcela_recebimento_total', sql`${t.totalParcelas} BETWEEN 2 AND 12`),
+    check('ck_parcela_recebimento_valor', sql`${t.valor} > 0`),
+    check(
+      'ck_parcela_recebimento_pagamento',
+      sql`(${t.paga} = true AND ${t.dataPagamento} IS NOT NULL) OR (${t.paga} = false AND ${t.dataPagamento} IS NULL)`,
+    ),
+  ],
+);
+
 export const receita = pgTable(
   'receita',
   {
@@ -44,6 +91,10 @@ export const receita = pgTable(
     agendamentoId: bigint('agendamento_id', { mode: 'number' }).references(() => agendamento.id, {
       onDelete: 'cascade',
     }),
+    parcelaRecebimentoId: bigint('parcela_recebimento_id', { mode: 'number' }).references(
+      () => parcelaRecebimento.id,
+      { onDelete: 'restrict' },
+    ),
     formaPagamentoId: bigint('forma_pagamento_id', { mode: 'number' })
       .notNull()
       .references(() => formaPagamento.id),
@@ -53,9 +104,13 @@ export const receita = pgTable(
     criadoEm: timestamp('criado_em', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
-    uniqueIndex('uq_receita_agendamento')
+    index('ix_receita_agendamento').on(t.agendamentoId),
+    uniqueIndex('uq_receita_agendamento_avulsa')
       .on(t.agendamentoId)
-      .where(sql`agendamento_id IS NOT NULL`),
+      .where(sql`agendamento_id IS NOT NULL AND parcela_recebimento_id IS NULL`),
+    uniqueIndex('uq_receita_parcela')
+      .on(t.parcelaRecebimentoId)
+      .where(sql`parcela_recebimento_id IS NOT NULL`),
     index('ix_receita_empresa_data').on(t.empresaId, t.dataRecebimento),
     check('ck_receita_valor', sql`${t.valor} > 0`),
   ],
@@ -114,9 +169,25 @@ export const receitaRelations = relations(receita, ({ one }) => ({
     fields: [receita.agendamentoId],
     references: [agendamento.id],
   }),
+  parcela: one(parcelaRecebimento, {
+    fields: [receita.parcelaRecebimentoId],
+    references: [parcelaRecebimento.id],
+  }),
+}));
+
+export const parcelaRecebimentoRelations = relations(parcelaRecebimento, ({ one }) => ({
+  formaPagamento: one(formaPagamento, {
+    fields: [parcelaRecebimento.formaPagamentoId],
+    references: [formaPagamento.id],
+  }),
+  agendamento: one(agendamento, {
+    fields: [parcelaRecebimento.agendamentoId],
+    references: [agendamento.id],
+  }),
 }));
 
 export type FormaPagamento = typeof formaPagamento.$inferSelect;
 export type Receita = typeof receita.$inferSelect;
+export type ParcelaRecebimento = typeof parcelaRecebimento.$inferSelect;
 export type Despesa = typeof despesa.$inferSelect;
 export type Notificacao = typeof notificacao.$inferSelect;

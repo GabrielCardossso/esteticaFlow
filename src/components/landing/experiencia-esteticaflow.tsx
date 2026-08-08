@@ -39,8 +39,14 @@ function atualizarOrigemDaReacao(event: PointerEvent<HTMLElement>) {
 
   const alvo = event.currentTarget;
   const limites = alvo.getBoundingClientRect();
-  alvo.style.setProperty('--reacao-x', `${((event.clientX - limites.left) / limites.width) * 100}%`);
-  alvo.style.setProperty('--reacao-y', `${((event.clientY - limites.top) / limites.height) * 100}%`);
+  alvo.style.setProperty(
+    '--reacao-x',
+    `${((event.clientX - limites.left) / limites.width) * 100}%`,
+  );
+  alvo.style.setProperty(
+    '--reacao-y',
+    `${((event.clientY - limites.top) / limites.height) * 100}%`,
+  );
 }
 
 function atualizarBrilhoDaLanding(event: PointerEvent<HTMLDivElement>) {
@@ -101,23 +107,48 @@ export function ExperienciaEsteticaFlow() {
     >
       <div className="landing-ruido pointer-events-none fixed inset-0 z-0 opacity-40" aria-hidden />
       <div className="landing-cursor-brilho pointer-events-none fixed inset-0 z-[20]" aria-hidden />
-      <div className="landing-progresso pointer-events-none fixed inset-x-0 top-0 z-[60]" aria-hidden><span /></div>
+      <div
+        className="landing-progresso pointer-events-none fixed inset-x-0 top-0 z-[60]"
+        aria-hidden
+      >
+        <span />
+      </div>
       <header className="landing-nav fixed inset-x-0 top-0 z-50">
         <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/" aria-label="EsteticaFlow, início" className="relative z-10">
             <Marca />
           </Link>
 
-          <nav className="hidden items-center gap-7 text-sm text-[#a9b2c3] lg:flex" aria-label="Navegação da landing">
-            <a href="#produto" className="landing-link">Produto</a>
-            <a href="#operacao" className="landing-link">Como funciona</a>
-            <a href="#planos" className="landing-link">Planos</a>
+          <nav
+            className="hidden items-center gap-7 text-sm text-[#a9b2c3] lg:flex"
+            aria-label="Navegação da landing"
+          >
+            <a href="#operacao" className="landing-link">
+              Como funciona
+            </a>
+            <a href="#produto" className="landing-link">
+              Ver o painel
+            </a>
+            <a href="#planos" className="landing-link">
+              Planos
+            </a>
           </nav>
 
           <div className="hidden items-center gap-2 sm:flex">
-            <Link href="/login" className="landing-link px-3 py-2 text-sm">Entrar</Link>
-            <Botao comoFilho variante="acento" tamanho="medio" className="landing-cta-botao" onPointerEnter={atualizarOrigemDaReacao} onPointerMove={atualizarOrigemDaReacao}>
-              <Link href="/suporte">Começar agora <ArrowRight /></Link>
+            <Link href="/login" className="landing-link px-3 py-2 text-sm">
+              Entrar
+            </Link>
+            <Botao
+              comoFilho
+              variante="acento"
+              tamanho="medio"
+              className="landing-cta-botao"
+              onPointerEnter={atualizarOrigemDaReacao}
+              onPointerMove={atualizarOrigemDaReacao}
+            >
+              <Link href="/suporte">
+                Começar agora <ArrowRight />
+              </Link>
             </Botao>
           </div>
 
@@ -134,13 +165,25 @@ export function ExperienciaEsteticaFlow() {
           <div className="border-t border-white/10 bg-[#0d1017]/98 px-4 pb-5 pt-3 shadow-2xl backdrop-blur-xl sm:hidden">
             <nav className="mx-auto grid max-w-7xl gap-1" aria-label="Navegação móvel">
               {[
-                ['Produto', '#produto'], ['Como funciona', '#operacao'], ['Planos', '#planos'],
+                ['Como funciona', '#operacao'],
+                ['Ver o painel', '#produto'],
+                ['Planos', '#planos'],
               ].map(([rotulo, href]) => (
-                <a key={href} href={href} onClick={() => setMenuAberto(false)} className="rounded-xl px-4 py-3 text-sm text-[#cdd4e0] hover:bg-white/[0.06]">
+                <a
+                  key={href}
+                  href={href}
+                  onClick={() => setMenuAberto(false)}
+                  className="rounded-xl px-4 py-3 text-sm text-[#cdd4e0] hover:bg-white/[0.06]"
+                >
                   {rotulo}
                 </a>
               ))}
-              <Link href="/login" className="rounded-xl px-4 py-3 text-sm text-[#cdd4e0] hover:bg-white/[0.06]">Entrar</Link>
+              <Link
+                href="/login"
+                className="rounded-xl px-4 py-3 text-sm text-[#cdd4e0] hover:bg-white/[0.06]"
+              >
+                Entrar
+              </Link>
             </nav>
           </div>
         ) : null}
@@ -151,35 +194,100 @@ export function ExperienciaEsteticaFlow() {
           <div className="landing-orbita landing-orbita-um" aria-hidden />
           <div className="landing-orbita landing-orbita-dois" aria-hidden />
           <div className="landing-grade pointer-events-none absolute inset-0 -z-10" aria-hidden />
-          <div className="landing-hero-luz pointer-events-none absolute inset-x-0 top-16 -z-10" aria-hidden />
+          <div
+            className="landing-hero-luz pointer-events-none absolute inset-x-0 top-16 -z-10"
+            aria-hidden
+          />
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-4xl text-center">
               <p className="landing-selo landing-entrada">
                 <span className="landing-selo-ponto" />
-                Gestão feita para quem entrega carro, não planilha
+                Sua operação cresceu. A improvisação não precisa crescer junto.
               </p>
               <h1 className="landing-titulo landing-entrada mt-6 [animation-delay:80ms]">
-                A sua operação merece<br className="hidden sm:block" /> um ritmo <span>impecável.</span>
+                Pare de administrar no escuro.
+                <br className="hidden sm:block" /> Trabalhe em um ritmo <span>impecável.</span>
               </h1>
               <p className="landing-subtitulo landing-entrada mx-auto mt-7 max-w-2xl [animation-delay:160ms]">
-                Uma central de comando para agenda, clientes, estoque e financeiro se moverem juntos — com a precisão que o seu serviço pede.
+                Agenda no WhatsApp, estoque no caderno e caixa na memória custam tempo e margem. O
+                EsteticaFlow coloca tudo no mesmo fluxo, sem complicar a bancada.
               </p>
               <div className="landing-entrada mt-9 flex flex-wrap justify-center gap-3 [animation-delay:240ms]">
-                <Botao comoFilho variante="acento" tamanho="grande" className="landing-cta-botao" onPointerEnter={atualizarOrigemDaReacao} onPointerMove={atualizarOrigemDaReacao}>
-                  <Link href="/login">Conhecer o painel <ArrowRight /></Link>
+                <Botao
+                  comoFilho
+                  variante="acento"
+                  tamanho="grande"
+                  className="landing-cta-botao"
+                  onPointerEnter={atualizarOrigemDaReacao}
+                  onPointerMove={atualizarOrigemDaReacao}
+                >
+                  <Link href="/login">
+                    Conhecer o painel <ArrowRight />
+                  </Link>
                 </Botao>
-                <a href="#produto" className="landing-botao-secundario">Explorar a demonstração <ChevronRight className="size-4" /></a>
+                <a href="#produto" className="landing-botao-secundario">
+                  Explorar a demonstração <ChevronRight className="size-4" />
+                </a>
               </div>
               <div className="landing-entrada mt-8 flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs text-[#8791a3] [animation-delay:320ms]">
-                <span className="inline-flex items-center gap-1.5"><Check className="size-3.5 text-emerald-400" /> Sem taxa por atendimento</span>
-                <span className="inline-flex items-center gap-1.5"><Check className="size-3.5 text-emerald-400" /> Dados por empresa isolados</span>
-                <span className="inline-flex items-center gap-1.5"><Check className="size-3.5 text-emerald-400" /> Acesso em qualquer tela</span>
+                <span className="inline-flex items-center gap-1.5">
+                  <Check className="size-3.5 text-emerald-400" /> Sem taxa por atendimento
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <Check className="size-3.5 text-emerald-400" /> Dados por empresa isolados
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                  <Check className="size-3.5 text-emerald-400" /> Acesso em qualquer tela
+                </span>
               </div>
             </div>
+          </div>
+        </section>
 
-            <div id="produto" className="landing-demo-wrap landing-demo-cinema mx-auto mt-14 max-w-6xl [animation-delay:360ms] sm:mt-20">
-              <div className="landing-demo-brilho" aria-hidden />
-              <DemoNavegavel ativo={moduloAtivo} aoMudar={setModuloAtivo} />
+        <section
+          className="landing-dores border-y border-white/[0.08] py-16 sm:py-20"
+          aria-labelledby="dores-titulo"
+        >
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="landing-revelar grid gap-8 lg:grid-cols-[0.75fr_1.25fr] lg:items-end">
+              <div>
+                <p className="landing-eyebrow">O custo do improviso</p>
+                <h2
+                  id="dores-titulo"
+                  className="mt-4 font-[family-name:var(--font-display)] text-3xl font-semibold tracking-[-0.055em] text-white sm:text-4xl"
+                >
+                  O problema não é falta de trabalho. É perder o controle quando ele chega.
+                </h2>
+              </div>
+              <p className="max-w-2xl text-base leading-relaxed text-[#9ea8ba] lg:justify-self-end">
+                Quando cada informação vive em um lugar, a equipe interrompe o serviço para procurar
+                respostas, produtos acabam sem aviso e o faturamento do mês vira uma estimativa.
+              </p>
+            </div>
+            <div className="mt-10 grid gap-3 md:grid-cols-3">
+              {[
+                [
+                  '01',
+                  'Agenda fragmentada',
+                  'Horários, atrasos e responsáveis espalhados em conversas.',
+                ],
+                [
+                  '02',
+                  'Custo invisível',
+                  'Produto consumido sem baixa e margem descoberta tarde demais.',
+                ],
+                [
+                  '03',
+                  'Cliente sem contexto',
+                  'Histórico perdido justamente quando ele volta para comprar.',
+                ],
+              ].map(([numero, titulo, texto]) => (
+                <article key={numero} className="landing-dor landing-revelar">
+                  <span>{numero}</span>
+                  <h3>{titulo}</h3>
+                  <p>{texto}</p>
+                </article>
+              ))}
             </div>
           </div>
         </section>
@@ -210,42 +318,60 @@ export function ExperienciaEsteticaFlow() {
                 'Caixa com contexto',
                 'Relatórios acionáveis',
                 'Equipe no mesmo ritmo',
-              ].concat([
-                'Agenda organizada',
-                'Histórico por veículo',
-                'Estoque em dia',
-                'Caixa com contexto',
-                'Relatórios acionáveis',
-                'Equipe no mesmo ritmo',
-              ]).map((beneficio, indice) => (
-                <span key={`${beneficio}-${indice}`} className="landing-fita-item" aria-hidden={indice >= 6}>
-                  <span className="landing-fita-ponto" aria-hidden />
-                  {beneficio}
-                </span>
-              ))}
+              ]
+                .concat([
+                  'Agenda organizada',
+                  'Histórico por veículo',
+                  'Estoque em dia',
+                  'Caixa com contexto',
+                  'Relatórios acionáveis',
+                  'Equipe no mesmo ritmo',
+                ])
+                .map((beneficio, indice) => (
+                  <span
+                    key={`${beneficio}-${indice}`}
+                    className="landing-fita-item"
+                    aria-hidden={indice >= 6}
+                  >
+                    <span className="landing-fita-ponto" aria-hidden />
+                    {beneficio}
+                  </span>
+                ))}
             </div>
           </div>
         </section>
 
-        <section id="operacao" className="relative py-24 sm:py-32">
+        <section id="operacao" className="relative scroll-mt-20 py-24 sm:py-32">
           <div className="mx-auto grid max-w-7xl gap-14 px-4 sm:px-6 lg:grid-cols-[0.75fr_1.25fr] lg:items-center lg:gap-20 lg:px-8">
             <div>
-              <p className="landing-eyebrow">Uma única operação</p>
-              <h2 className="landing-h2 mt-4">O dia anda.<br />O sistema acompanha.</h2>
+              <p className="landing-eyebrow">A solução em movimento</p>
+              <h2 className="landing-h2 mt-4">
+                Uma ação entra.
+                <br />O restante acompanha.
+              </h2>
               <p className="mt-6 max-w-md text-base leading-relaxed text-[#9ea8ba]">
-                Cada clique tem consequência útil: um atendimento concluído atualiza o caixa; um produto consumido conversa com o estoque; o histórico fica pronto antes da próxima visita.
+                Cada clique tem consequência útil: um atendimento concluído atualiza o caixa; um
+                produto consumido conversa com o estoque; o histórico fica pronto antes da próxima
+                visita.
               </p>
               <div className="landing-prova mt-7">
                 <article>
                   <p className="landing-prova-rotulo">O problema</p>
-                  <p>Informação espalhada faz o time perguntar, esperar e perder o ritmo.</p>
+                  <p>
+                    Informação espalhada faz o time perguntar, esperar, retrabalhar e perder margem.
+                  </p>
                 </article>
                 <article>
                   <p className="landing-prova-rotulo">A resposta</p>
-                  <p>Um fluxo único deixa cada decisão visível antes de ela virar urgência.</p>
+                  <p>
+                    Um fluxo único transforma atendimento em histórico, consumo, receita e decisão.
+                  </p>
                 </article>
               </div>
-              <a href="#planos" className="landing-link mt-8 inline-flex items-center gap-2 text-sm font-semibold text-[var(--acento-ativo)]">
+              <a
+                href="#planos"
+                className="landing-link mt-8 inline-flex items-center gap-2 text-sm font-semibold text-[var(--acento-ativo)]"
+              >
                 Ver o que cabe na sua operação <ArrowRight className="size-4" />
               </a>
             </div>
@@ -259,10 +385,19 @@ export function ExperienciaEsteticaFlow() {
               ].map(([Icone, titulo, texto], indice) => {
                 const Icon = Icone as typeof CalendarDays;
                 return (
-                  <article key={titulo as string} className="landing-fluxo-item" style={{ animationDelay: `${indice * 90}ms` }}>
-                    <div className="landing-fluxo-icone"><Icon className="size-5" /></div>
-                    <div><h3>{titulo as string}</h3><p>{texto as string}</p></div>
-                    <ChevronRight className="ml-auto size-4 text-[#596478]" aria-hidden />
+                  <article
+                    key={titulo as string}
+                    className="landing-fluxo-item"
+                    style={{ animationDelay: `${indice * 90}ms` }}
+                  >
+                    <div className="landing-fluxo-icone">
+                      <Icon className="size-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="landing-fluxo-etapa">Etapa 0{indice + 1}</span>
+                      <h3>{titulo as string}</h3>
+                      <p>{texto as string}</p>
+                    </div>
                   </article>
                 );
               })}
@@ -275,14 +410,25 @@ export function ExperienciaEsteticaFlow() {
             <div className="landing-revelar max-w-2xl">
               <p className="landing-eyebrow">Detalhe que organiza</p>
               <h2 className="landing-h2 mt-4">Menos abas. Mais contexto.</h2>
-              <p className="mt-5 text-[#9ea8ba]">As peças do painel foram desenhadas para deixar a leitura rápida e a próxima ação óbvia, inclusive quando o dia está cheio.</p>
+              <p className="mt-5 text-[#9ea8ba]">
+                As peças do painel foram desenhadas para deixar a leitura rápida e a próxima ação
+                óbvia, inclusive quando o dia está cheio.
+              </p>
             </div>
             <div className="mt-12 grid gap-4 md:grid-cols-2">
               {recursos.map(([titulo, texto, Icone], indice) => {
                 const Icon = Icone as typeof CalendarDays;
                 return (
-                  <article key={titulo as string} className={cn('landing-recurso landing-revelar group', indice === 0 ? 'md:col-span-2' : '')}>
-                    <div className="landing-recurso-icone"><Icon className="size-5" /></div>
+                  <article
+                    key={titulo as string}
+                    className={cn(
+                      'landing-recurso landing-revelar group',
+                      indice === 0 ? 'md:col-span-2' : '',
+                    )}
+                  >
+                    <div className="landing-recurso-icone">
+                      <Icon className="size-5" />
+                    </div>
                     <div className="relative z-10 max-w-md">
                       <p className="landing-recurso-numero">0{indice + 1}</p>
                       <h3>{titulo as string}</h3>
@@ -295,13 +441,50 @@ export function ExperienciaEsteticaFlow() {
           </div>
         </section>
 
-        <section id="planos" className="relative py-24 sm:py-32">
+        <section
+          id="produto"
+          className="landing-produto relative scroll-mt-20 overflow-hidden border-b border-white/[0.08] py-24 sm:py-32"
+        >
+          <div className="landing-produto-halo" aria-hidden />
+          <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="landing-revelar mx-auto max-w-3xl text-center">
+              <p className="landing-eyebrow">Veja antes de assinar</p>
+              <h2 className="landing-h2 mt-4">
+                O painel que explica a operação sem fazer você procurar.
+              </h2>
+              <p className="mx-auto mt-5 max-w-2xl text-[#9ea8ba]">
+                Explore agenda, financeiro e estoque na demonstração. Os módulos conversam entre si,
+                mas cada tela mostra somente o que importa naquele momento.
+              </p>
+            </div>
+            <div className="landing-demo-wrap landing-demo-cinema mx-auto mt-14 max-w-6xl sm:mt-20">
+              <div className="landing-demo-brilho" aria-hidden />
+              <DemoNavegavel ativo={moduloAtivo} aoMudar={setModuloAtivo} />
+            </div>
+            <div className="landing-demo-legenda landing-revelar mx-auto mt-7 flex max-w-3xl flex-wrap justify-center gap-x-6 gap-y-2 text-xs text-[#8791a3]">
+              <span>
+                <Check className="size-3.5" /> Dados conectados
+              </span>
+              <span>
+                <Check className="size-3.5" /> Leitura rápida no celular
+              </span>
+              <span>
+                <Check className="size-3.5" /> Financeiro baseado em registros reais
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <section id="planos" className="relative scroll-mt-20 py-24 sm:py-32">
           <div className="landing-orbita landing-orbita-tres" aria-hidden />
           <div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
             <div className="landing-revelar mx-auto max-w-2xl text-center">
               <p className="landing-eyebrow">Planos simples</p>
               <h2 className="landing-h2 mt-4">Gestão boa não pode custar o lucro do mês.</h2>
-              <p className="mt-5 text-[#9ea8ba]">Comece pela rotina. Quando a operação pedir mais, o painel cresce junto sem perder o histórico.</p>
+              <p className="mt-5 text-[#9ea8ba]">
+                Comece pela rotina. Quando a operação pedir mais, o painel cresce junto sem perder o
+                histórico.
+              </p>
             </div>
             <div className="mt-14 grid gap-5 md:grid-cols-2">
               {(['BASICO', 'COMPLETO'] as const).map((chave) => {
@@ -310,33 +493,66 @@ export function ExperienciaEsteticaFlow() {
                 const recursosDoPlano = [...plano.recursos];
                 const recursosExibidos = destaque ? recursosDoPlano : recursosDoPlano.slice(0, 6);
                 return (
-                  <article key={chave} className={cn('landing-plano landing-revelar', destaque && 'landing-plano-destaque')}>
-                    {destaque ? <span className="landing-plano-selo"><Sparkles className="size-3.5" /> Mais escolhido</span> : null}
+                  <article
+                    key={chave}
+                    className={cn(
+                      'landing-plano landing-revelar',
+                      destaque && 'landing-plano-destaque',
+                    )}
+                  >
+                    {destaque ? (
+                      <span className="landing-plano-selo">
+                        <Sparkles className="size-3.5" /> Mais escolhido
+                      </span>
+                    ) : null}
                     <p className="text-sm font-semibold text-[#eef2f8]">{plano.nome}</p>
-                    <p className="mt-2 min-h-11 text-sm leading-relaxed text-[#99a4b5]">{plano.descricao}</p>
+                    <p className="mt-2 min-h-11 text-sm leading-relaxed text-[#99a4b5]">
+                      {plano.descricao}
+                    </p>
                     <div className="mt-7 flex items-end gap-2">
-                      <span className="text-sm text-[#788499]">de <s>{formatarMoeda(plano.valorMensalTabela)}</s></span>
+                      <span className="text-sm text-[#788499]">
+                        de <s>{formatarMoeda(plano.valorMensalTabela)}</s>
+                      </span>
                       <span className="text-xs text-[#788499]">por</span>
                     </div>
-                    <p className="mt-1"><span className="landing-preco">{formatarMoeda(plano.valorMensalPadrao)}</span><span className="ml-1 text-sm text-[#99a4b5]">/ mês</span></p>
-                    <p className="mt-2 text-xs text-[#8791a3]">Até {plano.limiteUsuarios} {plano.limiteUsuarios === 1 ? 'usuário ativo' : 'usuários ativos'}</p>
+                    <p className="mt-1">
+                      <span className="landing-preco">
+                        {formatarMoeda(plano.valorMensalPadrao)}
+                      </span>
+                      <span className="ml-1 text-sm text-[#99a4b5]">/ mês</span>
+                    </p>
+                    <p className="mt-2 text-xs text-[#8791a3]">
+                      Até {plano.limiteUsuarios}{' '}
+                      {plano.limiteUsuarios === 1 ? 'usuário ativo' : 'usuários ativos'}
+                    </p>
                     <p className="mt-7 text-xs font-semibold text-[#aeb8c8]">
                       {destaque ? 'Tudo do Básico, mais:' : 'Inclui:'}
                     </p>
                     <ul className="mt-3 space-y-3">
                       {recursosExibidos.map((recurso: Recurso) => (
-                        <li key={recurso} className="flex items-start gap-2.5 text-sm text-[#c5cdd9]"><Check className="mt-0.5 size-4 shrink-0 text-emerald-400" />{ROTULO_RECURSO[recurso]}</li>
+                        <li
+                          key={recurso}
+                          className="flex items-start gap-2.5 text-sm text-[#c5cdd9]"
+                        >
+                          <Check className="mt-0.5 size-4 shrink-0 text-emerald-400" />
+                          {ROTULO_RECURSO[recurso]}
+                        </li>
                       ))}
                     </ul>
                     <Botao
                       comoFilho
                       tamanho="grande"
                       variante={destaque ? 'acento' : 'contorno'}
-                      className={cn('mt-9 w-full', destaque ? 'landing-cta-botao' : 'landing-cta-contorno')}
+                      className={cn(
+                        'mt-9 w-full',
+                        destaque ? 'landing-cta-botao' : 'landing-cta-contorno',
+                      )}
                       onPointerEnter={atualizarOrigemDaReacao}
                       onPointerMove={atualizarOrigemDaReacao}
                     >
-                      <Link href="/suporte">Quero este plano <ArrowRight /></Link>
+                      <Link href="/suporte">
+                        Quero este plano <ArrowRight />
+                      </Link>
                     </Botao>
                   </article>
                 );
@@ -349,10 +565,23 @@ export function ExperienciaEsteticaFlow() {
           <div className="landing-cta-final landing-revelar mx-auto max-w-7xl overflow-hidden px-6 py-14 text-center sm:px-12 sm:py-20">
             <div className="landing-cta-luz" aria-hidden />
             <Simbolo className="relative mx-auto size-11" />
-            <h2 className="relative mx-auto mt-6 max-w-2xl font-[family-name:var(--font-display)] text-4xl font-semibold tracking-tight text-white sm:text-5xl">Seu melhor atendimento começa antes do carro chegar.</h2>
-            <p className="relative mx-auto mt-5 max-w-xl text-[#b1bac9]">Coloque a operação em movimento, sem aumentar o ruído no seu dia.</p>
-            <Botao comoFilho variante="acento" tamanho="grande" className="relative mt-8 landing-cta-botao" onPointerEnter={atualizarOrigemDaReacao} onPointerMove={atualizarOrigemDaReacao}>
-              <Link href="/login">Acessar EsteticaFlow <ArrowRight /></Link>
+            <h2 className="relative mx-auto mt-6 max-w-2xl font-[family-name:var(--font-display)] text-4xl font-semibold tracking-tight text-white sm:text-5xl">
+              Seu melhor atendimento começa antes do carro chegar.
+            </h2>
+            <p className="relative mx-auto mt-5 max-w-xl text-[#b1bac9]">
+              Coloque a operação em movimento, sem aumentar o ruído no seu dia.
+            </p>
+            <Botao
+              comoFilho
+              variante="acento"
+              tamanho="grande"
+              className="relative mt-8 landing-cta-botao"
+              onPointerEnter={atualizarOrigemDaReacao}
+              onPointerMove={atualizarOrigemDaReacao}
+            >
+              <Link href="/login">
+                Acessar EsteticaFlow <ArrowRight />
+              </Link>
             </Botao>
           </div>
         </section>
@@ -362,7 +591,9 @@ export function ExperienciaEsteticaFlow() {
         <div className="mx-auto flex max-w-7xl flex-col gap-5 text-sm text-[#7e899b] sm:flex-row sm:items-center sm:justify-between">
           <Marca compacta />
           <p>EsteticaFlow · gestão que acompanha o seu serviço.</p>
-          <Link href="/suporte" className="landing-link">Falar com suporte</Link>
+          <Link href="/suporte" className="landing-link">
+            Falar com suporte
+          </Link>
         </div>
       </footer>
     </div>
@@ -390,36 +621,258 @@ function DemoNavegavel({ ativo, aoMudar }: { ativo: Modulo; aoMudar: (modulo: Mo
   };
 
   return (
-    <div className="landing-demo-sensor" onPointerMove={inclinarPainel} onPointerLeave={repousarPainel}>
+    <div
+      className="landing-demo-sensor"
+      onPointerMove={inclinarPainel}
+      onPointerLeave={repousarPainel}
+    >
       <div className="landing-demo">
-      <div className="landing-demo-topo">
-        <div className="flex items-center gap-1.5" aria-hidden><span className="size-2 rounded-full bg-[#ff5f57]" /><span className="size-2 rounded-full bg-[#febc2e]" /><span className="size-2 rounded-full bg-[#28c840]" /></div>
-        <div className="hidden max-w-56 flex-1 items-center gap-2 rounded-md border border-white/[0.08] bg-black/20 px-3 py-1.5 text-[10px] text-[#728096] sm:flex"><Search className="size-3" /> app.esteticaflow.com/painel</div>
-        <span className="text-[10px] text-emerald-400">● AO VIVO</span>
-      </div>
-      <div className="grid min-h-[510px] lg:grid-cols-[172px_1fr]">
-        <aside className="hidden border-r border-white/[0.08] bg-black/20 p-3 lg:block">
-          <div className="mb-7 flex items-center gap-2 px-2 pt-1"><Simbolo className="size-5" /><span className="font-[family-name:var(--font-display)] text-base font-semibold">Lumen<span className="text-[var(--acento-ativo)]">Auto</span></span></div>
-          <div className="space-y-1">
-            {modulos.map(({ id, rotulo, icone: Icone }) => <button key={id} type="button" aria-pressed={ativo === id} onClick={() => aoMudar(id)} className={cn('landing-demo-menu', ativo === id && 'landing-demo-menu-ativo')}><Icone className="size-3.5" />{rotulo}</button>)}
+        <div className="landing-demo-topo">
+          <div className="flex items-center gap-1.5" aria-hidden>
+            <span className="size-2 rounded-full bg-[#ff5f57]" />
+            <span className="size-2 rounded-full bg-[#febc2e]" />
+            <span className="size-2 rounded-full bg-[#28c840]" />
           </div>
-          <div className="mt-9 rounded-lg border border-white/[0.07] bg-white/[0.03] p-2.5"><p className="text-[10px] text-[#758197]">Agosto · operação</p><p className="mt-1 text-lg font-semibold text-white">82%</p><div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10"><div className="h-full w-[82%] rounded-full bg-[var(--acento-ativo)]" /></div></div>
-        </aside>
-        <div className="min-w-0 p-4 sm:p-6">
-          <div className="mb-5 flex items-center justify-between gap-3"><div><p className="text-xs text-[#8a95a8]">Sexta-feira, 7 de agosto</p><h3 className="mt-1 font-[family-name:var(--font-display)] text-2xl font-semibold tracking-tight text-white">{modulos.find((item) => item.id === ativo)?.rotulo}</h3></div><div className="grid size-9 place-items-center rounded-lg border border-white/10 bg-white/[0.04]"><Sparkles className="size-4 text-[var(--acento-ativo)]" /></div></div>
-          <div className="lg:hidden"><div className="mb-5 flex gap-1 overflow-x-auto pb-1">{modulos.map(({ id, rotulo }) => <button key={id} type="button" aria-pressed={ativo === id} onClick={() => aoMudar(id)} className={cn('shrink-0 rounded-full px-3 py-1.5 text-xs', ativo === id ? 'bg-[var(--acento-ativo)] text-black' : 'bg-white/[0.06] text-[#9aa5b7]')}>{rotulo}</button>)}</div></div>
-          {ativo === 'operacao' ? <VisaoGeral /> : null}
-          {ativo === 'agenda' ? <VisaoAgenda /> : null}
-          {ativo === 'financeiro' ? <VisaoFinanceira /> : null}
-          {ativo === 'estoque' ? <VisaoEstoque /> : null}
+          <div className="hidden max-w-56 flex-1 items-center gap-2 rounded-md border border-white/[0.08] bg-black/20 px-3 py-1.5 text-[10px] text-[#728096] sm:flex">
+            <Search className="size-3" /> app.esteticaflow.com/painel
+          </div>
+          <span className="text-[10px] text-emerald-400">● AO VIVO</span>
         </div>
-      </div>
+        <div className="grid min-h-[510px] lg:grid-cols-[172px_1fr]">
+          <aside className="hidden border-r border-white/[0.08] bg-black/20 p-3 lg:block">
+            <div className="mb-7 flex items-center gap-2 px-2 pt-1">
+              <Simbolo className="size-5" />
+              <span className="font-[family-name:var(--font-display)] text-base font-semibold">
+                Lumen<span className="text-[var(--acento-ativo)]">Auto</span>
+              </span>
+            </div>
+            <div className="space-y-1">
+              {modulos.map(({ id, rotulo, icone: Icone }) => (
+                <button
+                  key={id}
+                  type="button"
+                  aria-pressed={ativo === id}
+                  onClick={() => aoMudar(id)}
+                  className={cn('landing-demo-menu', ativo === id && 'landing-demo-menu-ativo')}
+                >
+                  <Icone className="size-3.5" />
+                  {rotulo}
+                </button>
+              ))}
+            </div>
+            <div className="mt-9 rounded-lg border border-white/[0.07] bg-white/[0.03] p-2.5">
+              <p className="text-[10px] text-[#758197]">Agosto · operação</p>
+              <p className="mt-1 text-lg font-semibold text-white">82%</p>
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
+                <div className="h-full w-[82%] rounded-full bg-[var(--acento-ativo)]" />
+              </div>
+            </div>
+          </aside>
+          <div className="min-w-0 p-4 sm:p-6">
+            <div className="mb-5 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-xs text-[#8a95a8]">Sexta-feira, 7 de agosto</p>
+                <h3 className="mt-1 font-[family-name:var(--font-display)] text-2xl font-semibold tracking-tight text-white">
+                  {modulos.find((item) => item.id === ativo)?.rotulo}
+                </h3>
+              </div>
+              <div className="grid size-9 place-items-center rounded-lg border border-white/10 bg-white/[0.04]">
+                <Sparkles className="size-4 text-[var(--acento-ativo)]" />
+              </div>
+            </div>
+            <div className="lg:hidden">
+              <div className="mb-5 flex gap-1 overflow-x-auto pb-1">
+                {modulos.map(({ id, rotulo }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    aria-pressed={ativo === id}
+                    onClick={() => aoMudar(id)}
+                    className={cn(
+                      'shrink-0 rounded-full px-3 py-1.5 text-xs',
+                      ativo === id
+                        ? 'bg-[var(--acento-ativo)] text-black'
+                        : 'bg-white/[0.06] text-[#9aa5b7]',
+                    )}
+                  >
+                    {rotulo}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {ativo === 'operacao' ? <VisaoGeral /> : null}
+            {ativo === 'agenda' ? <VisaoAgenda /> : null}
+            {ativo === 'financeiro' ? <VisaoFinanceira /> : null}
+            {ativo === 'estoque' ? <VisaoEstoque /> : null}
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-function VisaoGeral() { return <div className="space-y-4"><div className="grid gap-3 sm:grid-cols-3">{[['Receita do mês', 'R$ 15.384', '+ 12,8%', 'text-emerald-400'], ['Atendimentos pagos', '30', '7 hoje', 'text-[#b7c1d0]'], ['Estoque atento', '3 itens', 'reposição sugerida', 'text-amber-300']].map(([r,v,a,c]) => <div key={r} className="landing-demo-card"><p>{r}</p><strong>{v}</strong><span className={c}>{a}</span></div>)}</div><div className="grid gap-4 lg:grid-cols-[1.15fr_.85fr]"><div className="landing-demo-card min-h-56"><div className="flex items-center justify-between"><p>Faturamento · últimos 7 dias</p><TrendingUp className="size-4 text-emerald-400" /></div><div className="mt-8 flex h-28 items-end gap-2">{[42,62,51,76,64,90,78].map((h,i) => <div key={i} className="landing-grafico-barra flex-1" style={{height:`${h}%`, animationDelay:`${i * 70}ms`}} />)}</div><div className="mt-2 flex justify-between text-[10px] text-[#687489]"><span>seg</span><span>ter</span><span>qua</span><span>qui</span><span>sex</span><span>sáb</span><span>dom</span></div></div><div className="landing-demo-card"><p>Próxima entrega</p><div className="mt-5 rounded-lg border border-[var(--acento-ativo)]/25 bg-[var(--acento-ativo)]/10 p-3"><span className="text-xs text-[var(--acento-ativo)]">11:30 · EM ANDAMENTO</span><strong className="mt-2 block text-sm">Polimento técnico</strong><span className="mt-1 block text-xs text-[#96a2b4]">Marina Rocha · Civic Touring</span></div></div></div></div> }
-function VisaoAgenda() { return <div className="landing-demo-card"><div className="flex items-center justify-between"><p>Hoje · 7 de agosto</p><span className="rounded-full bg-emerald-400/10 px-2 py-1 text-[10px] text-emerald-400">3 confirmados</span></div><div className="mt-5 divide-y divide-white/[0.07]">{servicos.map(([hora,cliente,servico,status]) => <div key={hora} className="flex items-center gap-3 py-3"><span className="w-10 font-[family-name:var(--font-display)] text-base text-[var(--acento-ativo)]">{hora}</span><span className="size-2 rounded-full bg-emerald-400" /><div className="min-w-0 flex-1"><strong className="block truncate text-sm">{cliente}</strong><span className="block truncate text-xs text-[#8390a4]">{servico}</span></div><span className="hidden text-[10px] text-[#778398] sm:block">{status}</span></div>)}</div></div> }
-function VisaoFinanceira() { return <div className="grid gap-4 lg:grid-cols-[1.1fr_.9fr]"><div className="landing-demo-card"><p>Resultado do mês</p><strong className="mt-3 block text-4xl">R$ 7.220</strong><span className="mt-2 inline-flex items-center gap-1 text-xs text-emerald-400"><TrendingUp className="size-3.5" /> margem positiva de 46,9%</span><div className="mt-8 space-y-3">{[['Receitas', 'R$ 15.384', 'w-full bg-emerald-400'], ['Despesas', 'R$ 8.164', 'w-[54%] bg-[#8894a9]']].map(([r,v,c]) => <div key={r}><div className="flex justify-between text-xs"><span className="text-[#8b96a9]">{r}</span><span>{v}</span></div><div className="mt-2 h-1.5 rounded-full bg-white/10"><div className={cn('h-full rounded-full',c)} /></div></div>)}</div></div><div className="landing-demo-card"><p>Entradas recentes</p><div className="mt-5 space-y-4">{[['Vitrificação premium','R$ 1.490'],['Polimento técnico','R$ 680'],['Lavagem detalhada','R$ 260']].map(([r,v]) => <div key={r} className="flex items-center justify-between gap-2 text-sm"><span className="min-w-0 truncate text-[#bac3d0]">{r}</span><strong className="shrink-0 text-emerald-400">{v}</strong></div>)}</div></div></div> }
-function VisaoEstoque() { return <div className="space-y-4"><div className="grid gap-3 sm:grid-cols-3">{[['Itens ativos','24'],['Estoque saudável','21'],['Para repor','3']].map(([r,v]) => <div key={r} className="landing-demo-card"><p>{r}</p><strong className="mt-2 block text-2xl">{v}</strong></div>)}</div><div className="landing-demo-card"><p>Produtos que merecem atenção</p><div className="mt-4 space-y-3">{[['Shampoo neutro','550 ml','mín. 500 ml','bg-emerald-400'],['Cera sintética','280 g','mín. 350 g','bg-amber-300'],['Pano de microfibra','8 un','mín. 12 un','bg-amber-300']].map(([r,q,m,c]) => <div key={r} className="grid grid-cols-[1fr_auto] items-center gap-3 border-b border-white/[0.07] pb-3 last:border-0 last:pb-0"><div><strong className="block text-sm">{r}</strong><span className="text-xs text-[#7e8a9e]">{q} · {m}</span></div><span className={cn('size-2 rounded-full',c)} /></div>)}</div></div></div> }
+function VisaoGeral() {
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-3">
+        {[
+          ['Receita do mês', 'R$ 15.384', '+ 12,8%', 'text-emerald-400'],
+          ['Atendimentos pagos', '30', '7 hoje', 'text-[#b7c1d0]'],
+          ['Estoque atento', '3 itens', 'reposição sugerida', 'text-amber-300'],
+        ].map(([r, v, a, c]) => (
+          <div key={r} className="landing-demo-card">
+            <p>{r}</p>
+            <strong>{v}</strong>
+            <span className={c}>{a}</span>
+          </div>
+        ))}
+      </div>
+      <div className="grid gap-4 lg:grid-cols-[1.15fr_.85fr]">
+        <div className="landing-demo-card min-h-56">
+          <div className="flex items-center justify-between">
+            <p>Faturamento · últimos 7 dias</p>
+            <TrendingUp className="size-4 text-emerald-400" />
+          </div>
+          <div className="mt-8 flex h-28 items-end gap-2">
+            {[42, 62, 51, 76, 64, 90, 78].map((h, i) => (
+              <div
+                key={i}
+                className="landing-grafico-barra flex-1"
+                style={{ height: `${h}%`, animationDelay: `${i * 70}ms` }}
+              />
+            ))}
+          </div>
+          <div className="mt-2 flex justify-between text-[10px] text-[#687489]">
+            <span>seg</span>
+            <span>ter</span>
+            <span>qua</span>
+            <span>qui</span>
+            <span>sex</span>
+            <span>sáb</span>
+            <span>dom</span>
+          </div>
+        </div>
+        <div className="landing-demo-card">
+          <p>Próxima entrega</p>
+          <div className="mt-5 rounded-lg border border-[var(--acento-ativo)]/25 bg-[var(--acento-ativo)]/10 p-3">
+            <span className="text-xs text-[var(--acento-ativo)]">11:30 · EM ANDAMENTO</span>
+            <strong className="mt-2 block text-sm">Polimento técnico</strong>
+            <span className="mt-1 block text-xs text-[#96a2b4]">Marina Rocha · Civic Touring</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+function VisaoAgenda() {
+  return (
+    <div className="landing-demo-card">
+      <div className="flex items-center justify-between">
+        <p>Hoje · 7 de agosto</p>
+        <span className="rounded-full bg-emerald-400/10 px-2 py-1 text-[10px] text-emerald-400">
+          3 confirmados
+        </span>
+      </div>
+      <div className="mt-5 divide-y divide-white/[0.07]">
+        {servicos.map(([hora, cliente, servico, status]) => (
+          <div key={hora} className="flex items-center gap-3 py-3">
+            <span className="w-10 font-[family-name:var(--font-display)] text-base text-[var(--acento-ativo)]">
+              {hora}
+            </span>
+            <span className="size-2 rounded-full bg-emerald-400" />
+            <div className="min-w-0 flex-1">
+              <strong className="block truncate text-sm">{cliente}</strong>
+              <span className="block truncate text-xs text-[#8390a4]">{servico}</span>
+            </div>
+            <span className="hidden text-[10px] text-[#778398] sm:block">{status}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+function VisaoFinanceira() {
+  return (
+    <div className="grid gap-4 lg:grid-cols-[1.1fr_.9fr]">
+      <div className="landing-demo-card">
+        <p>Resultado do mês</p>
+        <strong className="mt-3 block text-4xl">R$ 7.220</strong>
+        <span className="mt-2 inline-flex items-center gap-1 text-xs text-emerald-400">
+          <TrendingUp className="size-3.5" /> margem positiva de 46,9%
+        </span>
+        <div className="mt-8 space-y-3">
+          {[
+            ['Receitas', 'R$ 15.384', 'w-full bg-emerald-400'],
+            ['Despesas', 'R$ 8.164', 'w-[54%] bg-[#8894a9]'],
+          ].map(([r, v, c]) => (
+            <div key={r}>
+              <div className="flex justify-between text-xs">
+                <span className="text-[#8b96a9]">{r}</span>
+                <span>{v}</span>
+              </div>
+              <div className="mt-2 h-1.5 rounded-full bg-white/10">
+                <div className={cn('h-full rounded-full', c)} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="landing-demo-card">
+        <p>Entradas recentes</p>
+        <div className="mt-5 space-y-4">
+          {[
+            ['Vitrificação premium', 'R$ 1.490'],
+            ['Polimento técnico', 'R$ 680'],
+            ['Lavagem detalhada', 'R$ 260'],
+          ].map(([r, v]) => (
+            <div key={r} className="flex items-center justify-between gap-2 text-sm">
+              <span className="min-w-0 truncate text-[#bac3d0]">{r}</span>
+              <strong className="shrink-0 text-emerald-400">{v}</strong>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+function VisaoEstoque() {
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-3">
+        {[
+          ['Itens ativos', '24'],
+          ['Estoque saudável', '21'],
+          ['Para repor', '3'],
+        ].map(([r, v]) => (
+          <div key={r} className="landing-demo-card">
+            <p>{r}</p>
+            <strong className="mt-2 block text-2xl">{v}</strong>
+          </div>
+        ))}
+      </div>
+      <div className="landing-demo-card">
+        <p>Produtos que merecem atenção</p>
+        <div className="mt-4 space-y-3">
+          {[
+            ['Shampoo neutro', '550 ml', 'mín. 500 ml', 'bg-emerald-400'],
+            ['Cera sintética', '280 g', 'mín. 350 g', 'bg-amber-300'],
+            ['Pano de microfibra', '8 un', 'mín. 12 un', 'bg-amber-300'],
+          ].map(([r, q, m, c]) => (
+            <div
+              key={r}
+              className="grid grid-cols-[1fr_auto] items-center gap-3 border-b border-white/[0.07] pb-3 last:border-0 last:pb-0"
+            >
+              <div>
+                <strong className="block text-sm">{r}</strong>
+                <span className="text-xs text-[#7e8a9e]">
+                  {q} · {m}
+                </span>
+              </div>
+              <span className={cn('size-2 rounded-full', c)} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}

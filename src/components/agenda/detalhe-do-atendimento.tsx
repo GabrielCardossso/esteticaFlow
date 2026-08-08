@@ -97,10 +97,18 @@ export function DetalheDoAtendimento({ id }: { id: number }) {
                 Iniciar
               </Botao>
             ) : null}
-            {podeRegistrarPagamento(data.status, data.pago) ? (
+            {podeRegistrarPagamento(data.status, data.pago) && !data.parcelado ? (
               <Botao variante="suave" onClick={() => setPagamentoAberto(true)}>
                 <CircleDollarSign />
                 Receber
+              </Botao>
+            ) : null}
+            {data.parcelado && !data.pago ? (
+              <Botao comoFilho variante="suave">
+                <Link href="/painel/financeiro#parcelas">
+                  <CircleDollarSign />
+                  Acompanhar parcelas
+                </Link>
               </Botao>
             ) : null}
             {podeExecutar(data.status, 'CONCLUIR') ? (
@@ -125,7 +133,11 @@ export function DetalheDoAtendimento({ id }: { id: number }) {
       <div className="mb-4 flex flex-wrap gap-2">
         <Etiqueta tom={TOM_STATUS[data.status]}>{ROTULO_STATUS[data.status]}</Etiqueta>
         <Etiqueta tom={data.pago ? 'positivo' : 'atencao'}>
-          {data.pago ? 'Pago' : 'Pagamento em aberto'}
+          {data.pago
+            ? 'Pago'
+            : data.parcelado
+              ? 'Parcelado · saldo em aberto'
+              : 'Pagamento em aberto'}
         </Etiqueta>
         <Etiqueta tom="neutro">Duração {formatarDuracao(data.duracaoMinutos)}</Etiqueta>
       </div>
@@ -249,6 +261,7 @@ export function DetalheDoAtendimento({ id }: { id: number }) {
         aoFechar={() => setConclusaoAberta(false)}
         agendamentoId={data.id}
         jaPago={data.pago}
+        possuiParcelamento={data.parcelado}
       />
     </>
   );

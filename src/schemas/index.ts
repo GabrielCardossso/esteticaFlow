@@ -96,10 +96,10 @@ export type VeiculoPayload = z.output<typeof veiculoSchema>;
 export const filtroClientesSchema = z.object({
   busca: z.string().trim().default(''),
   situacao: z.enum(['ativos', 'inativos', 'todos']).default('ativos'),
-  relacionamento: z.enum(['todos', 'ATIVO', 'EM_RISCO', 'INATIVO', 'SEM_ATENDIMENTO']).default('todos'),
-  ordenacao: z
-    .enum(['nome', 'ultimo_atendimento', 'valor_gasto', 'atendimentos'])
-    .default('nome'),
+  relacionamento: z
+    .enum(['todos', 'ATIVO', 'EM_RISCO', 'INATIVO', 'SEM_ATENDIMENTO'])
+    .default('todos'),
+  ordenacao: z.enum(['nome', 'ultimo_atendimento', 'valor_gasto', 'atendimentos']).default('nome'),
 });
 export type FiltroClientes = z.output<typeof filtroClientesSchema>;
 
@@ -160,8 +160,10 @@ export type AgendamentoPayload = z.output<typeof agendamentoSchema>;
 
 export const pagamentoSchema = z.object({
   formaPagamentoId: idNumerico,
+  parcelas: z.coerce.number().int().min(1).max(12).default(1),
 });
 export type PagamentoInput = z.input<typeof pagamentoSchema>;
+export type PagamentoPayload = z.output<typeof pagamentoSchema>;
 
 export const concluirSchema = z.object({
   formaPagamentoId: z
@@ -169,6 +171,7 @@ export const concluirSchema = z.object({
     .transform((valor) => (valor === '' || valor === null ? null : valor))
     .nullable()
     .default(null),
+  parcelas: z.coerce.number().int().min(1).max(12).default(1),
   consumos: z
     .array(
       z.object({
@@ -196,24 +199,26 @@ export type FiltroAgenda = z.output<typeof filtroAgendaSchema>;
 // Estoque
 // ---------------------------------------------------------------------------
 
-export const produtoSchema = z.object({
-  nome: textoObrigatorio('Nome', 150),
-  categoriaProdutoId: idNumerico,
-  unidadeEstoque: z.enum(UNIDADES, { required_error: 'Selecione a unidade de estoque.' }),
-  unidadeMinima: z.enum(UNIDADES, { required_error: 'Selecione a unidade do alerta.' }),
-  quantidadeEmbalagem: dinheiroPositivo('Quantidade da embalagem'),
-  valorEmbalagem: dinheiroNaoNegativo('Valor da embalagem'),
-  quantidadeInicial: dinheiroNaoNegativo('Quantidade inicial').default('0'),
-  quantidadeMinima: dinheiroNaoNegativo('Quantidade mínima').default('0'),
-}).superRefine((dados, contexto) => {
-  if (!unidadesCompativeis(dados.unidadeEstoque, dados.unidadeMinima)) {
-    contexto.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ['unidadeMinima'],
-      message: 'O alerta mínimo deve usar uma unidade compatível com o estoque.',
-    });
-  }
-});
+export const produtoSchema = z
+  .object({
+    nome: textoObrigatorio('Nome', 150),
+    categoriaProdutoId: idNumerico,
+    unidadeEstoque: z.enum(UNIDADES, { required_error: 'Selecione a unidade de estoque.' }),
+    unidadeMinima: z.enum(UNIDADES, { required_error: 'Selecione a unidade do alerta.' }),
+    quantidadeEmbalagem: dinheiroPositivo('Quantidade da embalagem'),
+    valorEmbalagem: dinheiroNaoNegativo('Valor da embalagem'),
+    quantidadeInicial: dinheiroNaoNegativo('Quantidade inicial').default('0'),
+    quantidadeMinima: dinheiroNaoNegativo('Quantidade mínima').default('0'),
+  })
+  .superRefine((dados, contexto) => {
+    if (!unidadesCompativeis(dados.unidadeEstoque, dados.unidadeMinima)) {
+      contexto.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['unidadeMinima'],
+        message: 'O alerta mínimo deve usar uma unidade compatível com o estoque.',
+      });
+    }
+  });
 export type ProdutoInput = z.input<typeof produtoSchema>;
 export type ProdutoPayload = z.output<typeof produtoSchema>;
 

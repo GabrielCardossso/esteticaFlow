@@ -1,5 +1,6 @@
 import { Document, Page, StyleSheet, Text, View, renderToBuffer } from '@react-pdf/renderer';
 import type { Relatorio } from '@/server/relatorios';
+import { CATALOGO_PLANOS } from '@/domain/plano';
 import { formatarData } from '@/domain/shared/tempo';
 import { formatarMoeda } from '@/domain/shared/texto';
 
@@ -115,7 +116,8 @@ function DocumentoRelatorio({ relatorio }: { relatorio: Relatorio }) {
         <View style={estilos.faixaTopo}>
           <Text style={estilos.marca}>EsteticaFlow · Relatório gerencial</Text>
           <Text style={estilos.subtitulo}>
-            {relatorio.empresa} · Plano {relatorio.plano} · {relatorio.filtroRotulo} · {periodo}
+            {relatorio.empresa} · Plano {CATALOGO_PLANOS[relatorio.plano].nome} ·{' '}
+            {relatorio.filtroRotulo} · {periodo}
           </Text>
         </View>
 

@@ -4,7 +4,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { api, FalhaDaApi, mensagemDeErro, paramsLimpos } from '@/lib/api';
 import { chaves } from '@/lib/chaves';
-import type { AgendamentoPayload, ConcluirPayload, FiltroAgenda } from '@/schemas';
+import type {
+  AgendamentoPayload,
+  ConcluirPayload,
+  FiltroAgenda,
+  PagamentoPayload,
+} from '@/schemas';
 import type { AgendamentoDaLista } from '@/server/agenda';
 
 interface RespostaDaAgenda {
@@ -120,8 +125,8 @@ export function useRegistrarPagamento() {
   const cache = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, formaPagamentoId }: { id: number; formaPagamentoId: number }) => {
-      await api.post(`/agenda/${id}/pagamento`, { formaPagamentoId });
+    mutationFn: async ({ id, dados }: { id: number; dados: PagamentoPayload }) => {
+      await api.post(`/agenda/${id}/pagamento`, dados);
     },
     onSuccess: () => {
       invalidarAgenda(cache);
@@ -152,9 +157,10 @@ export function useFormasDePagamento() {
   return useQuery({
     queryKey: chaves.financeiro.formas(false),
     queryFn: async () => {
-      const resposta = await api.get<Array<{ id: number; nome: string; ativo: boolean }>>(
-        '/financeiro/formas',
-      );
+      const resposta =
+        await api.get<
+          Array<{ id: number; nome: string; ativo: boolean; permiteParcelamento: boolean }>
+        >('/financeiro/formas');
       return resposta.data;
     },
     staleTime: 5 * 60_000,

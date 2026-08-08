@@ -12,12 +12,20 @@ export function CabecalhoDePagina({
   return (
     <header className="painel-cabecalho mb-6 flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0">
-        <h1 className="text-2xl font-bold tracking-tight text-[var(--tinta)]">{titulo}</h1>
+        <h1 className="flex items-center gap-3 text-2xl font-bold tracking-tight text-[var(--tinta)]">
+          <span
+            className="h-6 w-1 shrink-0 rounded-full bg-[var(--acento-ativo)] shadow-[0_0_18px_rgb(var(--acento-rgb)/0.45)]"
+            aria-hidden
+          />
+          {titulo}
+        </h1>
         {descricao !== undefined ? (
           <p className="mt-1 text-sm text-[var(--tinta-suave)]">{descricao}</p>
         ) : null}
       </div>
-      {acao !== undefined ? <div className="flex shrink-0 gap-2">{acao}</div> : null}
+      {acao !== undefined ? (
+        <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:shrink-0">{acao}</div>
+      ) : null}
     </header>
   );
 }

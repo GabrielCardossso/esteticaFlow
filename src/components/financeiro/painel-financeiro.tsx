@@ -5,7 +5,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowDownCircle,
   ArrowUpCircle,
+  CalendarClock,
+  CheckCircle2,
   CircleDollarSign,
+  CreditCard,
   Minus,
   Plus,
   Search,
@@ -39,7 +42,11 @@ import {
   type ReceitaAvulsaInput,
   type ReceitaAvulsaPayload,
 } from '@/schemas';
-import type { IndicadoresFinanceiros, LancamentoFinanceiro } from '@/server/financeiro';
+import type {
+  IndicadoresFinanceiros,
+  LancamentoFinanceiro,
+  ParcelaFinanceira,
+} from '@/server/financeiro';
 
 interface RespostaFinanceira {
   lancamentos: LancamentoFinanceiro[];
@@ -47,6 +54,7 @@ interface RespostaFinanceira {
   fim: string;
   saldo: string;
   indicadores: IndicadoresFinanceiros;
+  parcelas: ParcelaFinanceira[];
 }
 
 const ROTULO_CATEGORIA: Record<string, string> = {
@@ -103,6 +111,19 @@ export function PainelFinanceiro() {
       invalidar();
       toast.success('Receita registrada.');
       setReceitaAberta(false);
+    },
+    onError: (erro) => toast.error(mensagemDeErro(erro)),
+  });
+
+  const receberParcela = useMutation({
+    mutationFn: async (id: number) => {
+      await api.post(`/financeiro/parcelas/${id}/pagar`);
+      return id;
+    },
+    onSuccess: () => {
+      invalidar();
+      void cache.invalidateQueries({ queryKey: chaves.agenda.todos });
+      toast.success('Parcela marcada como paga.');
     },
     onError: (erro) => toast.error(mensagemDeErro(erro)),
   });
@@ -191,11 +212,155 @@ export function PainelFinanceiro() {
                 key="receber"
                 rotulo="A receber"
                 valor={formatarMoeda(indicadores?.aReceber ?? 0)}
-                detalhe="Atendimentos em aberto"
+                detalhe="Atendimentos e parcelas em aberto"
                 icone={Wallet}
               />,
             ]}
       </section>
+
+      <Cartao id="parcelas" className="mt-4 overflow-hidden scroll-mt-24">
+        <div className="flex flex-col gap-3 border-b border-[var(--borda)] bg-[linear-gradient(135deg,var(--superficie-2),transparent)] p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[var(--acento-fraco)] text-[var(--acento-ativo)]">
+              <CreditCard className="size-5" aria-hidden />
+            </span>
+            <div className="min-w-0">
+              <h2 className="font-semibold text-[var(--tinta)]">Parcelas dos clientes</h2>
+              <p className="mt-0.5 text-sm text-[var(--tinta-suave)]">
+                Acompanhe vencimentos e reconheça a receita somente quando cada parcela for paga.
+              </p>
+            </div>
+          </div>
+          <Etiqueta
+            tom={(data?.parcelas.some((item) => !item.paga) ?? false) ? 'atencao' : 'positivo'}
+          >
+            {data?.parcelas.filter((item) => !item.paga).length ?? 0} em aberto
+          </Etiqueta>
+        </div>
+
+        {isLoading ? (
+          <div className="p-4">
+            <EsqueletoDeLista linhas={3} />
+          </div>
+        ) : (data?.parcelas.length ?? 0) === 0 ? (
+          <Vazio
+            icone={CalendarClock}
+            titulo="Nenhum parcelamento ativo"
+            descricao="Ao receber um atendimento no cartão de crédito, as parcelas aparecerão aqui."
+          />
+        ) : (
+          <>
+            <div className="hidden md:block">
+              <Tabela>
+                <Cabecalho>
+                  <tr>
+                    <Coluna>Cliente e veículo</Coluna>
+                    <Coluna>Parcela</Coluna>
+                    <Coluna>Vencimento</Coluna>
+                    <Coluna>Status</Coluna>
+                    <Coluna numerica>Valor</Coluna>
+                    <Coluna className="text-right">Ação</Coluna>
+                  </tr>
+                </Cabecalho>
+                <Corpo>
+                  {(data?.parcelas ?? []).map((parcela) => (
+                    <Linha key={parcela.id}>
+                      <Celula>
+                        <p className="font-medium text-[var(--tinta)]">{parcela.cliente}</p>
+                        <p className="mt-0.5 text-xs text-[var(--tinta-tenue)]">
+                          {parcela.veiculo}
+                        </p>
+                      </Celula>
+                      <Celula>
+                        {parcela.numero}/{parcela.totalParcelas}
+                      </Celula>
+                      <Celula>{formatarData(parcela.dataVencimento)}</Celula>
+                      <Celula>
+                        <Etiqueta
+                          tom={parcela.paga ? 'positivo' : parcela.atrasada ? 'critico' : 'atencao'}
+                        >
+                          {parcela.paga ? 'Paga' : parcela.atrasada ? 'Atrasada' : 'Aguardando'}
+                        </Etiqueta>
+                      </Celula>
+                      <Celula numerica>{formatarMoeda(parcela.valor)}</Celula>
+                      <Celula className="text-right">
+                        {parcela.paga ? (
+                          <span className="inline-flex items-center gap-1.5 text-xs text-[var(--positivo)]">
+                            <CheckCircle2 className="size-4" aria-hidden />
+                            {formatarData(parcela.dataPagamento)}
+                          </span>
+                        ) : (
+                          <Botao
+                            variante="suave"
+                            tamanho="pequeno"
+                            carregando={
+                              receberParcela.isPending && receberParcela.variables === parcela.id
+                            }
+                            onClick={() => receberParcela.mutate(parcela.id)}
+                          >
+                            Marcar como paga
+                          </Botao>
+                        )}
+                      </Celula>
+                    </Linha>
+                  ))}
+                </Corpo>
+              </Tabela>
+            </div>
+
+            <div className="divide-y divide-[var(--borda)] md:hidden">
+              {(data?.parcelas ?? []).map((parcela) => (
+                <article key={parcela.id} className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-[var(--tinta)]">{parcela.cliente}</p>
+                      <p className="mt-0.5 truncate text-xs text-[var(--tinta-tenue)]">
+                        {parcela.veiculo}
+                      </p>
+                    </div>
+                    <Etiqueta
+                      tom={parcela.paga ? 'positivo' : parcela.atrasada ? 'critico' : 'atencao'}
+                    >
+                      {parcela.paga ? 'Paga' : parcela.atrasada ? 'Atrasada' : 'Aguardando'}
+                    </Etiqueta>
+                  </div>
+                  <div className="mt-4 grid grid-cols-3 gap-2 rounded-xl bg-[var(--superficie-2)] p-3 text-xs">
+                    <span>
+                      <small className="block text-[var(--tinta-tenue)]">Parcela</small>
+                      {parcela.numero}/{parcela.totalParcelas}
+                    </span>
+                    <span>
+                      <small className="block text-[var(--tinta-tenue)]">Vencimento</small>
+                      {formatarData(parcela.dataVencimento)}
+                    </span>
+                    <span className="text-right">
+                      <small className="block text-[var(--tinta-tenue)]">Valor</small>
+                      {formatarMoeda(parcela.valor)}
+                    </span>
+                  </div>
+                  {!parcela.paga ? (
+                    <Botao
+                      className="mt-3 w-full"
+                      variante="suave"
+                      carregando={
+                        receberParcela.isPending && receberParcela.variables === parcela.id
+                      }
+                      onClick={() => receberParcela.mutate(parcela.id)}
+                    >
+                      Marcar parcela como paga
+                    </Botao>
+                  ) : (
+                    <p className="mt-3 flex items-center gap-1.5 text-xs text-[var(--positivo)]">
+                      <CheckCircle2 className="size-4" aria-hidden /> Recebida em{' '}
+                      {formatarData(parcela.dataPagamento)}
+                    </p>
+                  )}
+                </article>
+              ))}
+            </div>
+          </>
+        )}
+      </Cartao>
 
       <Cartao className="mt-4">
         <div className="grid gap-3 border-b border-[var(--borda)] p-4 sm:grid-cols-2 lg:grid-cols-4">

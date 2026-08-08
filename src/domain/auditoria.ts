@@ -23,6 +23,7 @@ export type AcaoRegistrada =
   | 'AGENDAMENTO_CONCLUIDO'
   | 'AGENDAMENTO_CANCELADO'
   | 'PAGAMENTO_REGISTRADO'
+  | 'PARCELA_RECEBIDA'
   | 'PRODUTO_CRIADO'
   | 'PRODUTO_ATUALIZADO'
   | 'PRODUTO_ARQUIVADO'
@@ -70,6 +71,7 @@ export const ROTULO_ACAO_LOG: Readonly<Record<string, string>> = {
   AGENDAMENTO_CONCLUIDO: 'Concluiu atendimento',
   AGENDAMENTO_CANCELADO: 'Cancelou agendamento',
   PAGAMENTO_REGISTRADO: 'Registrou pagamento',
+  PARCELA_RECEBIDA: 'Recebeu parcela',
   PRODUTO_CRIADO: 'Cadastrou produto',
   PRODUTO_ATUALIZADO: 'Atualizou produto',
   PRODUTO_ARQUIVADO: 'Arquivou produto',

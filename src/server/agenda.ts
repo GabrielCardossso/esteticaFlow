@@ -1,4 +1,4 @@
-import { and, asc, between, eq, inArray } from 'drizzle-orm';
+import { and, asc, between, eq, inArray, sql } from 'drizzle-orm';
 import type { Contexto } from '@/auth/contexto';
 import { db } from '@/db/client';
 import {
@@ -8,6 +8,7 @@ import {
   estoque,
   formaPagamento,
   movimentacaoEstoque,
+  parcelaRecebimento,
   produto,
   receita,
   servico,
@@ -28,6 +29,7 @@ import {
   type StatusAgendamento,
 } from '@/domain/agendamento';
 import { normalizarQuantidade, validarBaixa, validarUnidadeCompativel } from '@/domain/estoque';
+import { dividirEmParcelas, permiteParcelamento } from '@/domain/financeiro';
 import { conflito, falha, naoEncontrado, ok, validacao, type Result } from '@/domain/result';
 import { Quantidade } from '@/domain/shared/decimal';
 import {
@@ -39,9 +41,15 @@ import {
   inicioDoDia,
   inicioDoMes,
   m,
+  paraISO,
 } from '@/domain/shared/tempo';
 import { contemTermo } from '@/domain/shared/texto';
-import type { AgendamentoPayload, ConcluirPayload, FiltroAgenda } from '@/schemas';
+import type {
+  AgendamentoPayload,
+  ConcluirPayload,
+  FiltroAgenda,
+  PagamentoPayload,
+} from '@/schemas';
 import { registrar } from './log';
 
 export interface AgendamentoDaLista {
@@ -54,6 +62,7 @@ export interface AgendamentoDaLista {
   desconto: string;
   total: string;
   pago: boolean;
+  parcelado: boolean;
   observacoes: string | null;
   clienteId: number;
   clienteNome: string;
@@ -114,10 +123,24 @@ async function carregarServicosDosAgendamentos(empresaId: number, ids: readonly 
   return mapa;
 }
 
+function prepararParcelas(valorTotal: string, quantidade: number) {
+  const hoje = hojeISO();
+  return dividirEmParcelas(valorTotal, quantidade).map((valor, indice) => ({
+    numero: indice + 1,
+    totalParcelas: quantidade,
+    valor,
+    dataVencimento: paraISO(m(hoje).add(indice, 'months')),
+    paga: indice === 0,
+    dataPagamento: indice === 0 ? hoje : null,
+  }));
+}
+
 export async function listarAgenda(
   contexto: Contexto,
   filtro: FiltroAgenda,
-): Promise<Result<{ itens: AgendamentoDaLista[]; inicio: string; fim: string; referencia: string }>> {
+): Promise<
+  Result<{ itens: AgendamentoDaLista[]; inicio: string; fim: string; referencia: string }>
+> {
   const { inicio, fim, referencia } = intervaloDoFiltro(filtro);
 
   const condicoes = [
@@ -141,6 +164,11 @@ export async function listarAgenda(
       desconto: agendamento.desconto,
       total: agendamento.total,
       pago: agendamento.pago,
+      parcelado: sql<boolean>`exists (
+        select 1 from ${parcelaRecebimento}
+        where ${parcelaRecebimento.agendamentoId} = ${agendamento.id}
+          and ${parcelaRecebimento.empresaId} = ${contexto.empresaId}
+      )`,
       observacoes: agendamento.observacoes,
       clienteId: cliente.id,
       clienteNome: cliente.nome,
@@ -192,7 +220,9 @@ export async function listarAgenda(
 export async function obterAgendamento(
   contexto: Contexto,
   id: number,
-): Promise<Result<AgendamentoDaLista & { receita: { valor: string; forma: string; data: string } | null }>> {
+): Promise<
+  Result<AgendamentoDaLista & { receita: { valor: string; forma: string; data: string } | null }>
+> {
   const [registro] = await db
     .select({
       id: agendamento.id,
@@ -203,6 +233,11 @@ export async function obterAgendamento(
       desconto: agendamento.desconto,
       total: agendamento.total,
       pago: agendamento.pago,
+      parcelado: sql<boolean>`exists (
+        select 1 from ${parcelaRecebimento}
+        where ${parcelaRecebimento.agendamentoId} = ${agendamento.id}
+          and ${parcelaRecebimento.empresaId} = ${contexto.empresaId}
+      )`,
       observacoes: agendamento.observacoes,
       clienteId: cliente.id,
       clienteNome: cliente.nome,
@@ -441,6 +476,11 @@ export async function concluirAgendamento(
       status: agendamento.status,
       pago: agendamento.pago,
       total: agendamento.total,
+      parcelado: sql<boolean>`exists (
+        select 1 from ${parcelaRecebimento}
+        where ${parcelaRecebimento.agendamentoId} = ${agendamento.id}
+          and ${parcelaRecebimento.empresaId} = ${contexto.empresaId}
+      )`,
     })
     .from(agendamento)
     .where(and(eq(agendamento.id, id), eq(agendamento.empresaId, contexto.empresaId)))
@@ -458,10 +498,14 @@ export async function concluirAgendamento(
     consumosAgregados.set(consumo.produtoId, acumulado);
   }
 
-  let formaValida: number | null = null;
-  if (dados.formaPagamentoId !== null && !atual.pago) {
+  if (atual.parcelado && dados.formaPagamentoId !== null) {
+    return falha(conflito('Este atendimento já possui parcelas. Gerencie-as no financeiro.'));
+  }
+
+  let formaValida: { id: number; nome: string } | null = null;
+  if (dados.formaPagamentoId !== null && !atual.pago && !atual.parcelado) {
     const [forma] = await db
-      .select({ id: formaPagamento.id })
+      .select({ id: formaPagamento.id, nome: formaPagamento.nome })
       .from(formaPagamento)
       .where(
         and(
@@ -472,7 +516,21 @@ export async function concluirAgendamento(
       )
       .limit(1);
     if (forma === undefined) return falha(naoEncontrado('Forma de pagamento não encontrada.'));
-    formaValida = forma.id;
+    if (dados.parcelas > 1 && !permiteParcelamento(forma.nome)) {
+      return falha(validacao('Parcelamento disponível apenas para cartão de crédito.', 'parcelas'));
+    }
+    formaValida = forma;
+  }
+
+  let parcelasPreparadas: ReturnType<typeof prepararParcelas> | null = null;
+  if (formaValida !== null && dados.parcelas > 1) {
+    try {
+      parcelasPreparadas = prepararParcelas(atual.total, dados.parcelas);
+    } catch {
+      return falha(
+        validacao('O valor do atendimento não permite essa quantidade de parcelas.', 'parcelas'),
+      );
+    }
   }
 
   const nomesServicos = await db
@@ -500,7 +558,8 @@ export async function concluirAgendamento(
       if (saldo === undefined) {
         return { erro: naoEncontrado('Produto sem controle de estoque nesta empresa.') } as const;
       }
-      if (!saldo.ativo) return { erro: conflito('Não é possível consumir um produto arquivado.') } as const;
+      if (!saldo.ativo)
+        return { erro: conflito('Não é possível consumir um produto arquivado.') } as const;
 
       let quantidade = Quantidade.zero;
       for (const consumo of consumos) {
@@ -534,15 +593,48 @@ export async function concluirAgendamento(
 
     let pago = atual.pago;
     if (formaValida !== null && !pago) {
-      await tx.insert(receita).values({
-        empresaId: contexto.empresaId,
-        agendamentoId: id,
-        formaPagamentoId: formaValida,
-        descricao: `Serviços: ${nomesServicos.map((s) => s.nome).join(', ')}`,
-        valor: atual.total,
-        dataRecebimento: hojeISO(),
-      });
-      pago = true;
+      const descricao = `Serviços: ${nomesServicos.map((s) => s.nome).join(', ')}`;
+      if (dados.parcelas > 1) {
+        const criadas = await tx
+          .insert(parcelaRecebimento)
+          .values(
+            (parcelasPreparadas ?? []).map((parcela) => ({
+              ...parcela,
+              empresaId: contexto.empresaId,
+              agendamentoId: id,
+              formaPagamentoId: formaValida.id,
+            })),
+          )
+          .returning({
+            id: parcelaRecebimento.id,
+            numero: parcelaRecebimento.numero,
+            totalParcelas: parcelaRecebimento.totalParcelas,
+            valor: parcelaRecebimento.valor,
+          });
+
+        const primeira = criadas.find((parcela) => parcela.numero === 1);
+
+        if (primeira === undefined) throw new Error('Falha ao criar parcelamento.');
+        await tx.insert(receita).values({
+          empresaId: contexto.empresaId,
+          agendamentoId: id,
+          parcelaRecebimentoId: primeira.id,
+          formaPagamentoId: formaValida.id,
+          descricao: `Parcela ${primeira.numero}/${primeira.totalParcelas} · ${descricao}`,
+          valor: primeira.valor,
+          dataRecebimento: hojeISO(),
+        });
+      } else {
+        await tx.insert(receita).values({
+          empresaId: contexto.empresaId,
+          agendamentoId: id,
+          formaPagamentoId: formaValida.id,
+          descricao,
+          valor: atual.total,
+          dataRecebimento: hojeISO(),
+        });
+        pago = true;
+      }
     }
 
     await tx
@@ -569,7 +661,7 @@ export async function concluirAgendamento(
 export async function registrarPagamento(
   contexto: Contexto,
   id: number,
-  formaPagamentoId: number,
+  dados: PagamentoPayload,
 ): Promise<Result<{ id: number; pago: boolean }>> {
   const [atual] = await db
     .select({
@@ -577,6 +669,11 @@ export async function registrarPagamento(
       status: agendamento.status,
       pago: agendamento.pago,
       total: agendamento.total,
+      parcelado: sql<boolean>`exists (
+        select 1 from ${parcelaRecebimento}
+        where ${parcelaRecebimento.agendamentoId} = ${agendamento.id}
+          and ${parcelaRecebimento.empresaId} = ${contexto.empresaId}
+      )`,
     })
     .from(agendamento)
     .where(and(eq(agendamento.id, id), eq(agendamento.empresaId, contexto.empresaId)))
@@ -586,13 +683,16 @@ export async function registrarPagamento(
 
   const permitido = validarPagamento(atual.status, atual.pago);
   if (!permitido.ok) return permitido;
+  if (atual.parcelado) {
+    return falha(conflito('Este atendimento já possui parcelas. Gerencie-as no financeiro.'));
+  }
 
   const [forma] = await db
-    .select({ id: formaPagamento.id })
+    .select({ id: formaPagamento.id, nome: formaPagamento.nome })
     .from(formaPagamento)
     .where(
       and(
-        eq(formaPagamento.id, formaPagamentoId),
+        eq(formaPagamento.id, dados.formaPagamentoId),
         eq(formaPagamento.empresaId, contexto.empresaId),
         eq(formaPagamento.ativo, true),
       ),
@@ -600,6 +700,20 @@ export async function registrarPagamento(
     .limit(1);
 
   if (forma === undefined) return falha(naoEncontrado('Forma de pagamento não encontrada.'));
+  if (dados.parcelas > 1 && !permiteParcelamento(forma.nome)) {
+    return falha(validacao('Parcelamento disponível apenas para cartão de crédito.', 'parcelas'));
+  }
+
+  let parcelasPreparadas: ReturnType<typeof prepararParcelas> | null = null;
+  if (dados.parcelas > 1) {
+    try {
+      parcelasPreparadas = prepararParcelas(atual.total, dados.parcelas);
+    } catch {
+      return falha(
+        validacao('O valor do atendimento não permite essa quantidade de parcelas.', 'parcelas'),
+      );
+    }
+  }
 
   const nomesServicos = await db
     .select({ nome: servico.nome })
@@ -608,17 +722,50 @@ export async function registrarPagamento(
     .where(eq(agendamentoServico.agendamentoId, id));
 
   await db.transaction(async (tx) => {
-    await tx.insert(receita).values({
-      empresaId: contexto.empresaId,
-      agendamentoId: id,
-      formaPagamentoId,
-      descricao: `Serviços: ${nomesServicos.map((s) => s.nome).join(', ')}`,
-      valor: atual.total,
-      dataRecebimento: hojeISO(),
-    });
+    const descricao = `Serviços: ${nomesServicos.map((s) => s.nome).join(', ')}`;
+    if (dados.parcelas > 1) {
+      const criadas = await tx
+        .insert(parcelaRecebimento)
+        .values(
+          (parcelasPreparadas ?? []).map((parcela) => ({
+            ...parcela,
+            empresaId: contexto.empresaId,
+            agendamentoId: id,
+            formaPagamentoId: forma.id,
+          })),
+        )
+        .returning({
+          id: parcelaRecebimento.id,
+          numero: parcelaRecebimento.numero,
+          totalParcelas: parcelaRecebimento.totalParcelas,
+          valor: parcelaRecebimento.valor,
+        });
+
+      const primeira = criadas.find((parcela) => parcela.numero === 1);
+
+      if (primeira === undefined) throw new Error('Falha ao criar parcelamento.');
+      await tx.insert(receita).values({
+        empresaId: contexto.empresaId,
+        agendamentoId: id,
+        parcelaRecebimentoId: primeira.id,
+        formaPagamentoId: forma.id,
+        descricao: `Parcela ${primeira.numero}/${primeira.totalParcelas} · ${descricao}`,
+        valor: primeira.valor,
+        dataRecebimento: hojeISO(),
+      });
+    } else {
+      await tx.insert(receita).values({
+        empresaId: contexto.empresaId,
+        agendamentoId: id,
+        formaPagamentoId: forma.id,
+        descricao,
+        valor: atual.total,
+        dataRecebimento: hojeISO(),
+      });
+    }
     await tx
       .update(agendamento)
-      .set({ pago: true })
+      .set({ pago: dados.parcelas === 1 })
       .where(and(eq(agendamento.id, id), eq(agendamento.empresaId, contexto.empresaId)));
   });
 
@@ -629,7 +776,7 @@ export async function registrarPagamento(
     detalhes: `Agendamento ${id}`,
   });
 
-  return ok({ id, pago: true });
+  return ok({ id, pago: dados.parcelas === 1 });
 }
 
 /** Agenda dos proximos dias, usada no painel. */

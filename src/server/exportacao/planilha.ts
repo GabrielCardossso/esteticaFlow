@@ -1,5 +1,6 @@
 import ExcelJS from 'exceljs';
 import type { Relatorio } from '@/server/relatorios';
+import { CATALOGO_PLANOS } from '@/domain/plano';
 import { formatarData } from '@/domain/shared/tempo';
 
 const CABECALHO_FUNDO = 'FF111827';
@@ -30,7 +31,7 @@ export async function gerarPlanilha(relatorio: Relatorio): Promise<Buffer> {
   resumo.addRow(['EsteticaFlow — Relatório gerencial']).font = { bold: true, size: 14 };
   resumo.addRow([]);
   resumo.addRow(['Empresa', relatorio.empresa]);
-  resumo.addRow(['Plano', relatorio.plano]);
+  resumo.addRow(['Plano', CATALOGO_PLANOS[relatorio.plano].nome]);
   resumo.addRow([
     'Período',
     `${formatarData(relatorio.periodo.inicio)} a ${formatarData(relatorio.periodo.fim)}`,

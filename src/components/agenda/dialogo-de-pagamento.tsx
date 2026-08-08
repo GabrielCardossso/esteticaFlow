@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Botao } from '@/components/ui/botao';
 import { Selecao } from '@/components/ui/campo';
 import { Dialogo } from '@/components/ui/dialogo';
+import { MAXIMO_PARCELAS } from '@/domain/financeiro';
 import { useFormasDePagamento, useRegistrarPagamento } from '@/hooks/use-agenda';
 
 export function DialogoDePagamento({
@@ -15,7 +16,8 @@ export function DialogoDePagamento({
 }) {
   const { data: formas, isLoading } = useFormasDePagamento();
   const registrar = useRegistrarPagamento();
-  const [forma, setForma] = useState<string>('');
+  const [forma, setForma] = useState('');
+  const [parcelas, setParcelas] = useState('1');
 
   useEffect(() => {
     if (agendamentoId !== null && forma === '' && (formas?.length ?? 0) > 0) {
@@ -23,11 +25,25 @@ export function DialogoDePagamento({
     }
   }, [agendamentoId, formas, forma]);
 
+  const formaSelecionada = formas?.find((item) => String(item.id) === forma);
+  const exibirParcelas = formaSelecionada?.permiteParcelamento === true;
+
   const confirmar = () => {
     if (agendamentoId === null || forma === '') return;
     registrar.mutate(
-      { id: agendamentoId, formaPagamentoId: Number(forma) },
-      { onSuccess: aoFechar },
+      {
+        id: agendamentoId,
+        dados: {
+          formaPagamentoId: Number(forma),
+          parcelas: exibirParcelas ? Number(parcelas) : 1,
+        },
+      },
+      {
+        onSuccess: () => {
+          setParcelas('1');
+          aoFechar();
+        },
+      },
     );
   };
 
@@ -39,7 +55,7 @@ export function DialogoDePagamento({
       }}
       largura="estreita"
       titulo="Registrar pagamento"
-      descricao="O status do atendimento não muda: um serviço em andamento pode já estar quitado."
+      descricao="Receba à vista ou crie um parcelamento no cartão com acompanhamento pelo financeiro."
       rodape={
         <>
           <Botao variante="fantasma" onClick={aoFechar}>
@@ -51,7 +67,7 @@ export function DialogoDePagamento({
             carregando={registrar.isPending}
             disabled={forma === ''}
           >
-            Confirmar recebimento
+            {exibirParcelas && parcelas !== '1' ? 'Criar parcelamento' : 'Confirmar recebimento'}
           </Botao>
         </>
       }
@@ -63,18 +79,46 @@ export function DialogoDePagamento({
           Nenhuma forma de pagamento ativa. Cadastre uma em Configurações.
         </p>
       ) : (
-        <Selecao
-          rotulo="Forma de pagamento"
-          obrigatorio
-          value={forma}
-          onChange={(evento) => setForma(evento.target.value)}
-        >
-          {(formas ?? []).map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.nome}
-            </option>
-          ))}
-        </Selecao>
+        <div className="space-y-4">
+          <Selecao
+            rotulo="Forma de pagamento"
+            obrigatorio
+            value={forma}
+            onChange={(evento) => {
+              setForma(evento.target.value);
+              setParcelas('1');
+            }}
+          >
+            {(formas ?? []).map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.nome}
+              </option>
+            ))}
+          </Selecao>
+
+          {exibirParcelas ? (
+            <div className="rounded-xl border border-[var(--acento-ativo)]/25 bg-[var(--acento-fraco)] p-4">
+              <Selecao
+                rotulo="Quantidade de parcelas"
+                ajuda={
+                  parcelas === '1'
+                    ? 'O valor total será recebido agora.'
+                    : 'A primeira parcela entra hoje; as demais ficam em Parcelas a receber.'
+                }
+                value={parcelas}
+                onChange={(evento) => setParcelas(evento.target.value)}
+              >
+                {Array.from({ length: MAXIMO_PARCELAS }, (_, indice) => indice + 1).map(
+                  (quantidade) => (
+                    <option key={quantidade} value={quantidade}>
+                      {quantidade}x {quantidade === 1 ? '(à vista)' : ''}
+                    </option>
+                  ),
+                )}
+              </Selecao>
+            </div>
+          ) : null}
+        </div>
       )}
     </Dialogo>
   );

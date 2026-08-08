@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { Botao } from '@/components/ui/botao';
 import { Campo, Selecao } from '@/components/ui/campo';
 import { Dialogo } from '@/components/ui/dialogo';
+import { MAXIMO_PARCELAS } from '@/domain/financeiro';
 import { UNIDADES, dimensaoDaUnidade, type UnidadeMedida } from '@/domain/estoque';
 import { formatarQuantidade } from '@/domain/shared/texto';
 import { useConcluirAgendamento, useFormasDePagamento } from '@/hooks/use-agenda';
@@ -34,11 +35,13 @@ export function DialogoDeConclusao({
   aoFechar,
   agendamentoId,
   jaPago,
+  possuiParcelamento,
 }: {
   aberto: boolean;
   aoFechar: () => void;
   agendamentoId: number;
   jaPago: boolean;
+  possuiParcelamento: boolean;
 }) {
   const { permite } = usePermissao();
   const podeEstoque = permite('ESTOQUE');
@@ -47,6 +50,7 @@ export function DialogoDeConclusao({
   const { data: formas } = useFormasDePagamento();
 
   const [forma, setForma] = useState('');
+  const [parcelas, setParcelas] = useState('1');
   const [consumos, setConsumos] = useState<LinhaDeConsumo[]>([]);
 
   const { data: produtos } = useQuery({
@@ -60,9 +64,13 @@ export function DialogoDeConclusao({
     enabled: aberto && podeEstoque,
   });
 
+  const formaSelecionada = formas?.find((item) => String(item.id) === forma);
+  const exibirParcelas = formaSelecionada?.permiteParcelamento === true;
+
   const confirmar = () => {
     const dados: ConcluirPayload = {
       formaPagamentoId: !jaPago && forma !== '' ? Number(forma) : null,
+      parcelas: !jaPago && forma !== '' && exibirParcelas ? Number(parcelas) : 1,
       consumos: consumos
         .filter((linha) => linha.produtoId !== '' && Number(linha.quantidade) > 0)
         .map((linha) => ({
@@ -78,6 +86,7 @@ export function DialogoDeConclusao({
         onSuccess: () => {
           setConsumos([]);
           setForma('');
+          setParcelas('1');
           aoFechar();
         },
       },
@@ -104,20 +113,50 @@ export function DialogoDeConclusao({
       }
     >
       <div className="space-y-5">
-        {!jaPago ? (
-          <Selecao
-            rotulo="Receber agora"
-            ajuda="Deixe em branco para concluir com a conta em aberto."
-            value={forma}
-            onChange={(evento) => setForma(evento.target.value)}
-          >
-            <option value="">Não receber agora</option>
-            {(formas ?? []).map((item) => (
-              <option key={item.id} value={item.id}>
-                {item.nome}
-              </option>
-            ))}
-          </Selecao>
+        {!jaPago && !possuiParcelamento ? (
+          <div className="space-y-4">
+            <Selecao
+              rotulo="Receber agora"
+              ajuda="Deixe em branco para concluir com a conta em aberto."
+              value={forma}
+              onChange={(evento) => {
+                setForma(evento.target.value);
+                setParcelas('1');
+              }}
+            >
+              <option value="">Não receber agora</option>
+              {(formas ?? []).map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.nome}
+                </option>
+              ))}
+            </Selecao>
+
+            {exibirParcelas ? (
+              <Selecao
+                rotulo="Quantidade de parcelas"
+                ajuda={
+                  parcelas === '1'
+                    ? 'Recebimento integral hoje.'
+                    : 'A primeira entra hoje e as demais ficam no financeiro.'
+                }
+                value={parcelas}
+                onChange={(evento) => setParcelas(evento.target.value)}
+              >
+                {Array.from({ length: MAXIMO_PARCELAS }, (_, indice) => indice + 1).map(
+                  (quantidade) => (
+                    <option key={quantidade} value={quantidade}>
+                      {quantidade}x {quantidade === 1 ? '(à vista)' : ''}
+                    </option>
+                  ),
+                )}
+              </Selecao>
+            ) : null}
+          </div>
+        ) : possuiParcelamento && !jaPago ? (
+          <p className="rounded-lg border border-[var(--acento-ativo)]/30 bg-[var(--acento-fraco)] p-3 text-sm text-[var(--tinta)]">
+            Este atendimento já tem um parcelamento. As próximas parcelas continuam no financeiro.
+          </p>
         ) : (
           <p className="rounded-lg border border-[var(--positivo)]/30 bg-[var(--positivo-fraco)] p-3 text-sm text-[var(--positivo)]">
             Este atendimento já está pago.
@@ -169,7 +208,8 @@ export function DialogoDeConclusao({
                                     produtoId: evento.target.value,
                                     unidadeMedida:
                                       (produtos ?? []).find(
-                                        (produto) => String(produto.produtoId) === evento.target.value,
+                                        (produto) =>
+                                          String(produto.produtoId) === evento.target.value,
                                       )?.unidadeEstoque ?? 'UN',
                                   }
                                 : item,
@@ -218,7 +258,9 @@ export function DialogoDeConclusao({
                         }
                       >
                         {unidadesCompativeis(produto?.unidadeMedida ?? 'UN').map((unidade) => (
-                          <option key={unidade} value={unidade}>{unidade}</option>
+                          <option key={unidade} value={unidade}>
+                            {unidade}
+                          </option>
                         ))}
                       </Selecao>
 

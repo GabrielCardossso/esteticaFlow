@@ -7,6 +7,7 @@ import {
   validarDataHora,
 } from '@/domain/agendamento';
 import { classificarRelacionamento, linkWhatsApp } from '@/domain/cliente';
+import { dividirEmParcelas, permiteParcelamento } from '@/domain/financeiro';
 import {
   calcularCustoUnitario,
   calcularValorDaCompra,
@@ -63,6 +64,24 @@ describe('Dinheiro', () => {
   it('compara corretamente', () => {
     expect(Dinheiro.comparar('10.00', '9.99')).toBe(1);
     expect(Dinheiro.comparar('10.00', '10.00')).toBe(0);
+  });
+});
+
+describe('parcelamento', () => {
+  it('identifica cartão de crédito mesmo com acento e variações de caixa', () => {
+    expect(permiteParcelamento('Cartão de Crédito')).toBe(true);
+    expect(permiteParcelamento('CRÉDITO')).toBe(true);
+    expect(permiteParcelamento('Pix')).toBe(false);
+  });
+
+  it('divide o total sem perder centavos', () => {
+    const parcelas = dividirEmParcelas('100.00', 3);
+    expect(parcelas).toEqual(['33.34', '33.33', '33.33']);
+    expect(Dinheiro.somar(...parcelas)).toBe('100.00');
+  });
+
+  it('limita o parcelamento a doze vezes', () => {
+    expect(() => dividirEmParcelas('100.00', 13)).toThrow(/entre 2 e 12/);
   });
 });
 
@@ -286,9 +305,18 @@ describe('custo e compra de estoque', () => {
   });
 
   it('exibe saldo grande em L e KG', () => {
-    expect(exibirQuantidadeInteligente('1500.000', 'ML')).toEqual({ quantidade: '1.5', unidade: 'L' });
-    expect(exibirQuantidadeInteligente('1250.000', 'G')).toEqual({ quantidade: '1.25', unidade: 'KG' });
-    expect(exibirQuantidadeInteligente('800.000', 'ML')).toEqual({ quantidade: '800', unidade: 'ML' });
+    expect(exibirQuantidadeInteligente('1500.000', 'ML')).toEqual({
+      quantidade: '1.5',
+      unidade: 'L',
+    });
+    expect(exibirQuantidadeInteligente('1250.000', 'G')).toEqual({
+      quantidade: '1.25',
+      unidade: 'KG',
+    });
+    expect(exibirQuantidadeInteligente('800.000', 'ML')).toEqual({
+      quantidade: '800',
+      unidade: 'ML',
+    });
   });
 });
 
