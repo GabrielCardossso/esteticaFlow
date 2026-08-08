@@ -43,7 +43,7 @@ import {
   m,
   paraISO,
 } from '@/domain/shared/tempo';
-import { contemTermo } from '@/domain/shared/texto';
+import { contemTermo, truncar } from '@/domain/shared/texto';
 import type {
   AgendamentoPayload,
   ConcluirPayload,
@@ -133,6 +133,13 @@ function prepararParcelas(valorTotal: string, quantidade: number) {
     paga: indice === 0,
     dataPagamento: indice === 0 ? hoje : null,
   }));
+}
+
+function descricaoDaReceita(nomesServicos: Array<{ nome: string }>, prefixo = ''): string {
+  return truncar(
+    `${prefixo}Serviços: ${nomesServicos.map((servico) => servico.nome).join(', ')}`,
+    200,
+  );
 }
 
 export async function listarAgenda(
@@ -593,7 +600,6 @@ export async function concluirAgendamento(
 
     let pago = atual.pago;
     if (formaValida !== null && !pago) {
-      const descricao = `Serviços: ${nomesServicos.map((s) => s.nome).join(', ')}`;
       if (dados.parcelas > 1) {
         const criadas = await tx
           .insert(parcelaRecebimento)
@@ -620,7 +626,10 @@ export async function concluirAgendamento(
           agendamentoId: id,
           parcelaRecebimentoId: primeira.id,
           formaPagamentoId: formaValida.id,
-          descricao: `Parcela ${primeira.numero}/${primeira.totalParcelas} · ${descricao}`,
+          descricao: descricaoDaReceita(
+            nomesServicos,
+            `Parcela ${primeira.numero}/${primeira.totalParcelas} · `,
+          ),
           valor: primeira.valor,
           dataRecebimento: hojeISO(),
         });
@@ -629,7 +638,7 @@ export async function concluirAgendamento(
           empresaId: contexto.empresaId,
           agendamentoId: id,
           formaPagamentoId: formaValida.id,
-          descricao,
+          descricao: descricaoDaReceita(nomesServicos),
           valor: atual.total,
           dataRecebimento: hojeISO(),
         });
@@ -722,7 +731,6 @@ export async function registrarPagamento(
     .where(eq(agendamentoServico.agendamentoId, id));
 
   await db.transaction(async (tx) => {
-    const descricao = `Serviços: ${nomesServicos.map((s) => s.nome).join(', ')}`;
     if (dados.parcelas > 1) {
       const criadas = await tx
         .insert(parcelaRecebimento)
@@ -749,7 +757,10 @@ export async function registrarPagamento(
         agendamentoId: id,
         parcelaRecebimentoId: primeira.id,
         formaPagamentoId: forma.id,
-        descricao: `Parcela ${primeira.numero}/${primeira.totalParcelas} · ${descricao}`,
+        descricao: descricaoDaReceita(
+          nomesServicos,
+          `Parcela ${primeira.numero}/${primeira.totalParcelas} · `,
+        ),
         valor: primeira.valor,
         dataRecebimento: hojeISO(),
       });
@@ -758,7 +769,7 @@ export async function registrarPagamento(
         empresaId: contexto.empresaId,
         agendamentoId: id,
         formaPagamentoId: forma.id,
-        descricao,
+        descricao: descricaoDaReceita(nomesServicos),
         valor: atual.total,
         dataRecebimento: hojeISO(),
       });
